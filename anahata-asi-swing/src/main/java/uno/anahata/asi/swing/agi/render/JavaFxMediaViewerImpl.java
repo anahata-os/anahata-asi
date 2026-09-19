@@ -32,8 +32,10 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.util.Duration;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TikaUtils;
+import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
  * Native JavaFX hardware-accelerated media viewer implementing {@link MediaViewerComponent}.
@@ -59,7 +61,7 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
 
     /** The action and metadata toolbar. */
     @Getter
-    private final MediaToolbar toolbar = new MediaToolbar();
+    private final MediaToolbar toolbar;
 
     /** The Swing JFXPanel hosting the JavaFX scene graph. */
     private final JFXPanel jfxPanel = new JFXPanel();
@@ -111,9 +113,12 @@ public class JavaFxMediaViewerImpl extends JPanel implements MediaViewerComponen
 
     /**
      * Constructs a new JavaFxMediaViewerImpl.
+     *
+     * @param agiPanel The parent AgiPanel providing session and configuration context.
      */
-    public JavaFxMediaViewerImpl() {
+    public JavaFxMediaViewerImpl(@NonNull AgiPanel agiPanel) {
         super(new BorderLayout());
+        this.toolbar = new MediaToolbar(agiPanel);
         setOpaque(true);
         setBackground(new Color(20, 24, 32));
         setMinimumSize(new Dimension(320, 240));

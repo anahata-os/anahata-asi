@@ -8,7 +8,6 @@ import java.awt.Insets;
 import javax.swing.BorderFactory;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.border.TitledBorder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.view.ResourceView;
@@ -47,7 +46,7 @@ public abstract class AbstractViewPanel<V extends ResourceView> extends JPanel {
     protected AbstractViewPanel(AgiPanel agiPanel) {
         this.agiPanel = agiPanel;
         setLayout(new GridBagLayout());
-        setBorder(BorderFactory.createTitledBorder(null, "View (Interpreter)", TitledBorder.LEFT, TitledBorder.TOP, getFont().deriveFont(Font.BOLD)));
+        setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
         
         gbc.gridx = 0;
         gbc.gridy = 0;

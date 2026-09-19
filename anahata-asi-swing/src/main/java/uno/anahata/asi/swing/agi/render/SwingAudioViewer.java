@@ -18,7 +18,9 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
  * Pure Swing audio player implementing {@link MediaViewerComponent}.
@@ -34,7 +36,7 @@ public class SwingAudioViewer extends JPanel implements MediaViewerComponent {
 
     /** The action and metadata toolbar. */
     @Getter
-    private final MediaToolbar toolbar = new MediaToolbar();
+    private final MediaToolbar toolbar;
 
     /** Toggle button for initiating and stopping playback. */
     private final JToggleButton playButton = new JToggleButton("▶ Play Audio");
@@ -53,10 +55,13 @@ public class SwingAudioViewer extends JPanel implements MediaViewerComponent {
 
     /**
      * Constructs a new SwingAudioViewer.
+     *
+     * @param agiPanel The parent AgiPanel providing session and configuration context.
      */
-    public SwingAudioViewer() {
+    public SwingAudioViewer(@NonNull AgiPanel agiPanel) {
         super(new BorderLayout());
 
+        this.toolbar = new MediaToolbar(agiPanel);
         setOpaque(true);
         setBackground(new Color(24, 28, 36));
         setBorder(BorderFactory.createEmptyBorder(10, 14, 10, 14));

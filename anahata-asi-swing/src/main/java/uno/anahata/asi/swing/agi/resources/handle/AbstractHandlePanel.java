@@ -16,7 +16,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
-import javax.swing.border.TitledBorder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.internal.TimeUtils;
@@ -96,7 +95,7 @@ public class AbstractHandlePanel<H extends ResourceHandle> extends JPanel {
      */
     public AbstractHandlePanel() {
         setLayout(new GridBagLayout());
-        setBorder(BorderFactory.createTitledBorder(null, "Handle (Connectivity)", TitledBorder.LEFT, TitledBorder.TOP, getFont().deriveFont(Font.BOLD)));
+        setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
         gbc.gridx = 0;
         gbc.gridy = 0;

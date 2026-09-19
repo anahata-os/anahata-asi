@@ -20,7 +20,6 @@ import javax.swing.JTextField;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
-import javax.swing.border.TitledBorder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.context.ContextPosition;
@@ -144,8 +143,6 @@ public class ResourcePanel extends ScrollablePanel {
         this.agiPanel = agiPanel;
 
         setLayout(new BorderLayout());
-        setOpaque(true);
-        setBackground(javax.swing.UIManager.getColor("Panel.background"));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // 1. GLOBAL HEADER
@@ -166,8 +163,7 @@ public class ResourcePanel extends ScrollablePanel {
 
         // Identity Tab - Pure JGoodies Implementation
         JPanel identityTab = new JPanel();
-        identityTab.setOpaque(false);
-        identityTab.setBorder(BorderFactory.createTitledBorder(null, "Identity (Core Metadata)", TitledBorder.LEFT, TitledBorder.TOP, identityTab.getFont().deriveFont(Font.BOLD)));
+        identityTab.setBorder(BorderFactory.createEmptyBorder(8, 10, 8, 10));
 
         FormLayout idLayout = new FormLayout(
                 "pref, 6dlu, pref, 0:grow", // Cols: Label, Gap, Component, Pusher
@@ -214,11 +210,9 @@ public class ResourcePanel extends ScrollablePanel {
         metadataTabs.addTab("Identity", createHScrollPane(identityTab));
 
         handleSectorContainer = new JPanel(new BorderLayout());
-        handleSectorContainer.setOpaque(false);
         metadataTabs.addTab("Handle", createHScrollPane(handleSectorContainer));
 
         viewSectorContainer = new JPanel(new BorderLayout());
-        viewSectorContainer.setOpaque(false);
         metadataTabs.addTab("View", createHScrollPane(viewSectorContainer));
 
         // 3. CONTENT TABS (Capabilities, Model perspective (RAG))
@@ -278,8 +272,6 @@ public class ResourcePanel extends ScrollablePanel {
     private JScrollPane createHScrollPane(JComponent comp) {
         JScrollPane sp = new JScrollPane(comp);
         sp.setBorder(BorderFactory.createEmptyBorder());
-        sp.setOpaque(false);
-        sp.getViewport().setOpaque(false);
         sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         return sp;

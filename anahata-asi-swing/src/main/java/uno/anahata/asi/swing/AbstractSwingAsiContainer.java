@@ -6,6 +6,7 @@ package uno.anahata.asi.swing;
 import java.awt.Component;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -48,6 +49,7 @@ import uno.anahata.asi.swing.agi.message.part.tool.param.TabbedListParameterRend
 import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.VBoxListParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.WrapListParameterRenderer;
+import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
 import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.internal.JavaFxBridge;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -464,6 +466,24 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
      */
     public boolean isJavaFxAvailable() {
         return javaFxVersionInfo != null;
+    }
+
+    /**
+     * Hook for host environments to provide a native media visualizer
+     * (such as Chromium-backed JCEF in IntelliJ).
+     * <p>
+     * Defaults to {@code null}, allowing {@link uno.anahata.asi.swing.agi.render.MediaRenderer}
+     * to proceed with standard JavaFX, JavaSound, or card fallbacks.
+     * </p>
+     *
+     * @param data The raw binary media data.
+     * @param mimeType The normalized MIME type (e.g. {@code "video/mp4"}).
+     * @param displayName An optional human-readable display or file name.
+     * @param sourceUri An optional source URI on disk or remote network.
+     * @return A host-provided {@link MediaViewerComponent}, or {@code null} to use default rendering.
+     */
+    public MediaViewerComponent createHostMediaViewer(byte[] data, String mimeType, String displayName, URI sourceUri, AgiPanel agiPanel) {
+        return null;
     }
 
 }

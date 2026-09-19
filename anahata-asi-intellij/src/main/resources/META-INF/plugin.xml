@@ -4,8 +4,8 @@
     <vendor email="anahata@anahata.uno" url="https://anahata.uno">Anahata</vendor>
 
     <description><![CDATA[
-      Anahata ASI integration for IntelliJ IDEA.<br>
-      Brings the power of Anahata's Artificial Super Intelligence directly into your IDE.
+      Anahata ASI Studio for IntelliJ IDEA.<br>
+      Brings the power of Anahata ASI directly into your IDE.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>
@@ -15,6 +15,10 @@
     <depends>org.jetbrains.idea.maven</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends>org.jetbrains.plugins.gradle</depends>
+    <depends>com.intellij.modules.jcef</depends>
+    <!--
+    <depends>com.intellij.modules.ui.jcef</depends>
+-->
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow id="Anahata ASI" secondary="true" icon="/icons/anahataToolWindow.png" anchor="right"

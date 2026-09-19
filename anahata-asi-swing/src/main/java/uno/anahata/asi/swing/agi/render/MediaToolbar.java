@@ -28,10 +28,14 @@ import javax.swing.SwingUtilities;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import lombok.NonNull;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.ExternalIcon;
 import uno.anahata.asi.swing.icons.NextIcon;
@@ -54,20 +58,23 @@ import uno.anahata.asi.swing.icons.SaveIcon;
 @Slf4j
 public class MediaToolbar extends JPanel {
 
+    /** The parent AgiPanel providing the session context and config. */
+    private final AgiPanel agiPanel;
+
     /** Label displaying format, dimensions, and file size. */
     private final JLabel badgeLabel = new JLabel();
 
     /** Button for copying media to the system clipboard. */
-    private final JButton copyButton = new JButton(new CopyIcon(14));
+    private final JButton copyButton;
 
     /** Button for saving the media to disk. */
-    private final JButton saveButton = new JButton(new SaveIcon(14));
+    private final JButton saveButton;
 
     /** Button for opening the media in an external application. */
-    private final JButton externalButton = new JButton(new ExternalIcon(14));
+    private final JButton externalButton;
 
     /** Button for opening the media inside the host IDE. */
-    private final JButton ideButton = new JButton(new NextIcon(14));
+    private final JButton ideButton;
 
     /** The raw binary data. */
     @Getter @Setter
@@ -91,10 +98,15 @@ public class MediaToolbar extends JPanel {
 
     /**
      * Constructs a new MediaToolbar with standard action buttons and badge.
+     *
+     * @param agiPanel The parent AgiPanel providing configuration and session context.
      */
-    public MediaToolbar() {
+    public MediaToolbar(@NonNull AgiPanel agiPanel) {
         super(new BorderLayout());
+        this.agiPanel = agiPanel;
         setOpaque(false);
+
+        SwingAgiConfig config = agiPanel.getAgiConfig();
 
         badgeLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
         badgeLabel.setForeground(new Color(140, 150, 165));
@@ -102,19 +114,19 @@ public class MediaToolbar extends JPanel {
         JPanel buttonsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         buttonsPanel.setOpaque(false);
 
-        copyButton.setToolTipText("Copy Media to System Clipboard");
+        copyButton = config.createSquareButton(ActionIconKey.COPY, 14, "Copy Media to System Clipboard");
         copyButton.setFocusable(false);
         copyButton.addActionListener(e -> copyToClipboard());
 
-        saveButton.setToolTipText("Save Media to File...");
+        saveButton = config.createSquareButton(ActionIconKey.SAVE, 14, "Save Media to File...");
         saveButton.setFocusable(false);
         saveButton.addActionListener(e -> saveAs());
 
-        externalButton.setToolTipText("Open in System Default Application (VLC, Image Viewer, etc.)");
+        externalButton = config.createSquareButton(ActionIconKey.EXTERNAL, 14, "Open in System Default Application (VLC, Image Viewer, etc.)");
         externalButton.setFocusable(false);
         externalButton.addActionListener(e -> openExternal());
 
-        ideButton.setToolTipText("Open in Host IDE");
+        ideButton = config.createSquareButton(ActionIconKey.OPEN_IN_IDE, 14, "Open in Host IDE");
         ideButton.setFocusable(false);
         ideButton.addActionListener(e -> openInIde());
 

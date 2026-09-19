@@ -76,7 +76,7 @@ public class BlobPartPanel extends AbstractPartPanel<BlobPart> {
                 String displayName = blobPart.getSourcePath() != null ? blobPart.getSourcePath().getFileName().toString() : "blob";
                 URI sourceUri = blobPart.getSourcePath() != null ? blobPart.getSourcePath().toUri() : null;
 
-                this.activeViewer = MediaRenderer.createViewer(currentData, currentMimeType, displayName, sourceUri, container);
+                this.activeViewer = MediaRenderer.createViewer(currentData, currentMimeType, displayName, sourceUri, container, agiPanel);
                 getContentContainer().add(activeViewer.getComponent(), BorderLayout.CENTER);
             }
 

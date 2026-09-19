@@ -29,8 +29,10 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
+import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 import uno.anahata.asi.swing.internal.JavaFxBridgeClassLoader;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -118,7 +120,8 @@ public class MediaRenderer {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(parent), "Image Viewer", Dialog.ModalityType.MODELESS);
         dialog.setLayout(new BorderLayout());
 
-        SwingImageViewer viewer = new SwingImageViewer();
+        AgiPanel ap = (AgiPanel) SwingUtilities.getAncestorOfClass(AgiPanel.class, parent);
+        SwingImageViewer viewer = new SwingImageViewer(ap);
         try {
             byte[] pngData = SwingUtils.encodeToPng(image);
             viewer.load(pngData, "image/png", "image.png", null);
@@ -141,11 +144,12 @@ public class MediaRenderer {
      * @param data The raw binary image data.
      * @param displayName The human-readable display name or file name.
      * @param sourceUri The optional disk or network URI of the image source.
+     * @param agiPanel The parent AgiPanel providing session context.
      * @return A fully configured {@link SwingImageViewer} ready for embedding
      * in the UI.
      */
-    public static SwingImageViewer createImageViewer(byte[] data, String mimeType, String displayName, URI sourceUri) {
-        SwingImageViewer viewer = new SwingImageViewer();
+    public static SwingImageViewer createImageViewer(byte[] data, String mimeType, String displayName, URI sourceUri, @NonNull AgiPanel agiPanel) {
+        SwingImageViewer viewer = new SwingImageViewer(agiPanel);
         viewer.load(data, mimeType, displayName, sourceUri);
         return viewer;
     }
@@ -158,9 +162,10 @@ public class MediaRenderer {
      * @param displayName An optional human-readable name or file name.
      * @param sourceUri An optional source URI.
      * @param container The active ASI container (for resolving JavaFX runtime availability).
+     * @param agiPanel The parent AgiPanel providing session context.
      * @return A configured {@link MediaViewerComponent}.
      */
-    public static MediaViewerComponent createViewer(byte[] data, String mimeType, String displayName, URI sourceUri, AbstractSwingAsiContainer container) {
+    public static MediaViewerComponent createViewer(byte[] data, String mimeType, String displayName, URI sourceUri, AbstractSwingAsiContainer container, @NonNull AgiPanel agiPanel) {
         if (mimeType == null) {
             mimeType = "application/octet-stream";
         }
@@ -168,10 +173,18 @@ public class MediaRenderer {
 
         // 1. High-fidelity Interactive Image Viewer (Pure Swing, universal)
         if (cleanMime.startsWith("image/")) {
-            return createImageViewer(data, cleanMime, displayName, sourceUri);
+            return createImageViewer(data, cleanMime, displayName, sourceUri, agiPanel);
         }
 
-        // 2. Hardware-accelerated Video & Audio with JavaFX
+        // 2. Host-provided media viewer (e.g. JCEF in IntelliJ)
+        if (container != null) {
+            MediaViewerComponent hostViewer = container.createHostMediaViewer(data, cleanMime, displayName, sourceUri, agiPanel);
+            if (hostViewer != null) {
+                return hostViewer;
+            }
+        }
+
+        // 3. Hardware-accelerated Video & Audio with JavaFX
         boolean fxAvailable = container != null && container.isJavaFxAvailable();
         if (fxAvailable && (cleanMime.startsWith("video/") || cleanMime.startsWith("audio/"))) {
             ClassLoader fxLoader = container.getJavaFxClassLoader();
@@ -181,7 +194,7 @@ public class MediaRenderer {
                     JavaFxBridgeClassLoader bridge = new JavaFxBridgeClassLoader(MediaRenderer.class.getClassLoader(), fxLoader);
                     Thread.currentThread().setContextClassLoader(bridge);
                     Class<?> viewerCls = bridge.loadClass("uno.anahata.asi.swing.agi.render.JavaFxMediaViewerImpl");
-                    MediaViewerComponent viewer = (MediaViewerComponent) viewerCls.getDeclaredConstructor().newInstance();
+                    MediaViewerComponent viewer = (MediaViewerComponent) viewerCls.getDeclaredConstructor(AgiPanel.class).newInstance(agiPanel);
                     viewer.load(data, cleanMime, displayName, sourceUri);
                     return viewer;
                 } catch (Throwable t) {
@@ -195,13 +208,13 @@ public class MediaRenderer {
 
         // 3. Pure Swing Audio fallback (JavaSound)
         if (cleanMime.startsWith("audio/")) {
-            SwingAudioViewer audioViewer = new SwingAudioViewer();
+            SwingAudioViewer audioViewer = new SwingAudioViewer(agiPanel);
             audioViewer.load(data, cleanMime, displayName, sourceUri);
             return audioViewer;
         }
 
         // 4. Generic Binary File card with MediaToolbar
-        return new GenericMediaCard(data, cleanMime, displayName, sourceUri);
+        return new GenericMediaCard(data, cleanMime, displayName, sourceUri, agiPanel);
     }
 
     /**
@@ -209,11 +222,12 @@ public class MediaRenderer {
      */
     public static class GenericMediaCard extends JPanel implements MediaViewerComponent {
         @Getter
-        private final MediaToolbar toolbar = new MediaToolbar();
+        private final MediaToolbar toolbar;
         private final JLabel nameLabel = new JLabel();
 
-        public GenericMediaCard(byte[] data, String mimeType, String displayName, URI sourceUri) {
+        public GenericMediaCard(byte[] data, String mimeType, String displayName, URI sourceUri, @NonNull AgiPanel agiPanel) {
             super(new BorderLayout(10, 10));
+            this.toolbar = new MediaToolbar(agiPanel);
             setOpaque(true);
             setBackground(new Color(24, 28, 36));
             setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));

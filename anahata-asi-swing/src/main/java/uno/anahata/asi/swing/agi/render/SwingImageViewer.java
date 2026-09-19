@@ -25,7 +25,9 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -42,7 +44,7 @@ public class SwingImageViewer extends JPanel implements MediaViewerComponent {
 
     /** The action and metadata toolbar. */
     @Getter
-    private final MediaToolbar toolbar = new MediaToolbar();
+    private final MediaToolbar toolbar;
 
     /** The scroll pane enclosing the canvas. */
     private final JScrollPane scrollPane;
@@ -61,11 +63,15 @@ public class SwingImageViewer extends JPanel implements MediaViewerComponent {
 
     /**
      * Constructs a new SwingImageViewer.
+     *
+     * @param agiPanel The parent AgiPanel providing session and configuration context.
      */
-    public SwingImageViewer() {
+    public SwingImageViewer(@NonNull AgiPanel agiPanel) {
         super(new BorderLayout());
         setOpaque(true);
         setBackground(new Color(24, 28, 36));
+
+        this.toolbar = new MediaToolbar(agiPanel);
 
         scrollPane = new JScrollPane(canvas);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());

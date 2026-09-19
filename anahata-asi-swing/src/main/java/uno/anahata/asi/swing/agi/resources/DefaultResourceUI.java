@@ -112,7 +112,8 @@ public class DefaultResourceUI implements ResourceUI {
                 resource.getMimeType(),
                 resource.getName(),
                 uri,
-                swingContainer);
+                swingContainer,
+                agiPanel);
         return viewer.getComponent();
     }
 

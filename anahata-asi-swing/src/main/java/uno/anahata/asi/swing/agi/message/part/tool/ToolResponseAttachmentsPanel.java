@@ -143,7 +143,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
 
         // Unified multimodal viewer (Image, Video, Audio, or File card)
         AbstractSwingAsiContainer container = (AbstractSwingAsiContainer) agiPanel.getAgi().getConfig().getAsiContainer();
-        MediaViewerComponent viewer = MediaRenderer.createViewer(data, mimeType, "attachment", null, container);
+        MediaViewerComponent viewer = MediaRenderer.createViewer(data, mimeType, "attachment", null, container, agiPanel);
         activeViewers.put(attachment, viewer);
         itemPanel.add(viewer.getComponent(), "growx, wrap");
 

@@ -2,6 +2,7 @@
 package uno.anahata.asi.swing.icons;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -29,10 +30,8 @@ public class ExternalIcon extends AbstractAnahataIcon {
         try {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             
-            g2.setColor(UIManager.getColor("Button.focusedBorderColor"));
-            if (g2.getColor() == null) {
-                g2.setColor(c.getForeground());
-            }
+            Color fg = (c != null && c.getForeground() != null) ? c.getForeground() : Color.LIGHT_GRAY;
+            g2.setColor(fg);
 
             int pad = size / 4;
             int thickness = Math.max(2, size / 10);
