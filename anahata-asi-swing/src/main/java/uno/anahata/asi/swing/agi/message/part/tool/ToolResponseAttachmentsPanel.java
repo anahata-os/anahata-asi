@@ -116,7 +116,7 @@ public class ToolResponseAttachmentsPanel extends JPanel {
     private JPanel createAttachmentPanel(ToolResponseAttachment attachment) {
         JPanel itemPanel = new JPanel(new MigLayout("fillx, insets 5, gap 0", "[grow]", "[]0[]"));
         itemPanel.setOpaque(false);
-        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()));
+        itemPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()));
 
         String mimeType = attachment.getMimeType();
         byte[] data = attachment.getData();

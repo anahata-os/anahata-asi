@@ -133,9 +133,9 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
         JPanel diagPanel = new JPanel(new MigLayout("insets 8, fillx", "[grow,fill]", "[]6[]"));
         diagPanel.setOpaque(false);
         diagPanel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
+                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
                 "Ollama Server & VRAM Monitor", 0, 0,
-                getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.theme().getMutedFg()));
+                getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.getTheme().getMutedFg()));
 
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         topRow.setOpaque(false);
@@ -171,7 +171,7 @@ public class OllamaAiProviderPanel extends OpenAiChatCompletionsProviderPanel<Ol
 
         pullProgressPanel = new JPanel(new MigLayout("insets 4, fillx", "[grow,fill]", "[]2[]"));
         pullProgressPanel.setOpaque(false);
-        pullProgressPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()));
+        pullProgressPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()));
         pullStatusLabel = new JLabel("Preparing download...");
         pullStatusLabel.setFont(pullStatusLabel.getFont().deriveFont(Font.BOLD, 11f));
         pullProgressBar = new JProgressBar(0, 100);

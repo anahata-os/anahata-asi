@@ -94,6 +94,6 @@ public class TabbedListParameterRenderer extends AbstractListParameterRenderer<O
     protected void onChildItemUpdated(int index, Object updatedItem) {
         String title = (updatedItem instanceof Displayable d) ? d.getDisplayValue() : ("#" + (index + 1));
         tabPane.setTitleAt(index, title + "*");
-        tabPane.setForegroundAt(index, SwingAgiConfig.theme().getLinkFg());
+        tabPane.setForegroundAt(index, SwingAgiConfig.getTheme().getLinkFg());
     }
 }

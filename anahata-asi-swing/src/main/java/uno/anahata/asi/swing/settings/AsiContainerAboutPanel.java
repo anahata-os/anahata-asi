@@ -160,7 +160,7 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         updateNotifications();
 
         JScrollPane notifScroll = new JScrollPane(notificationsArea);
-        notifScroll.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()));
+        notifScroll.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()));
         notifSection.add(notifScroll, BorderLayout.CENTER);
 
         JPanel notifActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -192,8 +192,8 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
-                title, 0, 0, getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.theme().getMutedFg()));
+                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
+                title, 0, 0, getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.getTheme().getMutedFg()));
         return panel;
     }
 

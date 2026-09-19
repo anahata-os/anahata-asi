@@ -109,7 +109,7 @@ public class CodeHyperlink extends JLabel {
         this.contentSupplier = contentSupplier;
         this.language = language;
         
-        setForeground(SwingAgiConfig.theme().getLinkFg());
+        setForeground(SwingAgiConfig.getTheme().getLinkFg());
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
         addMouseListener(new MouseAdapter() {

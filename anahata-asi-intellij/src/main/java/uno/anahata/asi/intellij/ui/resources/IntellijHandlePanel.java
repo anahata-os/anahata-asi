@@ -75,10 +75,10 @@ public class IntellijHandlePanel extends AbstractHandlePanel<IntellijHandle> {
             FileStatus status = FileStatusManager.getInstance(project).getStatus(vf);
             vcsStatusLabel.setText(status.getText());
             Color color = status.getColor();
-            vcsStatusLabel.setForeground(color != null ? color : SwingAgiConfig.theme().getFontColor());
+            vcsStatusLabel.setForeground(color != null ? color : SwingAgiConfig.getTheme().getFontColor());
         } else {
             vcsStatusLabel.setText("N/A");
-            vcsStatusLabel.setForeground(SwingAgiConfig.theme().getMutedFg());
+            vcsStatusLabel.setForeground(SwingAgiConfig.getTheme().getMutedFg());
         }
     }
 }

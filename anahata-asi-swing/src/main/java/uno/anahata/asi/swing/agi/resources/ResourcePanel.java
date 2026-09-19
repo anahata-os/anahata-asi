@@ -252,7 +252,7 @@ public class ResourcePanel extends ScrollablePanel {
         JTextField f = new JTextField(35); // Long enough for UUID
         f.setEditable(false);
         f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
+                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
         f.setOpaque(true);

@@ -391,13 +391,6 @@ public class SwingAgiConfig extends AgiConfig {
         return isDarkLaf();
     }
 
-    /**
-     * Returns a new theme object containing the color and font definitions for the UI.
-     * @return The UI theme.
-     */
-    public UITheme getTheme() {
-        return new UITheme();
-    }
 
     /**
      * Convenience factory returning a {@link UITheme} that reflects the currently active Look and
@@ -408,7 +401,7 @@ public class SwingAgiConfig extends AgiConfig {
      *
      * @return a UI theme for the active Look and Feel.
      */
-    public static UITheme theme() {
+    public static UITheme getTheme() {
         return new UITheme();
     }
 

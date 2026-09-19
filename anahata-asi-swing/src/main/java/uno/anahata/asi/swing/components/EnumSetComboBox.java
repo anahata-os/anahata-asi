@@ -176,7 +176,7 @@ public class EnumSetComboBox<E extends Enum<E>> extends JButton {
 
         JPopupMenu popup = new JPopupMenu();
         this.activePopup = popup;
-        popup.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()));
+        popup.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()));
 
         popup.addPopupMenuListener(new PopupMenuListener() {
             @Override

@@ -14,7 +14,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.UIManager;
 import javax.swing.table.DefaultTableModel;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
@@ -25,6 +24,7 @@ import uno.anahata.asi.agi.context.ContextWindowGarbageCollector;
 import uno.anahata.asi.agi.context.GarbageCollectorRecord;
 import uno.anahata.asi.internal.TimeUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
@@ -160,16 +160,7 @@ public class CwGcPanel extends JPanel {
      */
     private void initComponents() {
         JPanel headerPanel = new JPanel(new MigLayout("insets 10, fillx", "[grow]", "[]0[]"));
-        Color panelBg = UIManager.getColor("Panel.background");
-        Color headerBg = UIManager.getColor("TableHeader.background") != null 
-                ? UIManager.getColor("TableHeader.background") 
-                : (panelBg != null ? panelBg.darker() : new Color(245, 245, 245));
-        headerPanel.setBackground(headerBg);
-
-        Color borderColor = UIManager.getColor("Separator.foreground") != null 
-                ? UIManager.getColor("Separator.foreground") 
-                : Color.LIGHT_GRAY;
-        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor));
+        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()));
         JLabel titleLabel = new JLabel("Context Window Garbage Collector");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         headerPanel.add(titleLabel, "wrap");

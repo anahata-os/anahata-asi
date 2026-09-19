@@ -114,7 +114,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             // 1. Initialize the viewer (The Sense)
             initViewer();
 
-            UITheme theme = SwingAgiConfig.theme();
+            UITheme theme = SwingAgiConfig.getTheme();
             JPanel container = new JPanel(new BorderLayout());
             container.setOpaque(false);
             container.setBorder(BorderFactory.createLineBorder(theme.getChromeBorder(), 1, true));

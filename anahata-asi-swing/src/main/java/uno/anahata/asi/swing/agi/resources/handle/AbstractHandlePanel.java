@@ -108,7 +108,7 @@ public class AbstractHandlePanel<H extends ResourceHandle> extends JPanel {
         writableBox.setEnabled(false);
 
         addProperty("Class:", classLabel);
-        classLabel.setForeground(SwingAgiConfig.theme().getMutedFg());
+        classLabel.setForeground(SwingAgiConfig.getTheme().getMutedFg());
         addProperty("URI:", uriField);
         addProperty("MIME:", mimeLabel);
         addProperty("Status:", statusLabel);
@@ -183,7 +183,7 @@ public class AbstractHandlePanel<H extends ResourceHandle> extends JPanel {
         virtualBox.setSelected(handle.isVirtual());
 
         statusLabel.setText("Loading...");
-        statusLabel.setForeground(SwingAgiConfig.theme().getMutedFg());
+        statusLabel.setForeground(SwingAgiConfig.getTheme().getMutedFg());
         sizeLabel.setText("Loading...");
         modifiedLabel.setText("Loading...");
         mimeLabel.setText("Loading...");

@@ -273,7 +273,7 @@ public class AiModelsPanel extends JPanel {
 
         // Status Bar Panel (SOUTH)
         JPanel statusBar = new JPanel(new MigLayout("insets 4 8 4 8, fillx", "[grow,fill][]", "[]"));
-        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, SwingAgiConfig.theme().getChromeBorder()));
+        statusBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, SwingAgiConfig.getTheme().getChromeBorder()));
         statusLabel = new JLabel("Showing " + models.size() + " models");
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(true);

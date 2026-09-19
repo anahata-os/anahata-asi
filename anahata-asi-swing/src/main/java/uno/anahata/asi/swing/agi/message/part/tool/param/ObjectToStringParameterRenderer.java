@@ -53,7 +53,7 @@ public class ObjectToStringParameterRenderer extends AbstractParameterRenderer<O
     /** No-arg constructor for factory instantiation. */
     public ObjectToStringParameterRenderer() {
         container.setOpaque(false);
-        container.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder(), 1, true));
+        container.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder(), 1, true));
     }
 
     /**

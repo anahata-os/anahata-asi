@@ -173,7 +173,7 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         controlStrip = new JToolBar();
         controlStrip.setFloatable(false);
         controlStrip.setOpaque(false);
-        controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()));
+        controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()));
 
         // 1b. Action Nexus (Edit/Save)
         actionNexus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));

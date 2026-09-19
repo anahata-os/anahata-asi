@@ -112,7 +112,7 @@ public class AiProvidersPanel extends JPanel {
         // Left Sidebar (WEST)
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(230, -1));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, SwingAgiConfig.theme().getChromeBorder()));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, SwingAgiConfig.getTheme().getChromeBorder()));
 
         JPanel sidebarHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         sidebarHeader.setOpaque(false);

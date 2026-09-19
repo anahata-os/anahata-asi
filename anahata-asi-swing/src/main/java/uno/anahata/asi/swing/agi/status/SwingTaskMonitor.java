@@ -117,7 +117,7 @@ public class SwingTaskMonitor extends JPanel {
 
         if (tasks.isEmpty()) {
             JLabel idleLabel = new JLabel("No active tasks.", SwingConstants.CENTER);
-            idleLabel.setForeground(SwingAgiConfig.theme().getMutedFg());
+            idleLabel.setForeground(SwingAgiConfig.getTheme().getMutedFg());
             taskListPanel.add(idleLabel, "growx, gaptop 10, gapbottom 10");
         } else {
             for (SwingTask<?> task : tasks) {
@@ -139,7 +139,7 @@ public class SwingTaskMonitor extends JPanel {
     private JPanel createTaskEntry(SwingTask<?> task) {
         JPanel panel = new JPanel(new MigLayout("fillx, ins 5", "[grow, fill]5[pref!]", "[]"));
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.theme().getChromeBorder()),
+                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 

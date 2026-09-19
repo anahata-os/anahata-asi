@@ -234,10 +234,10 @@ public class InputPanel extends JPanel {
         // --- STAGED MESSAGE PANEL ---
         stagedMessagePanel = new JPanel(new BorderLayout(5, 0));
         stagedMessagePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, SwingAgiConfig.theme().getChromeBorder()),
+                BorderFactory.createMatteBorder(1, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
-        stagedMessagePanel.setBackground(SwingAgiConfig.theme().getChipBackground());
+        stagedMessagePanel.setBackground(SwingAgiConfig.getTheme().getChipBackground());
         stagedMessagePanel.setVisible(false);
 
         stagedMessageLabel = new JLabel("Staged Message: ");
