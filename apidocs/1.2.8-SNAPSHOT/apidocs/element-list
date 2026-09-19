@@ -47,6 +47,7 @@ uno.anahata.asi.intellij.tools.run
 uno.anahata.asi.intellij.tools.terminal
 uno.anahata.asi.intellij.tools.vcs
 uno.anahata.asi.intellij.ui
+uno.anahata.asi.intellij.ui.media
 uno.anahata.asi.intellij.ui.resources
 uno.anahata.asi.intellij.ui.status
 uno.anahata.asi.internal
