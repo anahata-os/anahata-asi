@@ -41,11 +41,11 @@ import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.AgiTransferHandler;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.components.CodeHyperlink;
-import uno.anahata.asi.swing.icons.IconUtils;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.swing.components.ExceptionDialog;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 
 /**
  * The primary dashboard for real-time monitoring of an AGI session's health and state.
@@ -174,9 +174,9 @@ public class StatusPanel extends JPanel {
         agiStatusPanel.setOpaque(false);
         statusIndicator = new StatusIndicator();
         statusLabel = new JLabel("Initializing...");
-        soundToggle = new JToggleButton(IconUtils.getIcon("bell.png"));
-        soundToggle.setSelectedIcon(IconUtils.getIcon("bell_mute.png"));
-        getAgiConfig().forceSquare(soundToggle, 24);
+        soundToggle = new JToggleButton(agiConfig.getActionIcon(ActionIconKey.BELL, 20));
+        soundToggle.setSelectedIcon(agiConfig.getActionIcon(ActionIconKey.BELL_MUTE, 20));
+        getAgiConfig().forceSquare(soundToggle, 20);
         soundToggle.setToolTipText("Toggle Sound Notifications");
         soundToggle.setSelected(!agiConfig.isAudioFeedbackEnabled());
         soundToggle.addActionListener(e -> agiConfig.setAudioFeedbackEnabled(!soundToggle.isSelected()));

@@ -131,7 +131,7 @@ public class HeaderPanel extends JPanel {
         add(saveSessionButton);
 
         if (!agi.isTemplate()) {
-            JButton saveAsTemplateBtn = config.createSquareButton(ActionIconKey.COPY, ICON_SIZE, "Save as Template...");
+            JButton saveAsTemplateBtn = config.createSquareButton(ActionIconKey.TEMPLATES, ICON_SIZE, "Save as Template...");
             saveAsTemplateBtn.addActionListener(e -> saveAsTemplate());
             add(saveAsTemplateBtn);
         }

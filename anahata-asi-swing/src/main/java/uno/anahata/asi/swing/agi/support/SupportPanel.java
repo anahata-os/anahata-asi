@@ -148,6 +148,7 @@ public class SupportPanel extends ScrollablePanel {
 
         JButton btn = new JButton(title, icon);
         btn.setPreferredSize(new Dimension(180, 35));
+        btn.setMargin(new Insets (2,4,2,2));
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());

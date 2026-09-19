@@ -24,6 +24,7 @@ import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.AttachIcon;
 import uno.anahata.asi.swing.icons.AutoReplyIcon;
+import uno.anahata.asi.swing.icons.BellIcon;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.CardsIcon;
 import uno.anahata.asi.swing.icons.CloneIcon;
@@ -54,6 +55,7 @@ import uno.anahata.asi.swing.icons.ServerToolsIcon;
 import uno.anahata.asi.swing.icons.SettingsIcon;
 import uno.anahata.asi.swing.icons.StopIcon;
 import uno.anahata.asi.swing.icons.TableIcon;
+import uno.anahata.asi.swing.icons.TemplatesIcon;
 import uno.anahata.asi.swing.toolkit.Screens;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
 import uno.anahata.asi.toolkit.java.Java;
@@ -332,6 +334,9 @@ public class SwingAgiConfig extends AgiConfig {
             case CARDS_VIEW -> new CardsIcon(size);
             case TABLE_VIEW -> new TableIcon(size);
             case COMPRESS -> new CompressIcon(size);
+            case TEMPLATES -> new TemplatesIcon(size);
+            case BELL -> new BellIcon(size, false);
+            case BELL_MUTE -> new BellIcon(size, true);
         };
     }
 

@@ -54,6 +54,7 @@ import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 
 /**
  * A panel dedicated to displaying and managing the available AI context
@@ -347,9 +348,12 @@ public class ContextPanel extends JPanel {
         // Configure Toolbar
         JToolBar toolBar = new JToolBar();
         toolBar.setFloatable(false);
+        toolBar.setOpaque(false);
 
-        JButton refreshButton = new JButton("Refresh Tokens", new RestartIcon(16));
-        refreshButton.setToolTipText("Recalculate token counts for all context items (Snapshot)");
+        JButton refreshButton = new JButton("Recalculate Tokens", getAgiPanel().getAgiConfig().getActionIcon(ActionIconKey.REFRESH, 16));
+        //refreshButton.putClientProperty("JButton.buttonType", "toolBarButton");
+        refreshButton.setBorderPainted(true);
+        refreshButton.setToolTipText("Recalculate token counts for all context items");
         refreshButton.addActionListener(e -> {
             agi.getResourceManager().resetTokenCounts();
             refreshTokens();

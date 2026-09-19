@@ -3,10 +3,13 @@ package uno.anahata.asi.intellij;
 
 import com.intellij.icons.AllIcons;
 import com.intellij.ui.JBColor;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Insets;
 import java.net.URI;
 import javax.swing.AbstractButton;
+import javax.swing.BorderFactory;
+import javax.swing.ButtonModel;
 import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JToggleButton;
@@ -186,24 +189,50 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         forceSquare(button, size);
         return button;
     }
-    
+
     /**
      * Forces a button to be square in intellij.
-     * 
+     *
      * @param button the fricking button
      * @param size the size
      */
     @Override
     public void forceSquare(AbstractButton button, int size) {
-       button.putClientProperty("JButton.buttonType", "toolBarButton");
-       button.setMargin(new Insets(2, 2, 2, 2));
-       button.setFocusPainted(false);
-       int side = size + 10;
-       Dimension square = new Dimension(side, side);
-       button.setPreferredSize(square);
-       button.setMinimumSize(square);
-       button.setMaximumSize(square);
-   }
+        button.setMargin(new Insets(2, 2, 2, 2));
+        button.setFocusPainted(false);
+        button.setRolloverEnabled(true);
+        button.setOpaque(false);
+        int side = size + 10;
+        Dimension square = new Dimension(side, side);
+        button.setPreferredSize(square);
+        button.setMinimumSize(square);
+        button.setMaximumSize(square);
+
+        button.addChangeListener(e -> {
+            ButtonModel m = button.getModel();
+            if (button instanceof JToggleButton tb && tb.isSelected()) {
+                button.setContentAreaFilled(true);
+                button.setBackground(isDark() ? new Color(45, 70, 105) : new Color(200, 225, 255));
+                button.setBorder(BorderFactory.createLineBorder(isDark() ? new Color(53, 116, 240) : new Color(30, 100, 210), 1, true));
+            } else if (m.isRollover()) {
+                button.setContentAreaFilled(true);
+                button.setBackground(isDark() ? new Color(255, 255, 255, 25) : new Color(0, 0, 0, 20));
+                button.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+            } else {
+                button.setContentAreaFilled(false);
+                button.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+            }
+        });
+
+        if (button instanceof JToggleButton tb && tb.isSelected()) {
+            button.setContentAreaFilled(true);
+            button.setBackground(isDark() ? new Color(45, 70, 105) : new Color(200, 225, 255));
+            button.setBorder(BorderFactory.createLineBorder(isDark() ? new Color(53, 116, 240) : new Color(30, 100, 210), 1, true));
+        } else {
+            button.setContentAreaFilled(false);
+            button.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
+        }
+    }
    
 
     /**

@@ -192,5 +192,20 @@ public enum ActionIconKey {
     /**
      * Compress or prune context items.
      */
-    COMPRESS
+    COMPRESS,
+
+    /**
+     * Session template or blueprint.
+     */
+    TEMPLATES,
+
+    /**
+     * Active sound feedback and notifications.
+     */
+    BELL,
+
+    /**
+     * Muted sound feedback and notifications.
+     */
+    BELL_MUTE
 }
