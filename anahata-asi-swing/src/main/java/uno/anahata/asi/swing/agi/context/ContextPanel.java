@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.agi.context;
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -24,7 +25,6 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingConstants;
-import javax.swing.JToolBar;
 import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.table.TableColumn;
@@ -345,22 +345,19 @@ public class ContextPanel extends JPanel {
      * Initializes the components and layout of the panel.
      */
     public void initComponents() {
-        // Configure Toolbar
-        JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setOpaque(false);
+        // Top action bar
+        JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        topBar.setOpaque(false);
 
         JButton refreshButton = new JButton("Recalculate Tokens", getAgiPanel().getAgiConfig().getActionIcon(ActionIconKey.REFRESH, 16));
-        //refreshButton.putClientProperty("JButton.buttonType", "toolBarButton");
-        refreshButton.setBorderPainted(true);
         refreshButton.setToolTipText("Recalculate token counts for all context items");
         refreshButton.addActionListener(e -> {
             agi.getResourceManager().resetTokenCounts();
             refreshTokens();
         });
-        toolBar.add(refreshButton);
+        topBar.add(refreshButton);
 
-        add(toolBar, BorderLayout.NORTH);
+        add(topBar, BorderLayout.NORTH);
 
         // Configure TreeTable
         treeTable.setTreeTableModel(treeTableModel);

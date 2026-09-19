@@ -28,9 +28,7 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
-import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.RestartIcon;
-import uno.anahata.asi.swing.icons.CopyIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -114,7 +112,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             // 1. Initialize the viewer (The Sense)
             initViewer();
 
-            UITheme theme = SwingAgiConfig.getTheme();
+            UITheme theme = agiPanel.getAgiConfig().getTheme();
             JPanel container = new JPanel(new BorderLayout());
             container.setOpaque(false);
             container.setBorder(BorderFactory.createLineBorder(theme.getChromeBorder(), 1, true));
@@ -122,8 +120,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
             // 2. Header Panel
             if (headerVisible) {
                 JPanel headerPanel = new JPanel(new BorderLayout());
-                headerPanel.setOpaque(true);
-                headerPanel.setBackground(theme.getPartHeaderBg());
+                headerPanel.setOpaque(false);
                 headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, theme.getChromeBorder()));
 
                 JPanel leftHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 2));
@@ -134,7 +131,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 langLabel.setForeground(theme.getMutedFg());
                 leftHeaderPanel.add(langLabel);
 
-                JButton copyButton = new JButton("Copy", new CopyIcon(12));
+                JButton copyButton = new JButton("Copy", agiPanel.getAgiConfig().getActionIcon(ActionIconKey.COPY, 12));
                 copyButton.setToolTipText("Copy Code to Clipboard");
                 copyButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
                 copyButton.setMargin(new Insets(1, 5, 1, 5));
@@ -148,7 +145,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                 addExtraHeaderButtons(leftHeaderPanel);
                 
                 if (editable) {
-                    cancelButton = new JButton("Cancel", new CancelIcon(12));
+                    cancelButton = new JButton("Cancel", agiPanel.getAgiConfig().getActionIcon(ActionIconKey.CANCEL, 12));
                     cancelButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
                     cancelButton.setMargin(new Insets(1, 5, 1, 5));
                     cancelButton.setFocusPainted(false);
@@ -157,12 +154,12 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
                         editing = false;
                         setComponentEditable(false);
                         editButton.setText("Edit");
-                        editButton.setIcon(null);
+                        editButton.setIcon(agiPanel.getAgiConfig().getActionIcon(ActionIconKey.EDIT, 12));
                         cancelButton.setVisible(false);
                     });
                     leftHeaderPanel.add(cancelButton);
 
-                    editButton = new JButton("Edit");
+                    editButton = new JButton("Edit", agiPanel.getAgiConfig().getActionIcon(ActionIconKey.EDIT, 12));
                     editButton.setToolTipText("Toggle Edit Mode");
                     editButton.setFont(new Font("SansSerif", Font.PLAIN, 11));
                     editButton.setMargin(new Insets(1, 5, 1, 5));
@@ -327,7 +324,7 @@ public class CodeBlockSegmentRenderer extends AbstractTextSegmentRenderer {
         
         if (editButton != null) {
             editButton.setText(editing ? "Save" : "Edit");
-            editButton.setIcon(editing ? new RestartIcon(12) : null);
+            editButton.setIcon(agiPanel.getAgiConfig().getActionIcon(editing ? ActionIconKey.SAVE : ActionIconKey.EDIT, 12));
         }
         if (cancelButton != null) {
             cancelButton.setVisible(editing);

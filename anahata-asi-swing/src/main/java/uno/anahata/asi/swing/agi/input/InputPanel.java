@@ -231,13 +231,15 @@ public class InputPanel extends JPanel {
         splitPane.setDividerLocation(0.5);
         splitPane.setOneTouchExpandable(true);
 
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+
         // --- STAGED MESSAGE PANEL ---
         stagedMessagePanel = new JPanel(new BorderLayout(5, 0));
         stagedMessagePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()),
+                BorderFactory.createMatteBorder(1, 0, 1, 0, config.getTheme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
-        stagedMessagePanel.setBackground(SwingAgiConfig.getTheme().getChipBackground());
+        stagedMessagePanel.setBackground(config.getTheme().getChipBackground());
         stagedMessagePanel.setVisible(false);
 
         stagedMessageLabel = new JLabel("Staged Message: ");
@@ -245,8 +247,6 @@ public class InputPanel extends JPanel {
 
         JPanel stagedButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         stagedButtons.setOpaque(false);
-
-        SwingAgiConfig config = agiPanel.getAgiConfig();
 
         revertStagedButton = new JButton("Edit", config.getActionIcon(ActionIconKey.EDIT, 16));
         revertStagedButton.setToolTipText("Move staged message back to input for editing");

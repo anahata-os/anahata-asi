@@ -315,10 +315,6 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
         }
         pruneButton.setToolTipText(tooltip);
 
-        // Visibility is also constrained by the remainingDepth value in updateRemainingDepthLabel
-        if (!prune) {
-            remainingDepthLabel.setVisible(false);
-        }
     }
 
     /**
@@ -326,7 +322,7 @@ public abstract class AbstractPartPanel<T extends AbstractPart> extends Collapsi
      */
     protected void updateRemainingDepthLabel() {
         int remainingDepth = part.getRemainingDepth();
-        if (remainingDepth >= 0 && remainingDepth < Integer.MAX_VALUE) {
+        if (pruneButton.isVisible() && remainingDepth >= 0 && remainingDepth < Integer.MAX_VALUE) {
             remainingDepthLabel.setText("(" + remainingDepth + ")");
             remainingDepthLabel.setVisible(true);
         } else {

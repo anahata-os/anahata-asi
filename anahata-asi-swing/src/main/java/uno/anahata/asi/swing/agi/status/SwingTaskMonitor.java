@@ -2,7 +2,6 @@
 package uno.anahata.asi.swing.agi.status;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -15,10 +14,10 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
+import javax.swing.UIManager;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -117,7 +116,7 @@ public class SwingTaskMonitor extends JPanel {
 
         if (tasks.isEmpty()) {
             JLabel idleLabel = new JLabel("No active tasks.", SwingConstants.CENTER);
-            idleLabel.setForeground(SwingAgiConfig.getTheme().getMutedFg());
+            idleLabel.setEnabled(false);
             taskListPanel.add(idleLabel, "growx, gaptop 10, gapbottom 10");
         } else {
             for (SwingTask<?> task : tasks) {
@@ -139,7 +138,7 @@ public class SwingTaskMonitor extends JPanel {
     private JPanel createTaskEntry(SwingTask<?> task) {
         JPanel panel = new JPanel(new MigLayout("fillx, ins 5", "[grow, fill]5[pref!]", "[]"));
         panel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
+                BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 

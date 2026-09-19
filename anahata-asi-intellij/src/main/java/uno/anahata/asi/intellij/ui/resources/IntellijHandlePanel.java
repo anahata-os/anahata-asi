@@ -11,7 +11,6 @@ import javax.swing.JTextField;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
 
 /**
@@ -75,10 +74,12 @@ public class IntellijHandlePanel extends AbstractHandlePanel<IntellijHandle> {
             FileStatus status = FileStatusManager.getInstance(project).getStatus(vf);
             vcsStatusLabel.setText(status.getText());
             Color color = status.getColor();
-            vcsStatusLabel.setForeground(color != null ? color : SwingAgiConfig.getTheme().getFontColor());
+            if (color != null) {
+                vcsStatusLabel.setForeground(color);
+            }
         } else {
             vcsStatusLabel.setText("N/A");
-            vcsStatusLabel.setForeground(SwingAgiConfig.getTheme().getMutedFg());
+            vcsStatusLabel.setEnabled(false);
         }
     }
 }

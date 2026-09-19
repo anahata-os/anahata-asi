@@ -35,7 +35,6 @@ import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -122,7 +121,7 @@ public class TemplatesPanel extends JPanel {
         // --- Left Sidebar (WEST) ---
         JPanel sidebar = new JPanel(new BorderLayout());
         sidebar.setPreferredSize(new Dimension(260, -1));
-        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, SwingAgiConfig.getTheme().getChromeBorder()));
+        sidebar.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, UIManager.getColor("Separator.foreground")));
 
         // Sidebar Top: Add Button
         JPanel sidebarHeader = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
@@ -292,7 +291,7 @@ public class TemplatesPanel extends JPanel {
                 saveRow.add(new JLabel("Click the"));
                 JLabel saveIconBadge = new JLabel(new SaveIcon(18));
                 saveIconBadge.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
+                        BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")),
                         BorderFactory.createEmptyBorder(2, 4, 2, 4)
                 ));
                 saveRow.add(saveIconBadge);

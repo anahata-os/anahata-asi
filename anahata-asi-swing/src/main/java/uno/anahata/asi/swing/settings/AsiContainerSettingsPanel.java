@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.IconUtils;
+import uno.anahata.asi.swing.icons.TemplatesIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
@@ -84,8 +86,8 @@ public class AsiContainerSettingsPanel extends ScrollablePanel {
         this.aboutPanel = new AsiContainerAboutPanel(container);
 
         mainTabs.addTab("AI Providers", providersPanel);
-        mainTabs.addTab("Templates", templatesPanel);
-        mainTabs.addTab("About", aboutPanel);
+        mainTabs.addTab("Templates", new TemplatesIcon(16), templatesPanel);
+        mainTabs.addTab("About", IconUtils.getIcon("anahata.png", 16, 16), aboutPanel);
 
         updateAboutTabTitle();
         new EdtPropertyChangeListener(this, container, "notifications", evt -> {

@@ -23,7 +23,7 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.agi.context.ContextPanel;
-import uno.anahata.asi.swing.agi.message.RagMessageViewer;
+import uno.anahata.asi.swing.agi.message.RagMessagePanel;
 import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
@@ -298,7 +298,7 @@ public class ContextProviderPanel extends ScrollablePanel {
         if (msg.getParts().isEmpty() && !emptyText.isEmpty()) {
             msg.addTextPart(emptyText);
         }
-        RagMessageViewer panel = new RagMessageViewer(parentPanel.getAgiPanel(), msg, false, false);
+        RagMessagePanel panel = new RagMessagePanel(parentPanel.getAgiPanel(), msg, false, false);
         panel.render();
         tab.removeAll();
         tab.add(panel, BorderLayout.CENTER);

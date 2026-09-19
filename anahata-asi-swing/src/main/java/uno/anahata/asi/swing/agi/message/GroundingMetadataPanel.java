@@ -111,7 +111,6 @@ public class GroundingMetadataPanel extends JPanel {
         
         JLabel titleLabel = new JLabel("Grounding Metadata");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
-        titleLabel.setForeground(theme.getFontColor());
         
         try {
             titleLabel.setIcon(IconUtils.getIcon("anahata.png", 24, 24));

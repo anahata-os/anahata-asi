@@ -115,7 +115,7 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
             Node document = markdownParser.parse(currentContent);
             String html = htmlRenderer.render(document);
 
-            String color = isThought ? SwingUtils.toHtmlColor(theme.getThoughtFg()) : SwingUtils.toHtmlColor(theme.getFontColor());
+            String color = isThought ? SwingUtils.toHtmlColor(theme.getThoughtFg()) : SwingUtils.toHtmlColor(theme.getTextPartFg());
             String fontStyle = isThought ? "italic" : "normal";
 
             // Wrap the content in a styled div to ensure the style is applied correctly
@@ -136,7 +136,7 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
         boolean dark = agiConfig.isDark();
         String borderColor = SwingUtils.toHtmlColor(theme.getChromeBorder());
         String thBg = dark ? "#2b2d30" : "#f2f2f2";
-        String fontColor = SwingUtils.toHtmlColor(theme.getFontColor());
+        String fontColor = SwingUtils.toHtmlColor(theme.getTextPartFg());
 
         sheet.addRule("body { word-wrap: break-word; font-family: sans-serif; font-size: 14px; background-color: transparent;}");
         sheet.addRule("table { border-collapse: collapse; width: 100%; }");

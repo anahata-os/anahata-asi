@@ -160,7 +160,7 @@ public class CwGcPanel extends JPanel {
      */
     private void initComponents() {
         JPanel headerPanel = new JPanel(new MigLayout("insets 10, fillx", "[grow]", "[]0[]"));
-        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()));
+        headerPanel.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, agiPanel.getAgiConfig().getTheme().getChromeBorder()));
         JLabel titleLabel = new JLabel("Context Window Garbage Collector");
         titleLabel.setFont(new Font("SansSerif", Font.BOLD, 18));
         headerPanel.add(titleLabel, "wrap");

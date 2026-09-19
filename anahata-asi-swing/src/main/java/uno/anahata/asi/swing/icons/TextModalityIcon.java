@@ -8,7 +8,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 
 /**
  * A vector icon rendering a text document page with horizontal line markings.
@@ -43,7 +42,7 @@ public class TextModalityIcon extends AbstractAnahataIcon {
 
             float s = size;
             Color primary = (c != null && !c.isEnabled()) ? Color.GRAY
-                    : (SwingAgiConfig.isDarkLaf() ? new Color(96, 165, 250) : new Color(37, 99, 235));
+                    : (isDarkLaf() ? new Color(96, 165, 250) : new Color(37, 99, 235));
             g2.setColor(primary);
 
             float stroke = Math.max(1.2f, s * 0.075f);

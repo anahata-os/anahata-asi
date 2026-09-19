@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>uno.anahata.asi.intellij</id>
     <name>Anahata ASI</name>
-    <vendor email="anahata@anahata.uno" url="https://anahata.uno">Anahata</vendor>
+    <vendor email="anahata@anahata.uno" url="https://asi.anahata.uno">Anahata</vendor>
 
     <description><![CDATA[
       Anahata ASI Studio for IntelliJ IDEA.<br>

@@ -68,12 +68,6 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
      * renderers, JSON serialization modules, and the IntelliJ native {@link uno.anahata.asi.swing.agi.resources.ResourceUI} strategy.
      */
     public static void initEnvironment() {
-        // Make the shared Swing UI follow IntelliJ's theme authoritatively. IntelliJ's New UI does
-        // not expose a reliable Panel.background to the swing module's luminance heuristic, so the
-        // chat/dashboard rendered light even under a dark IDE theme; JBColor.isBright() is the IDE's
-        // own light/dark flag. Set before any UITheme is constructed (this runs in the container's
-        // static initializer, ahead of the tool-window dashboard build).
-        SwingAgiConfig.setDarkModeDetector(() -> !JBColor.isBright());
         ParameterRendererFactory.register(FullTextResourceUpdate.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceReplacements.class, IntellijTextResourceWriteRenderer.class);
         ParameterRendererFactory.register(TextResourceLineEdits.class, IntellijTextResourceWriteRenderer.class);

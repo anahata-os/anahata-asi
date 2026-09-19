@@ -19,7 +19,6 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.context.ContextPosition;
@@ -27,7 +26,6 @@ import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.RefreshPolicy;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.RagMessagePanel;
 import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
 import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
@@ -251,12 +249,6 @@ public class ResourcePanel extends ScrollablePanel {
     private JTextField createReadOnlyField() {
         JTextField f = new JTextField(35); // Long enough for UUID
         f.setEditable(false);
-        f.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
-                BorderFactory.createEmptyBorder(2, 5, 2, 5)
-        ));
-        f.setOpaque(true);
-        f.setBackground(UIManager.getColor("TextField.inactiveBackground"));
         f.setMinimumSize(new Dimension(50, 22));
         f.setPreferredSize(new Dimension(150, 22));
         return f;

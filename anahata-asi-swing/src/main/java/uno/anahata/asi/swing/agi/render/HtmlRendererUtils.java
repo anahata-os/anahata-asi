@@ -81,7 +81,7 @@ public class HtmlRendererUtils {
         // Apply custom CSS for styling and word wrapping
         StyleSheet sheet = kit.getStyleSheet();
 
-        String fontStyle = isThought ? "font-style: italic; color: " + toHtmlColor(theme.getThoughtFg()) + ";" : "color: " + toHtmlColor(theme.getFontColor()) + ";";
+        String fontStyle = isThought ? "font-style: italic; color: " + toHtmlColor(theme.getThoughtFg()) + ";" : "color: " + toHtmlColor(theme.getTextPartFg()) + ";";
         String fontWeight = isThought ? "font-weight: normal;" : "font-weight: normal;";
 
         sheet.addRule("body { word-wrap: break-word; font-family: sans-serif; font-size: 14px; background-color: transparent; " + fontStyle + fontWeight + "}");

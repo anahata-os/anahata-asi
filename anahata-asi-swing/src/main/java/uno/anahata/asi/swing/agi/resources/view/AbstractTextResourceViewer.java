@@ -3,6 +3,7 @@ package uno.anahata.asi.swing.agi.resources.view;
 
 import java.awt.BorderLayout;
 import java.awt.CardLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Point;
@@ -24,8 +25,8 @@ import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import java.awt.Cursor;
+import javax.swing.UIManager;
 import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -173,7 +174,8 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         controlStrip = new JToolBar();
         controlStrip.setFloatable(false);
         controlStrip.setOpaque(false);
-        controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, SwingAgiConfig.getTheme().getChromeBorder()));
+        Color borderColor = (agiPanel != null) ? agiPanel.getAgiConfig().getTheme().getChromeBorder() : UIManager.getColor("Separator.foreground");
+        controlStrip.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor));
 
         // 1b. Action Nexus (Edit/Save)
         actionNexus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));

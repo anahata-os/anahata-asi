@@ -25,7 +25,6 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import net.miginfocom.swing.MigLayout;
 import uno.anahata.asi.AbstractAsiContainer;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.internal.TextUtils;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.components.ScrollablePanel;
@@ -78,13 +77,13 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         setLayout(new BorderLayout());
         setOpaque(false);
 
-        JPanel content = new JPanel(new MigLayout("fillx, insets 20", "[grow,fill]", "[]15[]15[]15[]"));
+        JPanel content = new JPanel(new MigLayout("fillx, insets 20", "[grow,fill]15[grow,fill]", "[]15[]15[]15[]"));
         content.setOpaque(false);
 
         // 1. Header with Logo & Title
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         headerPanel.setOpaque(false);
-        Icon logoIcon = IconUtils.getIcon("v2/anahata.png", 48, 48);
+        Icon logoIcon = IconUtils.getIcon("anahata.png", 48, 48);
         if (logoIcon != null) {
             headerPanel.add(new JLabel(logoIcon));
         }
@@ -93,12 +92,12 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         JLabel titleLabel = new JLabel("Anahata ASI");
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 18f));
         titleBox.add(titleLabel, "wrap");
-        JLabel subtitleLabel = new JLabel("Pure-Java Model-Agnostic Super Intelligence");
+        JLabel subtitleLabel = new JLabel("\"Pure-Java\" Super Intelligence");
         subtitleLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         subtitleLabel.setFont(subtitleLabel.getFont().deriveFont(Font.ITALIC, 12f));
         titleBox.add(subtitleLabel);
         headerPanel.add(titleBox);
-        content.add(headerPanel, "wrap");
+        content.add(headerPanel, "span 2, wrap");
 
         // 2. Container Identity & Versions
         JPanel identitySection = createTitledSection("Container Identity & Specifications");
@@ -110,11 +109,11 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         addMetadataRow(identitySection, "Core Framework Version:", AbstractAsiContainer.getAsiCoreImplementationVersion() != null ? AbstractAsiContainer.getAsiCoreImplementationVersion() : "Development Snapshot");
         addMetadataRow(identitySection, "Active Sessions:", String.valueOf(container.getActiveAgis().size()));
         addMetadataRow(identitySection, "Configured Providers:", String.valueOf(container.getAllProviders().size()));
-        content.add(identitySection, "wrap");
+        content.add(identitySection, "growy");
 
-        // 3. Storage Hierarchy on Disk
+        // 3. Storage Hierarchy on Disk (Placed to the right of Identity)
         JPanel storageSection = createTitledSection("Storage Directories on Disk");
-        storageSection.setLayout(new MigLayout("fillx, insets 12", "[right]15[grow,fill]5[]", "[]6[]6[]6[]6[]"));
+        storageSection.setLayout(new MigLayout("fillx, insets 12", "[right]10[]5[pref!]push", "[]6[]6[]6[]6[]"));
 
         addPathRow(storageSection, "Root Working Directory:", AbstractAsiContainer.getWorkDir());
         try {
@@ -125,7 +124,7 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         } catch (IOException e) {
             log.error("Failed to resolve container directories for About panel", e);
         }
-        content.add(storageSection, "wrap");
+        content.add(storageSection, "growy, wrap");
 
         // 4. Runtime & JVM Telemetry
         JPanel runtimeSection = createTitledSection("JVM Environment & Heap Utilization");
@@ -146,22 +145,11 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
 
         runtimeSection.add(new JLabel("Heap Memory Usage:"));
         runtimeSection.add(memoryPanel, "wrap");
-        content.add(runtimeSection, "wrap");
+        content.add(runtimeSection, "span 2, wrap");
 
         // 5. Operational Notifications & Diagnostic Log
         JPanel notifSection = createTitledSection("Operational Notifications & Boot Diagnostics");
         notifSection.setLayout(new BorderLayout(0, 8));
-
-        notificationsArea = new JTextArea(5, 40);
-        notificationsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        notificationsArea.setEditable(false);
-        notificationsArea.setLineWrap(true);
-        notificationsArea.setWrapStyleWord(true);
-        updateNotifications();
-
-        JScrollPane notifScroll = new JScrollPane(notificationsArea);
-        notifScroll.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()));
-        notifSection.add(notifScroll, BorderLayout.CENTER);
 
         JPanel notifActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         notifActions.setOpaque(false);
@@ -169,15 +157,27 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         clearBtn.setToolTipText("Clear all recorded diagnostic notifications");
         clearBtn.addActionListener(e -> container.clearNotifications());
         notifActions.add(clearBtn);
-        notifSection.add(notifActions, BorderLayout.SOUTH);
+        notifSection.add(notifActions, BorderLayout.NORTH);
 
-        content.add(notifSection, "wrap");
+        notificationsArea = new JTextArea(20, 40);
+        notificationsArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        notificationsArea.setEditable(false);
+        notificationsArea.setLineWrap(true);
+        notificationsArea.setWrapStyleWord(true);
+        updateNotifications();
+
+        JScrollPane notifScroll = new JScrollPane(notificationsArea);
+        notifScroll.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")));
+        notifSection.add(notifScroll, BorderLayout.CENTER);
+
+        content.add(notifSection, "span 2, wrap");
 
         // Bind reactive listener for notifications
         new EdtPropertyChangeListener(this, container, "notifications", evt -> updateNotifications());
 
         JScrollPane mainScroll = new JScrollPane(content);
         mainScroll.setBorder(null);
+        mainScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         mainScroll.getVerticalScrollBar().setUnitIncrement(24);
         add(mainScroll, BorderLayout.CENTER);
     }
@@ -191,9 +191,7 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
     private JPanel createTitledSection(String title) {
         JPanel panel = new JPanel();
         panel.setOpaque(false);
-        panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder()),
-                title, 0, 0, getFont().deriveFont(Font.BOLD, 12f), SwingAgiConfig.getTheme().getMutedFg()));
+        panel.setBorder(BorderFactory.createTitledBorder(title));
         return panel;
     }
 
@@ -210,7 +208,7 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         field.setEditable(false);
         field.setBorder(null);
         field.setOpaque(false);
-        target.add(field, "span 2, wrap");
+        target.add(field, "growx, wmin 0, span 2, wrap");
     }
 
     /**
@@ -226,7 +224,7 @@ public class AsiContainerAboutPanel extends ScrollablePanel {
         field.setEditable(false);
         field.setBorder(null);
         field.setOpaque(false);
-        target.add(field);
+        target.add(field, "wmin 0");
 
         JButton openBtn = new JButton(new ExternalIcon(14));
         openBtn.setToolTipText("Open folder in Desktop File Manager");

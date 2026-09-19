@@ -9,12 +9,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.function.Supplier;
 import javax.swing.JLabel;
+import javax.swing.UIManager;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.internal.JacksonUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
 /**
@@ -109,7 +109,9 @@ public class CodeHyperlink extends JLabel {
         this.contentSupplier = contentSupplier;
         this.language = language;
         
-        setForeground(SwingAgiConfig.getTheme().getLinkFg());
+        Color linkColor = (agiPanel != null) ? agiPanel.getAgiConfig().getTheme().getLinkFg()
+                : (UIManager.getColor("Component.linkColor") != null ? UIManager.getColor("Component.linkColor") : new Color(51, 153, 255));
+        setForeground(linkColor);
         setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         
         addMouseListener(new MouseAdapter() {

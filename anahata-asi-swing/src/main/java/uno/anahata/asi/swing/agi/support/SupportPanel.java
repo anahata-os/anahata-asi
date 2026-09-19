@@ -88,7 +88,7 @@ public class SupportPanel extends ScrollablePanel {
                 "Send us a direct message at support@anahata.uno", "email.png"));
 
         cards.add(createCard("Official Website", () -> openWebpage("https://asi.anahata.uno/"),
-                "Learn more about the Anahata ecosystem.", "v2/anahata.png"));
+                "Learn more about the Anahata ecosystem.", "anahata.png"));
 
         cards.add(createCard("AnahataTV (YouTube)", () -> openWebpage("https://www.youtube.com/@anahata108"),
                 "Watch tutorials and feature showcases.", "youtube.png"));
@@ -97,13 +97,13 @@ public class SupportPanel extends ScrollablePanel {
                 "Technical documentation and API reference.", "javadoc.png"));
 
         cards.add(createCard("Give to Anahata", () -> openWebpage("https://www.paypal.com/donate/?hosted_button_id=SS8B8R7S68R7G"),
-                "Support the development of the first ASI.", "v2/anahata.png"));
+                "Support the development of the first ASI.", "anahata.png"));
 
         // Games Row
         cards.add(createCard("Agi Kart", () -> AgiKart.main(null),
                 "Experience the speed of the first retro pseudo-3D Mode 7 speedway! Força Barça!", new AgiKartIcon(16)));
 
-        cards.add(createCard("Play Arkanoid", () -> Arkanoid.main(null),
+        cards.add(createCard("F.C.B Arkanoid", () -> Arkanoid.main(null),
                 "Take a break with the classic brick breaker.", new ArkanoidIcon(16)));
 
         cards.add(createCard("Mapacho Snake", () -> Snake.main(null),
@@ -148,7 +148,8 @@ public class SupportPanel extends ScrollablePanel {
 
         JButton btn = new JButton(title, icon);
         btn.setPreferredSize(new Dimension(180, 35));
-        btn.setMargin(new Insets (2,4,2,2));
+        btn.setMargin(new Insets(2, 12, 2, 8));
+        btn.setIconTextGap(8);
         btn.setHorizontalAlignment(SwingConstants.LEFT);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> action.run());
@@ -159,7 +160,7 @@ public class SupportPanel extends ScrollablePanel {
         descArea.setEditable(false);
         descArea.setFocusable(false);
         descArea.setOpaque(false);
-        descArea.setForeground(Color.GRAY);
+        descArea.setForeground(UIManager.getColor("Label.disabledForeground"));
         descArea.setFont(descArea.getFont().deriveFont(11f));
         descArea.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 5));
 

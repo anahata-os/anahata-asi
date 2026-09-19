@@ -14,7 +14,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.SwingAgiConfig;
+import javax.swing.UIManager;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
@@ -53,7 +53,7 @@ public class ObjectToStringParameterRenderer extends AbstractParameterRenderer<O
     /** No-arg constructor for factory instantiation. */
     public ObjectToStringParameterRenderer() {
         container.setOpaque(false);
-        container.setBorder(BorderFactory.createLineBorder(SwingAgiConfig.getTheme().getChromeBorder(), 1, true));
+        container.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground"), 1, true));
     }
 
     /**
@@ -75,6 +75,7 @@ public class ObjectToStringParameterRenderer extends AbstractParameterRenderer<O
     @Override
     public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, Object value) {
         super.init(agiPanel, call, paramName, value);
+        container.setBorder(BorderFactory.createLineBorder(this.agiPanel.getAgiConfig().getTheme().getChromeBorder(), 1, true));
         
         // 1. Resolve Purity: Convert object to string using authoritative utility
         String content = TextUtils.resolveContentString(value);
