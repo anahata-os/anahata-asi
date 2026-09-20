@@ -100,11 +100,26 @@ jobs:
 
           if [ "$IS_RELEASE" == "true" ] && [ "${{ inputs.deploy_central }}" == "true" ]; then
             echo "[INFO] Deploying release bundle to Sonatype Central Release portal (excluding NetBeans NBMs)..."
-            mvn clean deploy javadoc:aggregate -P release -pl !:anahata-asi-nb -ntp
+            mvn clean deploy -P release -pl !:anahata-asi-nb -ntp
           else
-            echo "[INFO] Compiling, testing & generating Javadocs locally (zero remote Maven Central upload)..."
-            mvn clean install javadoc:aggregate -ntp
+            echo "[INFO] Compiling, testing locally (zero remote Maven Central upload)..."
+            mvn clean install -ntp
           fi
+
+          echo "================================================================="
+          echo " [INFO] Generating Platform Core Javadoc (Excluding IDE Plugins)..."
+          echo "================================================================="
+          mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -ntp
+
+          echo "================================================================="
+          echo " [INFO] Generating NetBeans Studio Plugin Javadoc (Default NB Version)..."
+          echo "================================================================="
+          mvn javadoc:javadoc -pl :anahata-asi-nb -DoutputDirectory="${PWD}/docs/apidocs/${BASE_VER}/nb" -ntp
+
+          echo "================================================================="
+          echo " [INFO] Generating IntelliJ Studio Plugin Javadoc..."
+          echo "================================================================="
+          mvn javadoc:javadoc -pl :anahata-asi-intellij -DoutputDirectory="${PWD}/docs/apidocs/${BASE_VER}/intellij" -ntp
 
       # ---------------------------------------------------------------------
       # 2. PARAMETERIZED NETBEANS NBM STAMPING & CATALOG LOOP (Served from GitHub Releases)
@@ -404,7 +419,7 @@ jobs:
                   badge = " <span class=\"badge\" style=\"background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem; margin-left: 8px;\">Latest Stable</span>"
               else:
                   badge = ""
-              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\">{v}{badge}</a></li>\n"
+              li_html += f"            <li class=\"version-item\"><a href=\"{v}/apidocs/index.html\" class=\"version-link\" data-version=\"{v}\">{v}{badge}</a></li>\n"
 
           index_path = os.path.join(apidocs_dir, "index.html")
           with open(index_path, "r") as f:
