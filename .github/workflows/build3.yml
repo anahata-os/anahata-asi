@@ -116,14 +116,14 @@ jobs:
           echo "================================================================="
           mvn javadoc:javadoc -pl :anahata-asi-nb -ntp
           mkdir -p "docs/apidocs/${BASE_VER}/nb"
-          cp -r anahata-asi-nb/target/site/apidocs/* "docs/apidocs/${BASE_VER}/nb/"
+          cp -r anahata-asi-nb/target/reports/apidocs/* "docs/apidocs/${BASE_VER}/nb/"
 
           echo "================================================================="
           echo " [INFO] Generating IntelliJ Studio Plugin Javadoc..."
           echo "================================================================="
           mvn javadoc:javadoc -pl :anahata-asi-intellij -ntp
           mkdir -p "docs/apidocs/${BASE_VER}/intellij"
-          cp -r anahata-asi-intellij/target/site/apidocs/* "docs/apidocs/${BASE_VER}/intellij/"
+          cp -r anahata-asi-intellij/target/reports/apidocs/* "docs/apidocs/${BASE_VER}/intellij/"
 
       # ---------------------------------------------------------------------
       # 2. PARAMETERIZED NETBEANS NBM STAMPING & CATALOG LOOP (Served from GitHub Releases)
