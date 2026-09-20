@@ -430,7 +430,7 @@
 
                 <!-- Tab Pane 2: NetBeans Plugin API -->
                 <div class="tab-pane" id="pane-nb" style="display: none;">
-                    <div class="section-label">NetBeans IDE Plugin Target Builds</div>
+                    <div class="section-label">NetBeans Studio Plugin API</div>
                     <ul class="nb-version-list" id="version-list-nb">
                         <!-- Populated dynamically via JavaScript -->
                     </ul>
@@ -438,7 +438,7 @@
 
                 <!-- Tab Pane 3: IntelliJ Plugin API -->
                 <div class="tab-pane" id="pane-intellij" style="display: none;">
-                    <div class="section-label">IntelliJ IDEA Plugin Releases</div>
+                    <div class="section-label">IntelliJ Studio Plugin API</div>
                     <ul class="ij-version-list" id="version-list-intellij">
                         <!-- Populated dynamically via JavaScript -->
                     </ul>
@@ -494,12 +494,18 @@
                 document.querySelectorAll('.version-link').forEach(link => {
                     link.addEventListener('click', (e) => {
                         e.preventDefault();
-                        document.querySelectorAll('.version-link').forEach(l => l.classList.remove('active'));
+                        const currentPane = link.closest('.tab-pane');
+                        if (currentPane) {
+                            currentPane.querySelectorAll('.version-link').forEach(l => l.classList.remove('active'));
+                        } else {
+                            document.querySelectorAll('.version-link').forEach(l => l.classList.remove('active'));
+                        }
                         link.classList.add('active');
                         
                         const href = link.getAttribute('href');
                         const verText = link.dataset.version || link.childNodes[0].textContent.trim();
-                        loadJavadocUrl(href, verText);
+                        const scope = link.dataset.scope || 'Platform Core';
+                        loadJavadocUrl(href, `${scope} ${verText}`);
                     });
                 });
             }
@@ -517,36 +523,23 @@
 
                 coreLinks.forEach(coreLink => {
                     const rawVer = coreLink.dataset.version || coreLink.childNodes[0].textContent.trim();
-                    const isSnapshot = rawVer.includes('SNAPSHOT');
-                    const cleanVer = rawVer.replace(/-SNAPSHOT.*/, '');
-                    const baseHref = coreLink.getAttribute('href');
+                    const badgeHtml = coreLink.querySelector('.badge') ? coreLink.querySelector('.badge').outerHTML : '';
 
-                    // Target 310 (NetBeans 31)
-                    const nb310Ver = isSnapshot ? `${cleanVer}.310-SNAPSHOT` : `${cleanVer}.310`;
-                    const nb310Item = document.createElement('li');
-                    nb310Item.className = 'version-item';
-                    nb310Item.innerHTML = `<a href="${baseHref}?uno/anahata/asi/nb/package-summary.html" class="version-link" data-version="v${nb310Ver}">
-                        <span>${nb310Ver}</span>
-                        <span class="badge" style="background: rgba(237, 187, 0, 0.2); color: var(--barca-gold); border: 1px solid rgba(237, 187, 0, 0.4);">NB 31</span>
+                    // NetBeans item pointing directly to nb/ subfolder
+                    const nbItem = document.createElement('li');
+                    nbItem.className = 'version-item';
+                    nbItem.innerHTML = `<a href="${rawVer}/nb/index.html" class="version-link" data-version="${rawVer}" data-scope="NetBeans Studio" data-fallback="${rawVer}/apidocs/index.html">
+                        <span>${rawVer}</span>
+                        ${badgeHtml}
                     </a>`;
-                    nbList.appendChild(nb310Item);
+                    nbList.appendChild(nbItem);
 
-                    // Target 300 (NetBeans 30)
-                    const nb300Ver = isSnapshot ? `${cleanVer}.300-SNAPSHOT` : `${cleanVer}.300`;
-                    const nb300Item = document.createElement('li');
-                    nb300Item.className = 'version-item';
-                    nb300Item.innerHTML = `<a href="${baseHref}?uno/anahata/asi/nb/package-summary.html" class="version-link" data-version="v${nb300Ver}">
-                        <span>${nb300Ver}</span>
-                        <span class="badge" style="background: rgba(0, 77, 152, 0.25); color: #70a1ff; border: 1px solid rgba(0, 77, 152, 0.5);">NB 30</span>
-                    </a>`;
-                    nbList.appendChild(nb300Item);
-
-                    // IntelliJ Item
+                    // IntelliJ item pointing directly to intellij/ subfolder
                     const ijItem = document.createElement('li');
                     ijItem.className = 'version-item';
-                    ijItem.innerHTML = `<a href="${baseHref}?uno/anahata/asi/intellij/package-summary.html" class="version-link" data-version="v${rawVer}">
+                    ijItem.innerHTML = `<a href="${rawVer}/intellij/index.html" class="version-link" data-version="${rawVer}" data-scope="IntelliJ Studio" data-fallback="${rawVer}/apidocs/index.html">
                         <span>${rawVer}</span>
-                        <span class="badge" style="background: rgba(219, 97, 162, 0.2); color: var(--accent); border: 1px solid rgba(219, 97, 162, 0.4);">IJ 2024-2026</span>
+                        ${badgeHtml}
                     </a>`;
                     ijList.appendChild(ijItem);
                 });

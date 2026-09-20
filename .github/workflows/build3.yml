@@ -112,14 +112,18 @@ jobs:
           mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -ntp
 
           echo "================================================================="
-          echo " [INFO] Generating NetBeans Studio Plugin Javadoc (Default NB Version)..."
+          echo " [INFO] Generating NetBeans Studio Plugin Javadoc..."
           echo "================================================================="
-          mvn javadoc:javadoc -pl :anahata-asi-nb -DoutputDirectory="${PWD}/docs/apidocs/${BASE_VER}/nb" -ntp
+          mvn javadoc:javadoc -pl :anahata-asi-nb -ntp
+          mkdir -p "docs/apidocs/${BASE_VER}/nb"
+          cp -r anahata-asi-nb/target/site/apidocs/* "docs/apidocs/${BASE_VER}/nb/"
 
           echo "================================================================="
           echo " [INFO] Generating IntelliJ Studio Plugin Javadoc..."
           echo "================================================================="
-          mvn javadoc:javadoc -pl :anahata-asi-intellij -DoutputDirectory="${PWD}/docs/apidocs/${BASE_VER}/intellij" -ntp
+          mvn javadoc:javadoc -pl :anahata-asi-intellij -ntp
+          mkdir -p "docs/apidocs/${BASE_VER}/intellij"
+          cp -r anahata-asi-intellij/target/site/apidocs/* "docs/apidocs/${BASE_VER}/intellij/"
 
       # ---------------------------------------------------------------------
       # 2. PARAMETERIZED NETBEANS NBM STAMPING & CATALOG LOOP (Served from GitHub Releases)
@@ -358,10 +362,14 @@ jobs:
           # 1. Restore historical Javadoc vault
           mkdir -p _site/apidocs
           if [ -d "temp-gh-pages/apidocs" ]; then
+            # Purge legacy .300 and .310 directories from the historical vault
+            rm -rf temp-gh-pages/apidocs/*.[0-9][0-9][0-9]
+            rm -rf temp-gh-pages/apidocs/*.[0-9][0-9][0-9]-SNAPSHOT
+
             for dir in temp-gh-pages/apidocs/*; do
               if [ -d "$dir" ]; then
                 dirname=$(basename "$dir")
-                if [[ "$dirname" =~ ^[0-9] ]]; then
+                if [[ "$dirname" =~ ^[0-9] ]] && [[ ! "$dirname" =~ \.(300|310) ]]; then
                   cp -r "$dir" _site/apidocs/
                 fi
               fi
@@ -393,8 +401,10 @@ jobs:
           apidocs_dir = "_site/apidocs"
           all_dirs = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d[0].isdigit()]
 
-          snapshots = [d for d in all_dirs if "SNAPSHOT" in d]
-          stables = [d for d in all_dirs if "SNAPSHOT" not in d]
+          clean_dirs = [d for d in all_dirs if not re.search(r"\.(300|310)", d)]
+
+          snapshots = [d for d in clean_dirs if "SNAPSHOT" in d]
+          stables = [d for d in clean_dirs if "SNAPSHOT" not in d]
 
           def parse_ver(v_str):
               clean = re.sub(r"-SNAPSHOT.*", "", v_str)
