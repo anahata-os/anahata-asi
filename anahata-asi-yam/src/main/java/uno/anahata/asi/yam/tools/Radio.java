@@ -207,7 +207,7 @@ public class Radio extends AnahataToolkit {
      * @return Status message.
      */
     @AgiTool("Starts playing a specific internet radio station by its URL.")
-    public String start(@AgiToolParam("The URL of the radio station to play.") String url) {
+    public String start(@AgiToolParam(value = "The URL of the radio station to play.", rendererId = "uri") String url) {
         stop();
 
         this.currentStationUrl = url;

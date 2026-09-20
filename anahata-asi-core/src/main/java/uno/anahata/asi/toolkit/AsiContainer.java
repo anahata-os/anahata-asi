@@ -335,7 +335,7 @@ public class AsiContainer extends AnahataToolkit {
             @AgiToolParam(value = "The UUID of the AI provider to use. Will use the Asi Container default if not provided.", required = false) String aiProviderUUID,
             @AgiToolParam(value = "The ID of the AI model to use. Leave emtpy for default. Will use the Asi Container default if not provided", required = false) String modelID,
             @AgiToolParam(value = "List of toolkit fully qualified class names to enable. If not provided, will use all toolkits in the Asi Container preferences.", required = false) List<String> toolkitFqns,
-            @AgiToolParam(value = "Optional List of resource URIs to register.", required = false) List<String> resourceURIs,
+            @AgiToolParam(value = "Optional List of resource URIs to register.", rendererId = "uri", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "An optional initial message to send to the new AGI.", required = false) String initialMessage,
             @AgiToolParam(value = "Optional map of tool permission overrides for this session. The key must be the exact tool name using '.' as separator between the toolkit name and the method name: e.g. 'NbJava.compileAndExecute' or 'Session.updateSessionNickname'. Do not include backticks or markdown quotes in the map key.", required = false) Map<String, ToolPermission> toolPermissions,
             @AgiToolParam(value = "Optional thinking level/mode for the new session.", required = false) ThinkingLevel thinkingLevel,
@@ -488,11 +488,11 @@ public class AsiContainer extends AnahataToolkit {
             @AgiToolParam("The descriptive prompt for the media to generate.") String prompt,
             @AgiToolParam(value = "The UUID of the AI provider to use.", required = false) String aiProviderUUID,
             @AgiToolParam(value = "The ID of the AI model to use.", required = false) String modelID,
-            @AgiToolParam(value = "Optional list of resource URIs (e.g. images or documents) to provide to the model for image-to-image or editing.", required = false) List<String> resourceURIs,
+            @AgiToolParam(value = "Optional list of resource URIs (e.g. images or documents) to provide to the model for image-to-image or editing.", rendererId = "uri", required = false) List<String> resourceURIs,
             @AgiToolParam(value = "List of target response modalities. Defaults to [TEXT, IMAGE]. Can include IMAGE, AUDIO, VIDEO, TEXT.", required = false) List<ResponseModality> responseModalities,
             @AgiToolParam(value = "Optional nickname for the background AGI session. Defaults to 'Media Generation'.", required = false) String nickName,
             @AgiToolParam(value = "Whether to open the sub-AGI session in the UI. Defaults to false.", required = false) Boolean open,
-            @AgiToolParam(value = "Optional file path to save the generated media directly to disk.", required = false) String saveToPath,
+            @AgiToolParam(value = "Optional file path to save the generated media directly to disk.", rendererId = "path", required = false) String saveToPath,
             @AgiToolParam(value = "Optional thinking level/mode for generation.", required = false) ThinkingLevel thinkingLevel
     ) throws Exception {
         List<ResponseModality> modalities = (responseModalities != null && !responseModalities.isEmpty())

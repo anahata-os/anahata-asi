@@ -154,7 +154,7 @@ public class Editor extends AnahataToolkit {
      */
     @AgiTool("Opens a specified file in the NetBeans editor and optionally scrolls to a specific line.")
     public String openFile(
-            @AgiToolParam("The absolute path of the file to open.") String filePath,
+            @AgiToolParam(value = "The absolute path of the file to open.", rendererId = "path") String filePath,
             @AgiToolParam("The line number to scroll to (1-based).") Integer scrollToLine) throws Exception {
         
         if (filePath == null || filePath.trim().isEmpty()) {

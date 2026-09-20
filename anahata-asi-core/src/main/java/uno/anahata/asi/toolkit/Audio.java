@@ -248,7 +248,7 @@ public class Audio extends AnahataToolkit {
      * @throws Exception if playback fails.
      */
     @AgiTool("Plays an audio file on the selected output device. Supports both local paths and remote URLs.")
-    public String play(@AgiToolParam("The URI to the audio file.") String uri,
+    public String play(@AgiToolParam(value = "The URI to the audio file.", rendererId = "uri") String uri,
                        @AgiToolParam(value = "Optional specific device ID to use.", required = false) String deviceId) throws Exception {
         
         verifyAndHealDevices();
