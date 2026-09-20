@@ -142,19 +142,16 @@ public class SwingAgiConfig extends AgiConfig {
         propertyChangeSupport.firePropertyChange("showPruned", old, showPruned);
     }
 
-
     /**
      * Determines whether the active theme is a dark-mode variant.
      * <p>
-     * Uses the host-supplied {@linkplain #setDarkModeDetector(java.util.function.BooleanSupplier)
-     * dark-mode detector} when one is registered; otherwise falls back to a
-     * Look-and-Feel-agnostic relative-luminance check on
+     * Uses a Look-and-Feel-agnostic relative-luminance check on
      * {@code Panel.background}.
      *
      * @return true if the active theme is dark, false otherwise.
      */
     public boolean isDarkLaf() {
-        
+
         Color bg = UIManager.getColor("Panel.background");
         if (bg == null) {
             return false;
@@ -460,6 +457,7 @@ public class SwingAgiConfig extends AgiConfig {
 
         /**
          * The primary foreground color for general text.
+         *
          * @return The primary foreground color for general text.
          */
         public Color getTextPartFg() {
