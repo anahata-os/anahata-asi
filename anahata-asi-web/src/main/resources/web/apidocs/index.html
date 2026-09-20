@@ -14,102 +14,588 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anahata ASI | API Reference</title>
     <link rel="icon" type="image/png" href="../assets/favicon.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
             --barca-blue: #004d98;
             --barca-red: #a50044;
             --barca-gold: #edbb00;
-            --asi-dark: #05050a;
-            --asi-card: #0f0f1a;
-            --text-main: #e0e0e0;
+            --portal-dark: #070a10;
+            --sidebar-bg: #0c101b;
+            --toolbar-bg: #101624;
+            --card-border: rgba(255, 255, 255, 0.08);
+            --primary-light: #319795;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
         }
 
-        body {
-            background-color: var(--asi-dark);
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--portal-dark);
             color: var(--text-main);
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        /* Fixed Navigation Adjustment */
+        #main-nav nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 72px;
+            z-index: 1000;
+            background: rgba(12, 16, 27, 0.95) !important;
+            backdrop-filter: blur(12px) !important;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        /* Workspace Layout */
+        .apidocs-workspace {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 72px);
+            margin-top: 72px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Left Sidebar: Version Navigator */
+        .apidocs-sidebar {
+            width: 360px;
+            min-width: 320px;
+            max-width: 420px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--card-border);
             display: flex;
             flex-direction: column;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 1.2rem 1.4rem 0.8rem;
+            border-bottom: 1px solid var(--card-border);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .sidebar-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-title h2 {
+            font-size: 1.15rem;
+            margin: 0;
+            color: #ffffff;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        .sidebar-title h2 i {
+            color: var(--barca-gold);
+            font-size: 1.2rem;
+        }
+
+        /* Scope Pills / Tabs */
+        .scope-tabs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            margin-bottom: 0.8rem;
+            background: rgba(0, 0, 0, 0.35);
+            padding: 4px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .scope-tab {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            padding: 7px 4px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
+            gap: 5px;
+            white-space: nowrap;
         }
 
-        .container {
-            background: var(--asi-card);
-            padding: 4rem;
-            border-radius: 20px;
+        .scope-tab:hover {
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .scope-tab.active {
+            background: rgba(237, 187, 0, 0.15);
+            color: var(--barca-gold);
+            border: 1px solid rgba(237, 187, 0, 0.35);
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(237, 187, 0, 0.15);
+        }
+
+        /* Search Filter */
+        .search-box {
+            position: relative;
+            margin-top: 0.4rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .search-box input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.45);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            border-radius: 6px;
+            padding: 8px 12px 8px 32px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            outline: none;
+            transition: border-color 0.2s ease;
+            box-sizing: border-box;
         }
 
-        h1 { color: var(--barca-gold); text-transform: uppercase; letter-spacing: 4px; }
-        
-        .version-list {
+        .search-box input:focus {
+            border-color: var(--barca-gold);
+            box-shadow: 0 0 8px rgba(237, 187, 0, 0.2);
+        }
+
+        /* Scrollable Version Lists */
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem 1.2rem;
+        }
+
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 3px;
+        }
+
+        .section-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin: 0.4rem 0 0.8rem;
+            padding-left: 4px;
+        }
+
+        .version-list, .nb-version-list, .ij-version-list {
             list-style: none;
             padding: 0;
-            margin-top: 2rem;
+            margin: 0 0 1.5rem 0;
         }
 
         .version-item {
-            margin: 1rem 0;
+            margin-bottom: 6px;
         }
 
         .version-link {
-            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 9px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            color: #cbd5e1;
             text-decoration: none;
-            font-size: 1.2rem;
-            padding: 0.8rem 2rem;
-            border: 1px solid var(--barca-blue);
-            border-radius: 50px;
-            display: inline-block;
-            transition: all 0.3s;
-            min-width: 200px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
 
         .version-link:hover {
-            background: var(--barca-blue);
-            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            transform: translateX(3px);
+        }
+
+        .version-link.active {
+            background: rgba(237, 187, 0, 0.12);
+            border-color: var(--barca-gold);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 0 12px rgba(237, 187, 0, 0.2);
         }
 
         .badge {
-            font-size: 0.7rem;
-            background: var(--barca-red);
-            padding: 2px 8px;
+            font-size: 0.68rem;
+            padding: 2px 7px;
             border-radius: 4px;
-            vertical-align: middle;
-            margin-left: 10px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
         }
 
-        .back-link {
-            margin-top: 3rem;
-            color: var(--barca-gold);
+        /* Sidebar Footer */
+        .sidebar-footer {
+            padding: 0.8rem 1.4rem;
+            border-top: 1px solid var(--card-border);
+            background: rgba(0, 0, 0, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar-footer a {
+            color: var(--text-muted);
             text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s ease;
+        }
+
+        .sidebar-footer a:hover {
+            color: var(--barca-gold);
+        }
+
+        /* Right Pane: Embedded Javadoc Viewer */
+        .apidocs-viewer {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--portal-dark);
+            height: 100%;
+            position: relative;
+        }
+
+        .viewer-toolbar {
+            height: 52px;
+            background: var(--toolbar-bg);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.5rem;
+            box-sizing: border-box;
+        }
+
+        .viewer-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
             font-size: 0.9rem;
+        }
+
+        .view-tag {
+            color: var(--text-muted);
+            font-size: 0.8rem;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+        }
+
+        .current-version {
+            color: var(--barca-gold);
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            background: rgba(237, 187, 0, 0.1);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(237, 187, 0, 0.25);
+        }
+
+        .viewer-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toolbar-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--barca-blue);
+            border-color: var(--barca-blue);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        .iframe-container {
+            flex: 1;
+            position: relative;
+            width: 100%;
+            height: calc(100% - 52px);
+        }
+
+        #javadoc-frame {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #080c14;
+        }
+
+        @media (max-width: 900px) {
+            .apidocs-workspace {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+            .apidocs-sidebar {
+                width: 100%;
+                max-width: 100%;
+                height: 380px;
+                border-right: none;
+                border-bottom: 1px solid var(--card-border);
+            }
+            .apidocs-viewer {
+                height: 600px;
+            }
         }
     </style>
 </head>
 <body>
+    <div id="main-nav"></div>
 
-    <div class="container">
-        <img src="../assets/logo-transparent.png" alt="Anahata Logo" style="height: 50px; margin-bottom: 2rem;">
-        <h1>Anahata ASI API Reference</h1>
-        <p>Select a version to view the technical documentation.</p>
+    <div class="apidocs-workspace">
+        <!-- Left Sidebar Navigator -->
+        <aside class="apidocs-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">
+                    <h2><i class="fas fa-book"></i> API Reference</h2>
+                </div>
 
-        <ul class="version-list">
-            <li class="version-item">
-                <a href="1.0.0-SNAPSHOT/apidocs/index.html" class="version-link">
-                    1.0.0-SNAPSHOT <span class="badge">Latest</span>
-                </a>
-            </li>
-        </ul>
+                <!-- 3 Scope Tabs -->
+                <div class="scope-tabs">
+                    <button type="button" class="scope-tab active" data-tab="core"><i class="fas fa-bolt"></i> Core</button>
+                    <button type="button" class="scope-tab" data-tab="nb"><i class="fas fa-code"></i> NetBeans</button>
+                    <button type="button" class="scope-tab" data-tab="intellij"><i class="fas fa-laptop-code"></i> IntelliJ</button>
+                </div>
 
-        <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Portal</a>
+                <!-- Search Filter -->
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="version-filter-input" placeholder="Filter version..." autocomplete="off">
+                </div>
+            </div>
+
+            <!-- Scrollable List of Versions -->
+            <div class="sidebar-content">
+                <!-- Tab Pane 1: Core Platform Javadoc (Populated by build3.yml python script) -->
+                <div class="tab-pane active" id="pane-core">
+                    <div class="section-label">Platform Core &amp; Providers</div>
+                    <ul class="version-list">
+                        <li class="version-item">
+                            <a href="1.0.0-SNAPSHOT/apidocs/index.html" class="version-link" data-version="1.0.0-SNAPSHOT">
+                                1.0.0-SNAPSHOT <span class="badge" style="background: var(--primary-light); color: white;">Dev Snapshot</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tab Pane 2: NetBeans Plugin API -->
+                <div class="tab-pane" id="pane-nb" style="display: none;">
+                    <div class="section-label">NetBeans IDE Plugin Target Builds</div>
+                    <ul class="nb-version-list" id="version-list-nb">
+                        <!-- Populated dynamically via JavaScript -->
+                    </ul>
+                </div>
+
+                <!-- Tab Pane 3: IntelliJ Plugin API -->
+                <div class="tab-pane" id="pane-intellij" style="display: none;">
+                    <div class="section-label">IntelliJ IDEA Plugin Releases</div>
+                    <ul class="ij-version-list" id="version-list-intellij">
+                        <!-- Populated dynamically via JavaScript -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Sidebar Footer -->
+            <div class="sidebar-footer">
+                <a href="https://github.com/anahata-os/anahata-asi" target="_blank"><i class="fab fa-github"></i> GitHub Repository</a>
+                <span>ASL 108 / Apache 2.0</span>
+            </div>
+        </aside>
+
+        <!-- Right Main Viewer Area -->
+        <main class="apidocs-viewer">
+            <div class="viewer-toolbar">
+                <div class="viewer-breadcrumb">
+                    <span class="view-tag">Viewing:</span>
+                    <span id="current-version-label" class="current-version">Loading Javadocs...</span>
+                </div>
+                <div class="viewer-actions">
+                    <a id="btn-fullscreen" href="#" target="_blank" class="toolbar-btn">
+                        <i class="fas fa-external-link-alt"></i> Open Fullscreen
+                    </a>
+                </div>
+            </div>
+            <div class="iframe-container">
+                <iframe id="javadoc-frame" src="about:blank" title="Anahata ASI Platform Javadocs"></iframe>
+            </div>
+        </main>
     </div>
-    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+
+    <!-- Scarf Telemetry Pixel -->
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" width="1" height="1" border="0" />
+
+    <script src="../nav.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const javadocFrame = document.getElementById('javadoc-frame');
+            const currentVerLabel = document.getElementById('current-version-label');
+            const btnFullscreen = document.getElementById('btn-fullscreen');
+            const filterInput = document.getElementById('version-filter-input');
+
+            // 1. Version Navigation & Frame Loader
+            function loadJavadocUrl(url, labelText) {
+                if (!url) return;
+                javadocFrame.src = url;
+                currentVerLabel.textContent = labelText;
+                btnFullscreen.href = url;
+            }
+
+            function attachVersionLinkHandlers() {
+                document.querySelectorAll('.version-link').forEach(link => {
+                    link.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('.version-link').forEach(l => l.classList.remove('active'));
+                        link.classList.add('active');
+                        
+                        const href = link.getAttribute('href');
+                        const verText = link.dataset.version || link.childNodes[0].textContent.trim();
+                        loadJavadocUrl(href, verText);
+                    });
+                });
+            }
+
+            // 2. Populate NetBeans & IntelliJ Lists from Core versions
+            function populateSubmoduleLists() {
+                const coreLinks = document.querySelectorAll('.version-list .version-link');
+                const nbList = document.getElementById('version-list-nb');
+                const ijList = document.getElementById('version-list-intellij');
+
+                if (coreLinks.length === 0 || !nbList || !ijList) return;
+
+                nbList.innerHTML = '';
+                ijList.innerHTML = '';
+
+                coreLinks.forEach(coreLink => {
+                    const rawVer = coreLink.dataset.version || coreLink.childNodes[0].textContent.trim();
+                    const isSnapshot = rawVer.includes('SNAPSHOT');
+                    const cleanVer = rawVer.replace(/-SNAPSHOT.*/, '');
+                    const baseHref = coreLink.getAttribute('href');
+
+                    // Target 310 (NetBeans 31)
+                    const nb310Ver = isSnapshot ? `${cleanVer}.310-SNAPSHOT` : `${cleanVer}.310`;
+                    const nb310Item = document.createElement('li');
+                    nb310Item.className = 'version-item';
+                    nb310Item.innerHTML = `<a href="${baseHref}?uno/anahata/asi/nb/package-summary.html" class="version-link" data-version="v${nb310Ver}">
+                        <span>${nb310Ver}</span>
+                        <span class="badge" style="background: rgba(237, 187, 0, 0.2); color: var(--barca-gold); border: 1px solid rgba(237, 187, 0, 0.4);">NB 31</span>
+                    </a>`;
+                    nbList.appendChild(nb310Item);
+
+                    // Target 300 (NetBeans 30)
+                    const nb300Ver = isSnapshot ? `${cleanVer}.300-SNAPSHOT` : `${cleanVer}.300`;
+                    const nb300Item = document.createElement('li');
+                    nb300Item.className = 'version-item';
+                    nb300Item.innerHTML = `<a href="${baseHref}?uno/anahata/asi/nb/package-summary.html" class="version-link" data-version="v${nb300Ver}">
+                        <span>${nb300Ver}</span>
+                        <span class="badge" style="background: rgba(0, 77, 152, 0.25); color: #70a1ff; border: 1px solid rgba(0, 77, 152, 0.5);">NB 30</span>
+                    </a>`;
+                    nbList.appendChild(nb300Item);
+
+                    // IntelliJ Item
+                    const ijItem = document.createElement('li');
+                    ijItem.className = 'version-item';
+                    ijItem.innerHTML = `<a href="${baseHref}?uno/anahata/asi/intellij/package-summary.html" class="version-link" data-version="v${rawVer}">
+                        <span>${rawVer}</span>
+                        <span class="badge" style="background: rgba(219, 97, 162, 0.2); color: var(--accent); border: 1px solid rgba(219, 97, 162, 0.4);">IJ 2024-2026</span>
+                    </a>`;
+                    ijList.appendChild(ijItem);
+                });
+            }
+
+            // 3. Tab Switching Logic (Core / NetBeans / IntelliJ)
+            const scopeTabs = document.querySelectorAll('.scope-tab');
+            scopeTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    scopeTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+
+                    const target = tab.dataset.tab;
+                    document.getElementById('pane-core').style.display = target === 'core' ? 'block' : 'none';
+                    document.getElementById('pane-nb').style.display = target === 'nb' ? 'block' : 'none';
+                    document.getElementById('pane-intellij').style.display = target === 'intellij' ? 'block' : 'none';
+
+                    // Focus the first visible link in the newly active tab
+                    const activePane = document.getElementById(`pane-${target}`);
+                    const firstLink = activePane.querySelector('.version-link');
+                    if (firstLink) {
+                        firstLink.click();
+                    }
+                });
+            });
+
+            // 4. Live Search Filter
+            if (filterInput) {
+                filterInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    document.querySelectorAll('.tab-pane.active .version-item').forEach(item => {
+                        const text = item.textContent.toLowerCase();
+                        item.style.display = text.includes(query) ? '' : 'none';
+                    });
+                });
+            }
+
+            // 5. Initial Boot: populate sub-lists, wire clicks, and load first link
+            populateSubmoduleLists();
+            attachVersionLinkHandlers();
+
+            const initialLink = document.querySelector('.version-list .version-link');
+            if (initialLink) {
+                initialLink.classList.add('active');
+                const href = initialLink.getAttribute('href');
+                const verText = initialLink.dataset.version || initialLink.childNodes[0].textContent.trim();
+                loadJavadocUrl(href, verText);
+            }
+        });
+    </script>
 </body>
 </html>
