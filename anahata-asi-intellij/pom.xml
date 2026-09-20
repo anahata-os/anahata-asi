@@ -17,6 +17,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <intellij.platform.version>262.10315.125</intellij.platform.version>
         <intellij.plugins.version>${intellij.platform.version}</intellij.plugins.version>
+        <maven.compiler.showDeprecation>true</maven.compiler.showDeprecation>
     </properties>
 
     <dependencies>
@@ -263,6 +264,13 @@
 
     <build>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <showDeprecation>true</showDeprecation>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
