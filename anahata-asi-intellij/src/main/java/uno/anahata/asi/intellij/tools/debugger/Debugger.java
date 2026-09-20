@@ -776,9 +776,18 @@ public class Debugger extends AnahataToolkit {
          * {@inheritDoc}
          */
         @Override
-        public void tooManyChildren(int remaining) {
+        public void tooManyChildren(int remaining, Runnable addNextChildren) {
             sink.append("- _(").append(remaining).append(" more not shown)_\n");
             latch.countDown();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        @SuppressWarnings("deprecation")
+        public void tooManyChildren(int remaining) {
+            tooManyChildren(remaining, null);
         }
 
         /**

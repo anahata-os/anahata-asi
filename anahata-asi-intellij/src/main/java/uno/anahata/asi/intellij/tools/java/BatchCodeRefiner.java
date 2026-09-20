@@ -99,7 +99,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
         Project project = javaFile.getProject();
         String fileName = javaFile.getName();
 
-        String before = ReadAction.compute(javaFile::getText);
+        String before = ReadAction.computeBlocking(javaFile::getText);
 
         if (batch.getManualOverride() != null && !batch.getManualOverride().isBlank()) {
             runWrite(project, () -> {
@@ -129,7 +129,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
             });
         }
 
-        String after = ReadAction.compute(javaFile::getText);
+        String after = ReadAction.computeBlocking(javaFile::getText);
         String diff = AnahataDiffUtils.generateUnifiedDiff(fileName, before, after);
         log(diff);
         return diff;
@@ -313,7 +313,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
             throw new AgiToolException("No open project can host file: " + filePath);
         }
         JavaPsi.requireSmart(project);
-        PsiFile psiFile = ReadAction.compute(() -> JavaPsi.findPsiFile(project, vf));
+        PsiFile psiFile = ReadAction.computeBlocking(() -> JavaPsi.findPsiFile(project, vf));
         if (psiFile instanceof PsiJavaFile javaFile) {
             return javaFile;
         }

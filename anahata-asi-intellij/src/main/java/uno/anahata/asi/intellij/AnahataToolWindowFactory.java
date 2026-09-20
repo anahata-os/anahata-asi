@@ -8,7 +8,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.IconLoader;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
-import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.intellij.ui.content.ContentManagerEvent;
@@ -194,9 +193,7 @@ public class AnahataToolWindowFactory implements ToolWindowFactory {
             }
         };
 
-        if (toolWindow instanceof ToolWindowEx toolWindowEx) {
-            toolWindowEx.setTitleActions(newSession, importSession, showDashboard, preferences, reloadPlugin);
-        }
+        toolWindow.setTitleActions(List.of(newSession, importSession, showDashboard, preferences, reloadPlugin));
     }
 
     /**

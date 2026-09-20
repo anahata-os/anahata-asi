@@ -113,7 +113,7 @@ public final class JavaPsi {
             Project[] open = ProjectManager.getInstance().getOpenProjects();
             return open.length > 0 ? open[0] : null;
         }
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             Project[] open = ProjectManager.getInstance().getOpenProjects();
             for (Project project : open) {
                 if (project != null && !project.isDisposed()) {

@@ -137,7 +137,7 @@ public class Refactor extends AnahataToolkit {
             @AgiToolParam("The new simple member name.") String newName) throws AgiToolException {
 
         Project project = resolveHostProject(filePath);
-        PsiElement member = ReadAction.compute(() -> JavaPsi.findMember(project, memberFqn));
+        PsiElement member = ReadAction.computeBlocking(() -> JavaPsi.findMember(project, memberFqn));
         if (member == null) {
             throw new AgiToolException("Member not found: " + memberFqn);
         }
@@ -210,7 +210,7 @@ public class Refactor extends AnahataToolkit {
             @AgiToolParam("Whether to also search comments and strings.") boolean searchComments) throws AgiToolException {
 
         Project project = resolveHostProject(filePath);
-        PsiElement member = ReadAction.compute(() -> JavaPsi.findMember(project, memberFqn));
+        PsiElement member = ReadAction.computeBlocking(() -> JavaPsi.findMember(project, memberFqn));
         if (member == null) {
             throw new AgiToolException("Member not found: " + memberFqn);
         }
@@ -267,7 +267,7 @@ public class Refactor extends AnahataToolkit {
             @AgiToolParam("The FQN of the destination class.") String targetClassFqn) throws AgiToolException {
 
         Project project = resolveHostProject(filePath);
-        List<PsiMember> members = ReadAction.compute(() -> {
+        List<PsiMember> members = ReadAction.computeBlocking(() -> {
             List<PsiMember> found = new ArrayList<>();
             for (String fqn : memberFqns) {
                 PsiElement member = JavaPsi.findMember(project, fqn);
@@ -345,7 +345,7 @@ public class Refactor extends AnahataToolkit {
         }
 
         if (newName != null && copyHolder[0] instanceof PsiJavaFile javaCopy) {
-            PsiClass copiedClass = ReadAction.compute(() -> javaCopy.getClasses().length > 0 ? javaCopy.getClasses()[0] : null);
+            PsiClass copiedClass = ReadAction.computeBlocking(() -> javaCopy.getClasses().length > 0 ? javaCopy.getClasses()[0] : null);
             if (copiedClass != null) {
                 runRename(project, copiedClass, newName, false);
             }
@@ -373,7 +373,7 @@ public class Refactor extends AnahataToolkit {
         Project project = (Project) resolved[0];
         PsiClass source = (PsiClass) resolved[1];
         PsiMember[] members = resolveMembers(project, memberFqns);
-        PsiClass target = ReadAction.compute(() -> JavaPsi.findClass(project, targetSuperclassFqn));
+        PsiClass target = ReadAction.computeBlocking(() -> JavaPsi.findClass(project, targetSuperclassFqn));
         if (target == null) {
             throw new AgiToolException("Superclass not found: " + targetSuperclassFqn);
         }
@@ -482,7 +482,7 @@ public class Refactor extends AnahataToolkit {
         Project project = (Project) resolved[0];
         PsiClass source = (PsiClass) resolved[1];
         PsiMember[] members = resolveMembers(project, memberFqns);
-        PsiDirectory directory = ReadAction.compute(() -> source.getContainingFile().getContainingDirectory());
+        PsiDirectory directory = ReadAction.computeBlocking(() -> source.getContainingFile().getContainingDirectory());
 
         ApplicationManager.getApplication().invokeAndWait(() ->
                 new ExtractSuperClassProcessor(project, directory, newSuperclass, source, toMemberInfos(members),
@@ -509,7 +509,7 @@ public class Refactor extends AnahataToolkit {
         Project project = (Project) resolved[0];
         PsiClass source = (PsiClass) resolved[1];
         PsiMember[] members = resolveMembers(project, memberFqns);
-        PsiDirectory directory = ReadAction.compute(() -> source.getContainingFile().getContainingDirectory());
+        PsiDirectory directory = ReadAction.computeBlocking(() -> source.getContainingFile().getContainingDirectory());
 
         ApplicationManager.getApplication().invokeAndWait(() ->
                 new ExtractInterfaceProcessor(project, false, directory, newInterface, source, toMemberInfos(members),
@@ -543,7 +543,7 @@ public class Refactor extends AnahataToolkit {
      * @return a Markdown listing of usages, or a no-usages message.
      */
     private String renderUsages(Project project, PsiElement element) {
-        List<String> usages = ReadAction.compute(() -> {
+        List<String> usages = ReadAction.computeBlocking(() -> {
             List<String> found = new ArrayList<>();
             Collection<PsiReference> references = ReferencesSearch.search(element, GlobalSearchScope.allScope(project)).findAll();
             for (PsiReference reference : references) {
@@ -580,7 +580,7 @@ public class Refactor extends AnahataToolkit {
     private Object[] resolvePrimaryClass(String filePath) throws AgiToolException {
         Project project = resolveHostProject(filePath);
         VirtualFile vf = JavaPsi.findVirtualFile(filePath);
-        PsiClass primary = ReadAction.compute(() -> JavaPsi.primaryClass(project, vf));
+        PsiClass primary = ReadAction.computeBlocking(() -> JavaPsi.primaryClass(project, vf));
         if (primary == null) {
             throw new AgiToolException("No primary Java class in: " + filePath);
         }
@@ -616,7 +616,7 @@ public class Refactor extends AnahataToolkit {
      * @throws AgiToolException if no members resolve.
      */
     private PsiMember[] resolveMembers(Project project, List<String> memberFqns) throws AgiToolException {
-        List<PsiMember> members = ReadAction.compute(() -> {
+        List<PsiMember> members = ReadAction.computeBlocking(() -> {
             List<PsiMember> found = new ArrayList<>();
             for (String fqn : memberFqns) {
                 if (JavaPsi.findMember(project, fqn) instanceof PsiMember member) {
@@ -640,7 +640,7 @@ public class Refactor extends AnahataToolkit {
      * @throws AgiToolException if the FQN does not resolve to a method.
      */
     private PsiMethod resolveMethod(Project project, String memberFqn) throws AgiToolException {
-        PsiMethod method = ReadAction.compute(() ->
+        PsiMethod method = ReadAction.computeBlocking(() ->
                 JavaPsi.findMember(project, memberFqn) instanceof PsiMethod psiMethod ? psiMethod : null);
         if (method == null) {
             throw new AgiToolException("Not a method: " + memberFqn);

@@ -316,7 +316,7 @@ public class IntellijJava extends DesktopJava {
     public String buildProjectClasspathString(String projectPath, boolean includeProjectDependencies, boolean includeTestContext) throws AgiToolException {
         Project project = resolveProject(projectPath);
         JavaPsi.requireSmart(project);
-        String classpath = ReadAction.compute(() -> {
+        String classpath = ReadAction.computeBlocking(() -> {
             OrderEnumerator enumerator = OrderEnumerator.orderEntries(project).recursively().withoutSdk();
             if (!includeTestContext) {
                 enumerator = enumerator.productionOnly();

@@ -50,7 +50,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
             return;
         }
 
-        String markdown = ReadAction.compute(() -> {
+        String markdown = ReadAction.computeBlocking(() -> {
             StringBuilder sb = new StringBuilder();
             sb.append("  ## Project Structure: ").append(p.getName()).append("\n\n");
 

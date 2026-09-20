@@ -242,7 +242,7 @@ public class CodeRefiner extends AnahataToolkit {
             throw new AgiToolException("No open project can host file: " + filePath);
         }
         JavaPsi.requireSmart(project);
-        PsiFile psiFile = ReadAction.compute(() -> JavaPsi.findPsiFile(project, vf));
+        PsiFile psiFile = ReadAction.computeBlocking(() -> JavaPsi.findPsiFile(project, vf));
         if (psiFile == null) {
             throw new AgiToolException("Could not resolve a PSI file for: " + filePath);
         }

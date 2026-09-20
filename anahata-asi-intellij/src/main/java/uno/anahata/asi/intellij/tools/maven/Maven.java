@@ -189,7 +189,7 @@ public class Maven extends AnahataToolkit {
         Project ideProject = open[0];
         int max = maxResults != null ? maxResults : 50;
 
-        List<MavenArtifactSearchResult> results = ReadAction.compute(() ->
+        List<MavenArtifactSearchResult> results = ReadAction.computeBlocking(() ->
                 new MavenArtifactSearcher().search(ideProject, query, max));
         if (results.isEmpty()) {
             return "No index results for '" + query + "' (the repository index may not be built yet).";

@@ -79,7 +79,7 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize) throws AgiToolException {
 
         awaitSmart();
-        List<JavaType> allResults = ReadAction.compute(() -> {
+        List<JavaType> allResults = ReadAction.computeBlocking(() -> {
             List<JavaType> results = new ArrayList<>();
             for (Project project : ProjectManager.getInstance().getOpenProjects()) {
                 PsiShortNamesCache cache = PsiShortNamesCache.getInstance(project);
@@ -211,7 +211,7 @@ public class CodeModel extends AnahataToolkit {
     public String getTypeJavadocs(
             @AgiToolParam("The keychain DTO for the type to inspect.") JavaType javaType) throws Exception {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(javaType.getFqn());
             if (cl != null) {
                 PsiDocComment doc = cl.getDocComment();
@@ -245,7 +245,7 @@ public class CodeModel extends AnahataToolkit {
     public String getMemberSources(
             @AgiToolParam("The keychain DTO for the member to inspect.") JavaMember member) throws Exception {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(member.getFqn().substring(0, member.getFqn().lastIndexOf('.')));
             if (cl != null) {
                 return getPsiMemberSource(cl, member.getFqn());
@@ -278,7 +278,7 @@ public class CodeModel extends AnahataToolkit {
     public String getMemberJavadocs(
             @AgiToolParam("The keychain DTO for the member to inspect.") JavaMember member) throws Exception {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(member.getFqn().substring(0, member.getFqn().lastIndexOf('.')));
             if (cl != null) {
                 return getPsiMemberJavadoc(cl, member.getFqn());
@@ -320,7 +320,7 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam(value = "Optional list of member kinds to filter by.", required = false) List<ElementKind> kindFilters) throws Exception {
 
         awaitSmart();
-        List<JavaMember> allMembers = ReadAction.compute(() -> {
+        List<JavaMember> allMembers = ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(javaType.getFqn());
             if (cl == null) {
                 throw new AgiToolException("Class not found: " + javaType.getFqn());
@@ -383,7 +383,7 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam(value = "The maximum number of results to return per page.", required = false) Integer pageSize) throws AgiToolException {
 
         awaitSmart();
-        List<JavaType> allResults = ReadAction.compute(() -> {
+        List<JavaType> allResults = ReadAction.computeBlocking(() -> {
             List<JavaType> results = new ArrayList<>();
             for (Project project : ProjectManager.getInstance().getOpenProjects()) {
                 PsiShortNamesCache cache = PsiShortNamesCache.getInstance(project);
@@ -428,7 +428,7 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam("The keychain DTO for the starting type.") JavaType javaType,
             @AgiToolParam(value = "The maximum depth to recurse. Defaults to 3 if null.", required = false) Integer maxDepth) throws Exception {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(javaType.getFqn());
             if (cl != null) {
                 return getSubtypesNode(cl, maxDepth != null ? maxDepth : 3, 0);
@@ -465,7 +465,7 @@ public class CodeModel extends AnahataToolkit {
             @AgiToolParam("The keychain DTO for the starting type.") JavaType javaType,
             @AgiToolParam(value = "The maximum depth to recurse up. Defaults to 3.", required = false) Integer maxDepth) throws Exception {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(javaType.getFqn());
             if (cl != null) {
                 return getSupertypesNode(cl, maxDepth != null ? maxDepth : 3, 0);
@@ -527,7 +527,7 @@ public class CodeModel extends AnahataToolkit {
      */
     private JavaType resolveUniqueType(String fqn) throws AgiToolException {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiClass cl = findPsiClass(fqn);
             if (cl != null) {
                 return new JavaType(fqn, getUrlOfClass(cl));
@@ -546,7 +546,7 @@ public class CodeModel extends AnahataToolkit {
      */
     private JavaMember resolveUniqueMember(String memberFqn) throws Exception {
         awaitSmart();
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             int lastDot = memberFqn.lastIndexOf('.');
             if (lastDot <= 0) {
                 throw new AgiToolException("Invalid member FQN: " + memberFqn);

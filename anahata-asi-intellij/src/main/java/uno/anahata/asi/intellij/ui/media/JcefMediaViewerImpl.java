@@ -4,6 +4,7 @@ package uno.anahata.asi.intellij.ui.media;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefApp;
 import com.intellij.ui.jcef.JBCefBrowser;
+import com.intellij.ui.jcef.JBCefBrowserBase;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -51,7 +52,7 @@ public class JcefMediaViewerImpl extends JPanel implements MediaViewerComponent 
     /**
      * The embedded Chromium browser component.
      */
-    private JBCefBrowser browser;
+    private JBCefBrowserBase browser;
 
     /**
      * Temporary disk file created when media bytes are loaded from memory.

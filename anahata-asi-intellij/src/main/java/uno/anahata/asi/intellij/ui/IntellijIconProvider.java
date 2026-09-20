@@ -66,7 +66,7 @@ public class IntellijIconProvider implements IconProvider {
                 try {
                     final VirtualFile targetVf = vf;
                     Project project = JavaPsi.findHostProject(targetVf);
-                    Icon richIcon = ReadAction.compute(() -> IconUtil.getIcon(targetVf, 0, project));
+                    Icon richIcon = ReadAction.computeBlocking(() -> IconUtil.getIcon(targetVf, 0, project));
                     if (richIcon != null) {
                         return richIcon;
                     }

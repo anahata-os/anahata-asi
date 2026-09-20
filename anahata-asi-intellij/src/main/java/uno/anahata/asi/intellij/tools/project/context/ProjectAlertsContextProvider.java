@@ -46,7 +46,7 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
             return;
         }
 
-        String markdown = ReadAction.compute(() -> {
+        String markdown = ReadAction.computeBlocking(() -> {
             StringBuilder sb = new StringBuilder();
             sb.append("  ## Project Alerts: ").append(p.getName()).append("\n\n");
 

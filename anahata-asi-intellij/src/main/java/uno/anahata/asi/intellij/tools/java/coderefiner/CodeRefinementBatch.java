@@ -104,7 +104,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         String name = originalResourceName != null ? originalResourceName : "Temp.java";
         String baseSource = originalContent.replace("\r\n", "\n");
 
-        return ReadAction.compute(() -> {
+        return ReadAction.computeBlocking(() -> {
             PsiFileFactory fileFactory = PsiFileFactory.getInstance(hostProject);
             PsiFile file = fileFactory.createFileFromText(name, JavaLanguage.INSTANCE, baseSource);
             if (!(file instanceof PsiJavaFile dummyFile)) {

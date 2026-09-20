@@ -1,17 +1,21 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.resources.handle;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.FileStatus;
 import com.intellij.openapi.vcs.FileStatusManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.openapi.vfs.VirtualFileEvent;
-import com.intellij.openapi.vfs.VirtualFileListener;
 import com.intellij.openapi.vfs.VirtualFileManager;
-import com.intellij.openapi.vfs.VirtualFileMoveEvent;
-import com.intellij.openapi.vfs.VirtualFilePropertyEvent;
+import com.intellij.openapi.vfs.newvfs.BulkFileListener;
+import com.intellij.openapi.vfs.newvfs.events.VFileContentChangeEvent;
+import com.intellij.openapi.vfs.newvfs.events.VFileDeleteEvent;
+import com.intellij.openapi.vfs.newvfs.events.VFileEvent;
+import com.intellij.openapi.vfs.newvfs.events.VFileMoveEvent;
+import com.intellij.openapi.vfs.newvfs.events.VFilePropertyChangeEvent;
+import com.intellij.util.messages.MessageBusConnection;
 import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
@@ -20,6 +24,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.List;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +35,12 @@ import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.persistence.Rebindable;
 
 /**
- * An IntelliJ-native reactive resource handle that wraps physical and virtual files.
+ * An IntelliJ-native reactive resource handle that wraps physical and virtual
+ * files.
  * <p>
- * This handle integrates with the IntelliJ Virtual File System (VFS), listening for
- * file renames, movements, content modifications, and deletions. When a file is moved
- * across packages/folders or renamed, it updates its managed path and URI and marks the
+ * This handle integrates with the IntelliJ Virtual File System (VFS), listening
+ * for file renames, movements, content modifications, and deletions. When a
+ * file is moved across packages/folders or renamed, it updates its managed path and URI and marks the
  * parent {@link Resource} dirty so the AI context reflects the change without requiring
  * manual re-adding.
  * </p>
@@ -42,7 +48,7 @@ import uno.anahata.asi.persistence.Rebindable;
  * @author anahata
  */
 @Slf4j
-public class IntellijHandle extends AbstractResourceHandle implements VirtualFileListener, Rebindable {
+public class IntellijHandle extends AbstractResourceHandle implements Rebindable {
 
     /**
      * The unique identifier URI for the resource.
@@ -62,11 +68,8 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
      */
     private transient VirtualFile virtualFile;
 
-    /**
-     * Flag indicating whether this handle is currently registered with VirtualFileManager.
-     */
-    private transient boolean listenerRegistered = false;
 
+    private transient MessageBusConnection messageBusConnection;
     /**
      * Constructs a new IntelliJ handle from an absolute file path.
      *
@@ -140,15 +143,21 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
     }
 
     /**
-     * Attaches this handle as a VirtualFileListener to the global VirtualFileManager.
+     * Attaches this handle as a VirtualFileListener to the global
+     * VirtualFileManager.
      */
     private synchronized void setupListener() {
-        if (!listenerRegistered) {
+        if (messageBusConnection == null) {
             try {
-                VirtualFileManager.getInstance().addVirtualFileListener(this);
-                listenerRegistered = true;
+                messageBusConnection = ApplicationManager.getApplication().getMessageBus().connect();
+                messageBusConnection.subscribe(VirtualFileManager.VFS_CHANGES, new BulkFileListener() {
+                    @Override
+                    public void after(@NonNull List<? extends @NonNull VFileEvent> events) {
+                        handleVfsEvents(events);
+                    }
+                });
             } catch (Throwable t) {
-                log.warn("Could not register VirtualFileListener for {}: {}", uri, t.getMessage());
+                log.warn("Could not register VFS listener for {}: {}", uri, t.getMessage());
             }
         }
     }
@@ -174,112 +183,80 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
     /**
      * {@inheritDoc}
      * <p>
-     * Unregisters the VFS listener to prevent memory leaks when the resource is disposed.
+     * Unregisters the VFS listener to prevent memory leaks when the resource is
+     * disposed.
      * </p>
      */
     @Override
     public synchronized void dispose() {
-        if (listenerRegistered) {
+        if (messageBusConnection != null) {
             try {
-                VirtualFileManager.getInstance().removeVirtualFileListener(this);
+                messageBusConnection.disconnect();
             } catch (Throwable t) {
-                log.debug("Error removing VirtualFileListener for {}: {}", uri, t.getMessage());
+                log.debug("Error disconnecting VFS listener for {}: {}", uri, t.getMessage());
             }
-            listenerRegistered = false;
+            messageBusConnection = null;
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Tracks in-place file renames. If this file was renamed, updates the internal URI
-     * and path and marks the owner resource dirty so the prompt receives the updated name.
-     * </p>
-     */
-    @Override
-    public void propertyChanged(VirtualFilePropertyEvent event) {
-        if (VirtualFile.PROP_NAME.equals(event.getPropertyName())) {
-            VirtualFile eventFile = event.getFile();
-            boolean matches = false;
-            if (virtualFile != null && eventFile.equals(virtualFile)) {
-                matches = true;
-            } else if (path != null) {
-                VirtualFile parent = eventFile.getParent();
-                if (parent != null) {
-                    String oldPath = parent.getPath() + "/" + event.getOldValue();
-                    if (oldPath.equals(path) || eventFile.getPath().equals(path)) {
+    private void handleVfsEvents(List<? extends VFileEvent> events) {
+        for (VFileEvent event : events) {
+            if (event instanceof VFilePropertyChangeEvent propEvent) {
+                if (VirtualFile.PROP_NAME.equals(propEvent.getPropertyName())) {
+                    VirtualFile eventFile = propEvent.getFile();
+                    boolean matches = false;
+                    if (virtualFile != null && eventFile.equals(virtualFile)) {
                         matches = true;
+                    } else if (path != null) {
+                        VirtualFile parent = eventFile.getParent();
+                        if (parent != null) {
+                            String oldPath = parent.getPath() + "/" + propEvent.getOldValue();
+                            if (oldPath.equals(path) || eventFile.getPath().equals(path)) {
+                                matches = true;
+                            }
+                        }
+                    }
+                    if (matches) {
+                        log.info("IntellijHandle detected rename from {} to {}", propEvent.getOldValue(), propEvent.getNewValue());
+                        this.virtualFile = eventFile;
+                        setUri(Paths.get(eventFile.getPath()).toUri());
+                        owner.markDirty();
                     }
                 }
-            }
-            if (matches) {
-                log.info("IntellijHandle detected rename from {} to {}", event.getOldValue(), event.getNewValue());
-                this.virtualFile = eventFile;
-                setUri(Paths.get(eventFile.getPath()).toUri());
-                owner.markDirty();
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Tracks file moves across packages or directories. Updates the internal URI and path
-     * and marks the owner resource dirty.
-     * </p>
-     */
-    @Override
-    public void fileMoved(VirtualFileMoveEvent event) {
-        VirtualFile eventFile = event.getFile();
-        boolean matches = false;
-        if (virtualFile != null && eventFile.equals(virtualFile)) {
-            matches = true;
-        } else if (path != null) {
-            VirtualFile oldParent = event.getOldParent();
-            if (oldParent != null) {
-                String oldPath = oldParent.getPath() + "/" + eventFile.getName();
-                if (oldPath.equals(path) || eventFile.getPath().equals(path)) {
+            } else if (event instanceof VFileMoveEvent moveEvent) {
+                VirtualFile eventFile = moveEvent.getFile();
+                boolean matches = false;
+                if (virtualFile != null && eventFile.equals(virtualFile)) {
                     matches = true;
+                } else if (path != null) {
+                    VirtualFile oldParent = moveEvent.getOldParent();
+                    if (oldParent != null) {
+                        String oldPath = oldParent.getPath() + "/" + eventFile.getName();
+                        if (oldPath.equals(path) || eventFile.getPath().equals(path)) {
+                            matches = true;
+                        }
+                    }
+                }
+                if (matches) {
+                    log.info("IntellijHandle detected move for {} from {} to {}", eventFile.getName(),
+                            moveEvent.getOldParent().getPath(), moveEvent.getNewParent().getPath());
+                    this.virtualFile = eventFile;
+                    setUri(Paths.get(eventFile.getPath()).toUri());
+                    owner.markDirty();
+                }
+            } else if (event instanceof VFileContentChangeEvent contentEvent) {
+                VirtualFile eventFile = contentEvent.getFile();
+                if ((virtualFile != null && eventFile.equals(virtualFile)) || (path != null && eventFile.getPath().equals(path))) {
+                    owner.markDirty();
+                }
+            } else if (event instanceof VFileDeleteEvent deleteEvent) {
+                VirtualFile eventFile = deleteEvent.getFile();
+                if ((virtualFile != null && eventFile.equals(virtualFile)) || (path != null && eventFile.getPath().equals(path))) {
+                    owner.markDirty();
                 }
             }
         }
-        if (matches) {
-            log.info("IntellijHandle detected move for {} from {} to {}", eventFile.getName(),
-                    event.getOldParent().getPath(), event.getNewParent().getPath());
-            this.virtualFile = eventFile;
-            setUri(Paths.get(eventFile.getPath()).toUri());
-            owner.markDirty();
-        }
     }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Marks the owner resource dirty when file content changes on disk.
-     * </p>
-     */
-    @Override
-    public void contentsChanged(VirtualFileEvent event) {
-        VirtualFile eventFile = event.getFile();
-        if ((virtualFile != null && eventFile.equals(virtualFile)) || (path != null && eventFile.getPath().equals(path))) {
-            owner.markDirty();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Marks the owner resource dirty when the file is deleted.
-     * </p>
-     */
-    @Override
-    public void fileDeleted(VirtualFileEvent event) {
-        VirtualFile eventFile = event.getFile();
-        if ((virtualFile != null && eventFile.equals(virtualFile)) || (path != null && eventFile.getPath().equals(path))) {
-            owner.markDirty();
-        }
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -421,7 +398,7 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
             return null;
         }
         try {
-            return ReadAction.compute(() -> {
+            return ReadAction.computeBlocking(() -> {
                 Project project = JavaPsi.findHostProject(vf);
                 if (project == null || project.isDisposed()) {
                     return null;
@@ -454,7 +431,7 @@ public class IntellijHandle extends AbstractResourceHandle implements VirtualFil
         VirtualFile vf = getVirtualFile();
         if (vf != null) {
             try {
-                return ReadAction.compute(() -> FileDocumentManager.getInstance().isFileModified(vf));
+                return ReadAction.computeBlocking(() -> FileDocumentManager.getInstance().isFileModified(vf));
             } catch (Throwable t) {
                 log.debug("Could not check isFileModified for {}: {}", getPath(), t.getMessage());
             }

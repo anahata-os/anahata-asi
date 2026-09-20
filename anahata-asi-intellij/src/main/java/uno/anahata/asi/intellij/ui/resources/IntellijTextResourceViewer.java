@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.ui.resources;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.application.WriteIntentReadAction;
@@ -19,6 +20,7 @@ import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.AbstractAsiContainer;
@@ -77,6 +79,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
      * is a shared live file document, otherwise listeners (and this viewer) leak on every open.
      */
     private DocumentListener documentListener;
+    private Disposable listenerDisposable;
 
     /**
      * Constructs the IntelliJ text resource viewer.
@@ -218,7 +221,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
 
         if (vf != null) {
             final VirtualFile targetVf = vf;
-            document = ReadAction.compute(() -> FileDocumentManager.getInstance().getDocument(targetVf));
+            document = ReadAction.computeBlocking(() -> FileDocumentManager.getInstance().getDocument(targetVf));
         }
         if (document == null) {
             String text = "";
@@ -241,7 +244,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         });
 
         if (editor instanceof EditorEx editorEx) {
-            EditorHighlighter highlighter = ReadAction.compute(() -> {
+            EditorHighlighter highlighter = ReadAction.computeBlocking(() -> {
                 if (targetVf != null) {
                     return EditorHighlighterFactory.getInstance().createEditorHighlighter(project, targetVf);
                 } else {
@@ -258,6 +261,10 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         editor.getSettings().setFoldingOutlineShown(true);
         editor.getSettings().setLineMarkerAreaShown(true);
 
+        if (listenerDisposable != null) {
+            Disposer.dispose(listenerDisposable);
+        }
+        listenerDisposable = Disposer.newDisposable("IntellijTextResourceViewer.listener");
         documentListener = new DocumentListener() {
             @Override
             public void documentChanged(DocumentEvent event) {
@@ -267,7 +274,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
                 }
             }
         };
-        document.addDocumentListener(documentListener);
+        document.addDocumentListener(documentListener, listenerDisposable);
 
         getWrapper().removeAll();
         getWrapper().add(editor.getComponent(), BorderLayout.CENTER);
@@ -324,8 +331,9 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
     @Override
     public void removeNotify() {
         super.removeNotify();
-        if (document != null && documentListener != null) {
-            document.removeDocumentListener(documentListener);
+        if (listenerDisposable != null) {
+            Disposer.dispose(listenerDisposable);
+            listenerDisposable = null;
             documentListener = null;
         }
         if (editor != null && !editor.isDisposed()) {

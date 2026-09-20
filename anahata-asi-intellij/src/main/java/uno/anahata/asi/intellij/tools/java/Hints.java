@@ -17,7 +17,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
@@ -90,7 +89,7 @@ public class Hints extends AnahataToolkit {
         }
         JavaPsi.requireSmart(project);
 
-        Object[] resolved = ReadAction.compute(() -> {
+        Object[] resolved = ReadAction.computeBlocking(() -> {
             PsiFile psiFile = JavaPsi.findPsiFile(project, vf);
             Document document = FileDocumentManager.getInstance().getDocument(vf);
             return new Object[]{psiFile, document};
@@ -156,7 +155,7 @@ public class Hints extends AnahataToolkit {
             throw new AgiToolException("No open project can host file: " + filePath);
         }
         JavaPsi.requireSmart(project);
-        Object[] resolved = ReadAction.compute(() -> new Object[]{
+        Object[] resolved = ReadAction.computeBlocking(() -> new Object[]{
                 JavaPsi.findPsiFile(project, vf), FileDocumentManager.getInstance().getDocument(vf)});
         PsiFile psiFile = (PsiFile) resolved[0];
         Document document = (Document) resolved[1];
@@ -170,19 +169,23 @@ public class Hints extends AnahataToolkit {
         IntentionAction[] chosen = new IntentionAction[1];
         int[] offset = {-1};
         String[] fixLabel = new String[1];
-        ReadAction.run(() -> {
+        ReadAction.runBlocking(() -> {
             for (HighlightInfo info : infos) {
-                if (document.getLineNumber(info.getStartOffset()) != targetLine || info.quickFixActionRanges == null) {
+                if (document.getLineNumber(info.getStartOffset()) != targetLine) {
                     continue;
                 }
-                for (Pair<HighlightInfo.IntentionActionDescriptor, TextRange> pair : info.quickFixActionRanges) {
-                    IntentionAction action = pair.getFirst().getAction();
+                info.findRegisteredQuickFix((descriptor, fixRange) -> {
+                    IntentionAction action = descriptor.getAction();
                     if (fixName == null || action.getText().toLowerCase().contains(fixName.toLowerCase())) {
                         chosen[0] = action;
                         offset[0] = info.getStartOffset();
                         fixLabel[0] = action.getText();
-                        return;
+                        return action;
                     }
+                    return null;
+                });
+                if (chosen[0] != null) {
+                    return;
                 }
             }
         });
@@ -231,7 +234,7 @@ public class Hints extends AnahataToolkit {
         List<HighlightInfo> infos = new ArrayList<>();
         ProgressManager.getInstance().runProcess(() -> {
             DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
-            ReadAction.run(() -> infos.addAll(analyzer.runMainPasses(psiFile, document, new EmptyProgressIndicator())));
+            ReadAction.runBlocking(() -> infos.addAll(analyzer.runMainPasses(psiFile, document, new EmptyProgressIndicator())));
         }, new EmptyProgressIndicator());
         return infos;
     }
