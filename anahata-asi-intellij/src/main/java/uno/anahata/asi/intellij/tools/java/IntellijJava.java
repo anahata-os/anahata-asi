@@ -195,7 +195,7 @@ public class IntellijJava extends DesktopJava {
 
         // 3. Check IntelliJ's suggested JDK home paths
         try {
-            for (String suggested : JavaSdk.getInstance().suggestHomePaths()) {
+            for (String suggested : JavaSdk.getInstance().suggestHomePaths((Project) null)) {
                 Path home = Path.of(suggested);
                 Path javac = findJavacInJdkHome(home);
                 if (javac != null && seenJavacPaths.add(javac.toAbsolutePath().normalize())) {
