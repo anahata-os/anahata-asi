@@ -466,7 +466,7 @@ public class Projects extends AnahataToolkit {
         sb.append("\n## Detected System JDK Home Paths\n");
         try {
             JavaSdk javaSdk = JavaSdk.getInstance();
-            java.util.Collection<String> suggested = javaSdk.suggestHomePaths();
+            java.util.Collection<String> suggested = javaSdk.suggestHomePaths((Project) null);
             if (suggested.isEmpty()) {
                 sb.append("- None auto-detected by JavaSdk.\n");
             } else {
@@ -643,7 +643,7 @@ public class Projects extends AnahataToolkit {
 
         // 2. Look for suggested home paths
         try {
-            java.util.Collection<String> suggested = javaSdk.suggestHomePaths();
+            java.util.Collection<String> suggested = javaSdk.suggestHomePaths(project);
             for (String homePath : suggested) {
                 if (Files.exists(Path.of(homePath))) {
                     String name = javaSdk.suggestSdkName(null, homePath);
