@@ -94,7 +94,7 @@ public class Screens extends AnahataToolkit {
                 + "- You can use these tools to 'see' the user's screen or specific windows.\n"
                 + "- **Live Screen Sharing**: If you see BlobParts in the RAG message, these are live captures of shared screens or regions. Each BlobPart is preceded by a text part identifying the source. Live screen captures are streamed in-memory.\n"
                 + "- **Displaying Disk Images**: When referencing image files that have been written to disk by tools (such as takeScreenshot or screenshotAllWindows) or any other images on disk or from a URL, use Markdown attributes syntax in your text response: `![Screenshot](file:///path/to/image.png){width=500}`. This ensures it fits nicely in the chat without stretching the UI.\n"
-                + "- **Markdown & HTML Rendering Support in Swing**: The chat renders markdown via Flexmark converted to HTML inside Swing's JEditorPane (supporting tables, lists, basic styling, autolinks, and images). **It does NOT support JavaScript-dependent extensions such as LaTeX math syntax (e.g. `$...$` or `$$...$$` formulas/arrows) or dynamic client-side scripts, which will not render properly. So DON'T OUTPUT THOSE SYMBOLS**"
+                + "- **Markdown & HTML Rendering Support in Swing**: The chat renders markdown via Flexmark converted to HTML inside Swing's JEditorPane (supporting tables, lists, basic styling, autolinks, and images). **It does NOT support JavaScript-dependent extensions such as LaTeX math syntax (e.g. `$...$` or `$$...$$` or `$\\to$` formulas/arrows) or dynamic client-side scripts, which will not render properly. So DON'T OUTPUT THOSE SYMBOLS**"
         );
     }
 
