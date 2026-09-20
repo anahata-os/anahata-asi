@@ -73,7 +73,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
                 int w = (parent != null && parent.getWidth() > 0) ? parent.getWidth() - 15 : 600;
                 return new Dimension(w, ps.height);
             }
-            return pillPanel.getPreferredSize();
+            return pillRow.getPreferredSize();
         }
 
         @Override
@@ -114,6 +114,16 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
      * Button to open the resource or URI in the host environment.
      */
     protected JButton openBtn;
+
+    /**
+     * Button to remove this chip from its enclosing parent container.
+     */
+    protected JButton deleteBtn;
+
+    /**
+     * Panel wrapping the pill in a flow layout so it does not stretch across the container when standalone.
+     */
+    protected final JPanel pillRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
 
     /**
      * Constructs a new AbstractChipParameterRenderer with standard pill wiring.
@@ -162,18 +172,22 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
 
         pillPanel.add(centerPanel, BorderLayout.CENTER);
 
-        JButton deleteBtn = new JButton(new DeleteIcon(14));
+        deleteBtn = new JButton(new DeleteIcon(14));
         deleteBtn.putClientProperty("JButton.buttonType", "toolBarButton");
         deleteBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         deleteBtn.setToolTipText("Remove");
         deleteBtn.setMargin(new Insets(1, 8, 1, 4));
         deleteBtn.addActionListener(e -> deleteSelf());
+        deleteBtn.setVisible(false);
 
         pillPanel.add(deleteBtn, BorderLayout.EAST);
 
+        pillRow.setOpaque(false);
+        pillRow.add(pillPanel);
+
         editorPanel.setOpaque(false);
 
-        container.add(pillPanel, "pill");
+        container.add(pillRow, "pill");
         container.add(editorPanel, "editor");
 
         applyColors();
@@ -406,12 +420,27 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
 
     /**
      * {@inheritDoc}
+     * <p>Updates delete button visibility when parent renderer is assigned.</p>
+     */
+    @Override
+    public void setParentRenderer(ParameterRenderer<?> parentRenderer) {
+        super.setParentRenderer(parentRenderer);
+        if (deleteBtn != null) {
+            deleteBtn.setVisible(parentRenderer != null);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * Renders the single chip for the bound value.</p>
      */
     @Override
     public boolean render() {
         updateContent(value);
+        if (deleteBtn != null) {
+            deleteBtn.setVisible(parentRenderer != null);
+        }
         return true;
     }
 }
