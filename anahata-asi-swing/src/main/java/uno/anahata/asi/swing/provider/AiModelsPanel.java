@@ -6,6 +6,7 @@ package uno.anahata.asi.swing.provider;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -15,6 +16,7 @@ import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -64,6 +66,7 @@ import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.provider.ResponseModality;
 import uno.anahata.asi.swing.components.EnumSetTableCellEditor;
+import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.icons.AddIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -312,7 +315,7 @@ public class AiModelsPanel extends JPanel {
             }
         }
 
-        // Add double-click and right-click listeners
+        // Add double-click, click on rythihyperlink, and right-click listeners
         table.addMouseListener(new MouseAdapter() {
             /**
              * {@inheritDoc}
@@ -331,6 +334,12 @@ public class AiModelsPanel extends JPanel {
                 }
             }
 
+            /**
+             * {@inheritDoc}
+             * <p>
+             * Displays context menu if triggered on release.
+             * </p>
+             */
             @Override
             public void mouseReleased(MouseEvent e) {
                 if (e.isPopupTrigger()) {
@@ -341,24 +350,66 @@ public class AiModelsPanel extends JPanel {
             /**
              * {@inheritDoc}
              * <p>
-             * Detects double-click gestures to trigger the model selection
-             * callback for the row under the cursor.
+             * Resets the cursor when the mouse exits the table viewport.
+             * </p>
+             */
+            @Override
+            public void mouseExited(MouseEvent e) {
+                if (modelSelectionCallback != null) {
+                    table.setCursor(Cursor.getDefaultCursor());
+                }
+            }
+
+            /**
+             * {@inheritDoc}
+             * <p>
+             * Detects single-click on the Model ID hyperlink or double-click gestures
+             * to trigger model selection.
              * </p>
              */
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2 && modelSelectionCallback != null) {
-                    int viewRow = table.getSelectedRow();
-                    if (viewRow >= 0) {
+                if (modelSelectionCallback != null && SwingUtilities.isLeftMouseButton(e)) {
+                    Point p = e.getPoint();
+                    int viewRow = table.rowAtPoint(p);
+                    int viewCol = table.columnAtPoint(p);
+                    if (viewRow >= 0 && viewCol >= 0) {
                         int modelRow = table.convertRowIndexToModel(viewRow);
                         AbstractModel model = tableModel.getModelAt(modelRow);
                         if (model != null) {
-                            modelSelectionCallback.accept(model);
+                            int modelCol = table.convertColumnIndexToModel(viewCol);
+                            if (modelCol == 2) {
+                                selectModel(model);
+                                return;
+                            }
+                            if (e.getClickCount() == 2) {
+                                selectModel(model);
+                            }
                         }
                     }
                 }
             }
         });
+
+        if (modelSelectionCallback != null) {
+            table.addMouseMotionListener(new MouseMotionAdapter() {
+                /**
+                 * {@inheritDoc}
+                 * <p>
+                 * Changes the cursor to a hand pointer when hovering over the Model ID column.
+                 * </p>
+                 */
+                @Override
+                public void mouseMoved(MouseEvent e) {
+                    int col = table.columnAtPoint(e.getPoint());
+                    if (col >= 0 && "Model ID".equals(table.getColumnName(col))) {
+                        table.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    } else {
+                        table.setCursor(Cursor.getDefaultCursor());
+                    }
+                }
+            });
+        }
 
         // Add SwingX Highlighter for unregistered API models (italic + faint foreground)
         table.addHighlighter(new org.jdesktop.swingx.decorator.AbstractHighlighter() {
@@ -387,27 +438,51 @@ public class AiModelsPanel extends JPanel {
         // Set cell renderer on AI Provider column (shows provider icon and display name)
         table.getColumnModel().getColumn(1).setCellRenderer(new AiProviderRenderer());
 
-        // Set cell renderer on Model ID column (NewIcon if unregistered, warning if discrepancy)
+        // Set cell renderer on Model ID column (Hyperlink when in selection mode, NewIcon if unregistered, warning if discrepancy)
         table.getColumnExt("Model ID").setCellRenderer(new DefaultTableCellRenderer() {
             private final NewIcon newBadgeIcon = new NewIcon(14);
 
+            /**
+             * {@inheritDoc}
+             * <p>
+             * Formats the Model ID with a clickable hyperlink style when in selection mode,
+             * and displays badges for unregistered API models or configuration discrepancies.
+             * </p>
+             */
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 int modelRow = table.convertRowIndexToModel(row);
                 AbstractModel m = tableModel.getModelAt(modelRow);
                 if (m != null) {
-                    if (!m.isRegistered()) {
+                    if (modelSelectionCallback != null) {
+                        setText("<html><u>" + m.getModelId() + "</u></html>");
+                        if (isSelected) {
+                            setForeground(table.getSelectionForeground());
+                        } else {
+                            Color linkColor = UIManager.getColor("Component.linkColor");
+                            if (linkColor == null) {
+                                linkColor = new Color(51, 153, 255);
+                            }
+                            setForeground(linkColor);
+                        }
+                    } else {
                         setText(m.getModelId());
+                    }
+
+                    if (!m.isRegistered()) {
                         setIcon(newBadgeIcon);
-                        setToolTipText("Discovered from API, not yet registered in local database");
+                        setToolTipText(modelSelectionCallback != null
+                                ? "Click to select " + m.getModelId()
+                                : "Discovered from API, not yet registered in local database");
                     } else {
                         setIcon(null);
-                        setText(m.getModelId());
                         if (m.hasDiscrepancy()) {
-                            setToolTipText("Model has customized configuration (Reset button available to restore API defaults)");
+                            setToolTipText(modelSelectionCallback != null
+                                    ? "Click to select " + m.getModelId() + " (Model has customized configuration)"
+                                    : "Model has customized configuration (Reset button available to restore API defaults)");
                         } else {
-                            setToolTipText(null);
+                            setToolTipText(modelSelectionCallback != null ? "Click to select " + m.getModelId() : null);
                         }
                     }
                 }
@@ -526,6 +601,30 @@ public class AiModelsPanel extends JPanel {
         }
 
         return null;
+    }
+
+    /**
+     * Dispatches the model selection callback. If the selected model is not yet registered in local
+     * storage, it is automatically registered and persisted without prompting. If registration fails,
+     * an {@link ExceptionDialog} is displayed to the user and selection does not proceed.
+     *
+     * @param model The model entity to select.
+     */
+    private void selectModel(AbstractModel model) {
+        if (modelSelectionCallback != null && model != null) {
+            AbstractModel toSelect = model;
+            if (!model.isRegistered() && model.getProvider() != null) {
+                try {
+                    model.getProvider().addModel(model);
+                    toSelect = model.getProvider().getModel(model.getModelId()).orElse(model);
+                } catch (Exception ex) {
+                    log.error("Failed to automatically register model {} on selection", model.getModelId(), ex);
+                    ExceptionDialog.show(this, "Select Model", "Failed to register model '" + model.getModelId() + "' in local storage", ex);
+                    return;
+                }
+            }
+            modelSelectionCallback.accept(toSelect);
+        }
     }
 
     /**
