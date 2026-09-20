@@ -24,9 +24,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.status.AgiStatus;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
-import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import javax.swing.UIManager;
 
@@ -103,20 +101,12 @@ public class AgiCard extends JPanel {
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 14f));
         header.add(nameLabel, "growx");
 
-        closeBtn = new JButton(new CancelIcon(14));
-        closeBtn.setToolTipText("Close Session Tab");
-        closeBtn.setFocusable(false);
-        closeBtn.setMargin(new Insets(2, 2, 2, 2));
-        // Ensure the button looks like a standard button (with borders/fill)
-        closeBtn.putClientProperty("JButton.buttonType", "square");
+        SwingAgiConfig config = (SwingAgiConfig) agi.getConfig();
+        closeBtn = config.createSquareButton(ActionIconKey.CANCEL, 14, "Close Session Tab");
         closeBtn.addActionListener(e -> container.close(agi));
         header.add(closeBtn, "w 24!, h 24!");
-        
-        JButton disposeBtn = new JButton(new DeleteIcon(14));
-        disposeBtn.setToolTipText("Permanently Dispose Session");
-        disposeBtn.setFocusable(false);
-        disposeBtn.setMargin(new Insets(2, 2, 2, 2));
-        disposeBtn.putClientProperty("JButton.buttonType", "square");
+
+        JButton disposeBtn = config.createSquareButton(ActionIconKey.DELETE, 14, "Permanently Dispose Session");
         disposeBtn.addActionListener(e -> container.dispose(agi));
         header.add(disposeBtn, "w 24!, h 24!");
 
@@ -171,7 +161,7 @@ public class AgiCard extends JPanel {
         idLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         footer.add(idLabel, "growx");
         
-        JButton focusBtn = new JButton("Open", new SearchIcon(14));
+        JButton focusBtn = new JButton("Open", config.getActionIcon(ActionIconKey.OPEN_SESSION, 14));
         focusBtn.setToolTipText("Open/Focus this session tab");
         focusBtn.setMargin(new Insets(2, 4, 2, 4));
         focusBtn.setFont(focusBtn.getFont().deriveFont(10f));

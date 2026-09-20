@@ -23,9 +23,13 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.StringHandle;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.CancelIcon;
 import uno.anahata.asi.swing.icons.CopyIcon;
 import uno.anahata.asi.swing.icons.DeleteIcon;
@@ -111,6 +115,16 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
     protected AbstractTextResourceViewer editorViewer;
 
     /**
+     * Button to copy content to clipboard.
+     */
+    protected JButton copyBtn;
+
+    /**
+     * Button to toggle in-place editing.
+     */
+    protected JButton editBtn;
+
+    /**
      * Button to open the resource or URI in the host environment.
      */
     protected JButton openBtn;
@@ -141,11 +155,8 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
             }
         });
 
-        JButton copyBtn = new JButton(new CopyIcon(14));
-        copyBtn.putClientProperty("JButton.buttonType", "toolBarButton");
-        copyBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        copyBtn = new JButton(new CopyIcon(14));
         copyBtn.setToolTipText("Copy to clipboard");
-        copyBtn.setMargin(new Insets(1, 4, 1, 4));
         copyBtn.addActionListener(e -> SwingUtils.copyToClipboard(getClipboardContent()));
 
         pillPanel.add(copyBtn, BorderLayout.WEST);
@@ -155,17 +166,11 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         centerPanel.add(nameLabel);
 
         openBtn = new JButton(new ExternalIcon(14));
-        openBtn.putClientProperty("JButton.buttonType", "toolBarButton");
-        openBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         openBtn.setToolTipText("Open");
-        openBtn.setMargin(new Insets(1, 4, 1, 4));
         openBtn.addActionListener(e -> onOpen());
         centerPanel.add(openBtn);
 
-        JButton editBtn = new JButton(new EditIcon(14));
-        editBtn.putClientProperty("JButton.buttonType", "toolBarButton");
-        editBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        editBtn.setMargin(new Insets(1, 4, 1, 4));
+        editBtn = new JButton(new EditIcon(14));
         editBtn.setToolTipText("Edit in-place");
         editBtn.addActionListener(e -> setEditing(true));
         centerPanel.add(editBtn);
@@ -173,10 +178,7 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         pillPanel.add(centerPanel, BorderLayout.CENTER);
 
         deleteBtn = new JButton(new DeleteIcon(14));
-        deleteBtn.putClientProperty("JButton.buttonType", "toolBarButton");
-        deleteBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         deleteBtn.setToolTipText("Remove");
-        deleteBtn.setMargin(new Insets(1, 8, 1, 4));
         deleteBtn.addActionListener(e -> deleteSelf());
         deleteBtn.setVisible(false);
 
@@ -191,6 +193,24 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         container.add(editorPanel, "editor");
 
         applyColors();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Initializes the renderer and configures pill buttons using SwingAgiConfig.</p>
+     */
+    @Override
+    public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, Object value) {
+        super.init(agiPanel, call, paramName, value);
+        SwingAgiConfig cfg = agiPanel.getAgiConfig();
+        copyBtn.setIcon(cfg.getActionIcon(ActionIconKey.COPY, 14));
+        cfg.forceSquare(copyBtn, 14);
+        openBtn.setIcon(cfg.getActionIcon(ActionIconKey.EXTERNAL, 14));
+        cfg.forceSquare(openBtn, 14);
+        editBtn.setIcon(cfg.getActionIcon(ActionIconKey.EDIT, 14));
+        cfg.forceSquare(editBtn, 14);
+        deleteBtn.setIcon(cfg.getActionIcon(ActionIconKey.DELETE, 14));
+        cfg.forceSquare(deleteBtn, 14);
     }
 
     /**
@@ -335,19 +355,14 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
         JPanel headerActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         headerActions.setOpaque(false);
 
-        JButton cancelBtn = new JButton("Cancel", new CancelIcon(14));
-        cancelBtn.putClientProperty("JButton.buttonType", "toolBarButton");
-        cancelBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+        JButton cancelBtn = new JButton("Cancel", config.getActionIcon(ActionIconKey.CANCEL, 14));
         cancelBtn.setFont(cancelBtn.getFont().deriveFont(11f));
-        cancelBtn.setMargin(new Insets(1, 4, 1, 4));
         cancelBtn.addActionListener(e -> setEditing(false));
         headerActions.add(cancelBtn);
 
-        JButton saveBtn = new JButton("Save", new SaveIcon(14));
-        saveBtn.putClientProperty("JButton.buttonType", "toolBarButton");
-        saveBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        JButton saveBtn = new JButton("Save", config.getActionIcon(ActionIconKey.SAVE, 14));
         saveBtn.setFont(saveBtn.getFont().deriveFont(Font.BOLD, 11f));
-        saveBtn.setMargin(new Insets(1, 4, 1, 4));
         saveBtn.addActionListener(e -> {
             if (editorViewer != null) {
                 String newContent = editorViewer.getEditorContent();

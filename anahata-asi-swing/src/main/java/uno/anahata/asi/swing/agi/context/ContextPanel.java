@@ -50,7 +50,6 @@ import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.ResourcesNode;
 import uno.anahata.asi.swing.components.ScrollablePanel;
-import uno.anahata.asi.swing.icons.DeleteIcon;
 import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.agi.tool.ToolManager;
@@ -495,7 +494,7 @@ public class ContextPanel extends JPanel {
             }
         });
 
-        JMenuItem removeItem = new JMenuItem("Remove from Context", new DeleteIcon(16));
+        JMenuItem removeItem = new JMenuItem("Remove from Context", getAgiPanel().getAgiConfig().getActionIcon(ActionIconKey.DELETE, 16));
         removeItem.addActionListener(e -> {
             for (int row : treeTable.getSelectedRows()) {
                 Object node = treeTable.getPathForRow(row).getLastPathComponent();

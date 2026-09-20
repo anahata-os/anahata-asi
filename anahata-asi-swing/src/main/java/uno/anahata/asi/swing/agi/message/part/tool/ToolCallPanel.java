@@ -51,10 +51,7 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.components.AdjustingTabPane;
 import uno.anahata.asi.swing.components.CodeHyperlink;
-import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.RunIcon;
-import uno.anahata.asi.swing.icons.StopIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
@@ -304,18 +301,18 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             statusCombo.setForeground(SwingAgiConfig.getColor(status));
         });
 
-        declineButton = new JButton("Decline", new CancelIcon(16));
+        declineButton = new JButton("Decline", agiConfig.getActionIcon(ActionIconKey.CANCEL, 16));
         declineButton.setToolTipText("Set status to DECLINED and collapses the tool call");
         declineButton.addActionListener(e -> {
             getPart().getResponse().decline();
             getPart().setExpanded(false);
         });
 
-        revertButton = new JButton("Clear response", new DeleteIcon(16));
+        revertButton = new JButton("Clear response", agiConfig.getActionIcon(ActionIconKey.DELETE, 16));
         revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");
         revertButton.addActionListener(e -> getPart().getResponse().decline());
 
-        runButton = new JButton("Run", new RunIcon(16));
+        runButton = new JButton("Run", agiConfig.getActionIcon(ActionIconKey.SEND, 16));
 
         toolProgressBar = new JProgressBar();
         toolProgressBar.setIndeterminate(true);
@@ -538,31 +535,31 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
 
         if (response.getStatus() == ToolExecutionStatus.EXECUTING) {
             runButton.setText("Stop");
-            runButton.setIcon(new StopIcon(16));
+            runButton.setIcon(agiConfig.getActionIcon(ActionIconKey.STOP, 16));
             runButton.addActionListener(e -> response.stop());
             runButton.setEnabled(true);
             revertButton.setVisible(false);
         } else if (response.getStatus() == ToolExecutionStatus.EXECUTED) {
             runButton.setText("Run Again");
-            runButton.setIcon(new RunIcon(16));
+            runButton.setIcon(agiConfig.getActionIcon(ActionIconKey.SEND, 16));
             runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
         } else if (response.getStatus() == ToolExecutionStatus.PENDING || response.getStatus() == ToolExecutionStatus.DECLINED) {
             runButton.setText("Run");
-            runButton.setIcon(new RunIcon(16));
+            runButton.setIcon(agiConfig.getActionIcon(ActionIconKey.SEND, 16));
             runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(false);
         } else if (response.getStatus() == ToolExecutionStatus.FAILED) {
             runButton.setText("Retry");
-            runButton.setIcon(new RunIcon(16));
+            runButton.setIcon(agiConfig.getActionIcon(ActionIconKey.SEND, 16));
             runButton.addActionListener(e -> executeTool());
             runButton.setEnabled(true);
             revertButton.setVisible(true);
         } else {
             runButton.setText("Executed");
-            runButton.setIcon(new RunIcon(16));
+            runButton.setIcon(agiConfig.getActionIcon(ActionIconKey.SEND, 16));
             runButton.setEnabled(false);
             revertButton.setVisible(false);
         }

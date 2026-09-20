@@ -3,9 +3,7 @@
  */
 package uno.anahata.asi.swing.agi.message.part.tool;
 
-import java.awt.Color;
 import java.awt.Desktop;
-import java.awt.Insets;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.HashMap;
@@ -24,10 +22,10 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.agi.tool.ToolResponseAttachment;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.render.MediaRenderer;
 import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
-import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.SearchIcon;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 
 /**
  * A panel for rendering a list of {@link ToolResponseAttachment}s.
@@ -123,16 +121,11 @@ public class ToolResponseAttachmentsPanel extends JPanel {
         // Label and Info
         JLabel infoLabel = new JLabel("Attachment (" + mimeType + "): " + TextUtils.formatSize(data.length));
         
-        JButton viewButton = new JButton(new SearchIcon(14));
-        viewButton.setToolTipText("View Attachment");
-        viewButton.setMargin(new Insets(0, 0, 0, 0));
-        viewButton.setFocusable(false);
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+        JButton viewButton = config.createSquareButton(ActionIconKey.SEARCH, 14, "View Attachment");
         viewButton.addActionListener(e -> viewAttachment(attachment));
 
-        JButton deleteButton = new JButton(new DeleteIcon(14));
-        deleteButton.setToolTipText("Remove Attachment");
-        deleteButton.setMargin(new Insets(0, 0, 0, 0));
-        deleteButton.setFocusable(false);
+        JButton deleteButton = config.createSquareButton(ActionIconKey.DELETE, 14, "Remove Attachment");
         deleteButton.addActionListener(e -> response.removeAttachment(attachment));
 
         // Add them to the first row: Label and View on the left, Delete on the far right
