@@ -93,6 +93,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
           BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "BASE_VER=$BASE_VER" >> $GITHUB_ENV
           echo "================================================================="
           echo " [INFO] Starting One-Pass Reactor Build (Version: $BASE_VER)"
           echo " [INFO] Release Mode: $IS_RELEASE | Deploy to Central: ${{ inputs.deploy_central }}"
@@ -358,8 +359,11 @@ jobs:
 
       - name: Prepare Website & Merge Catalogs
         run: |
+          BASE_VER=${BASE_VER:-$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)}
           mkdir -p _site
           cp -r anahata-asi-web/src/main/resources/web/* _site/
+          mkdir -p _site/apidocs
+          cp anahata-asi-web/src/main/resources/web/apidocs/index.html _site/apidocs/index.html
 
           # 1. Restore historical Javadoc vault
           mkdir -p _site/apidocs
