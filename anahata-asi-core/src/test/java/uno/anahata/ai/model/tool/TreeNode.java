@@ -31,7 +31,7 @@ public class TreeNode {
     /**
      * The textual data payload held by this node.
      */
-    @Schema(description = "The data held by this node.", required = true)
+    @Schema(description = "The data held by this node.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String data;
 
     /**

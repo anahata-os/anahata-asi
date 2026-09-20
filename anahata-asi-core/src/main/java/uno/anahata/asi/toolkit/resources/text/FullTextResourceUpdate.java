@@ -27,7 +27,7 @@ public class FullTextResourceUpdate extends AbstractTextResourceWrite {
     /**
      * The full new content for the file.
      */
-    @Schema(description = "The new content for the file.", required = true)
+    @Schema(description = "The new content for the file.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String newContent;
 
 

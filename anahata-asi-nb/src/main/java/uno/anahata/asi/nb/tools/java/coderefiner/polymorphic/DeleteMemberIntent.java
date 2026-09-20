@@ -27,7 +27,7 @@ import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 public class DeleteMemberIntent extends CodeRefinementIntentPolymorphic {
 
     /** The target member FQN. */
-    @Schema(description = "The ABSOLUTE FQN of the member to delete.", required = true)
+    @Schema(description = "The ABSOLUTE FQN of the member to delete.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String memberFqn;
 
     /**

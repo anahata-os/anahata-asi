@@ -24,7 +24,7 @@ public class LineInsertion extends AbstractLineEdit {
     /**
      * The 1-based line number before which the content will be inserted.
      */
-    @Schema(description = "The 1-based line number before which the content will be inserted.", required = true)
+    @Schema(description = "The 1-based line number before which the content will be inserted.", requiredMode = Schema.RequiredMode.REQUIRED)
     private int atLine;
 
     /**
@@ -34,7 +34,7 @@ public class LineInsertion extends AbstractLineEdit {
      * absorption during the application phase.
      * </p>
      */
-    @Schema(description = "The new lines to insert.", required = true)
+    @Schema(description = "The new lines to insert.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String content;
 
     /**

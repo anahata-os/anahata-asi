@@ -70,7 +70,7 @@ public class CodeRefinementIntent implements Serializable {
      * The type of structural modification to perform (INSERT, UPDATE, DELETE,
      * MOVE).
      */
-    @Schema(description = "The operation type.", required = true)
+    @Schema(description = "The operation type.", requiredMode = Schema.RequiredMode.REQUIRED)
     private Type type;
 
     /**

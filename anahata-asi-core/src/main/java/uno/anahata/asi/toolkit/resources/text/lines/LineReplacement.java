@@ -27,14 +27,14 @@ public class LineReplacement extends AbstractLineEdit {
      * The 1-based line number of the resource in the RAG message where the
      * replacement starts (Inclusive).
      */
-    @Schema(description = "The 1-based line number of the resource in the RAG message where the replacement starts (Inclusive).", required = true)
+    @Schema(description = "The 1-based line number of the resource in the RAG message where the replacement starts (Inclusive).", requiredMode = Schema.RequiredMode.REQUIRED)
     private int startLine;
 
     /**
      * The 1-based line number of the resource in the RAG message where the
      * replacement ends (Inclusive).
      */
-    @Schema(description = "The 1-based line number of the resource in the RAG message where the replacement ends (Inclusive).", required = true)
+    @Schema(description = "The 1-based line number of the resource in the RAG message where the replacement ends (Inclusive).", requiredMode = Schema.RequiredMode.REQUIRED)
     private int endLine;
 
     /**
@@ -44,7 +44,7 @@ public class LineReplacement extends AbstractLineEdit {
      * newlines are processed structurally to ensure proper absorption.
      * </p>
      */
-    @Schema(description = "The new content for the [startLine, endLine] range of the resource in the RAG message. It can have as many lines as you want. Do not include surrounding anchors because that is not the way this tool works.", required = true)
+    @Schema(description = "The new content for the [startLine, endLine] range of the resource in the RAG message. It can have as many lines as you want. Do not include surrounding anchors because that is not the way this tool works.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String content;
 
     /**

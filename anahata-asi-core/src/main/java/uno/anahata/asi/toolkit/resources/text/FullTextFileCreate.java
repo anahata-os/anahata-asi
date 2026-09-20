@@ -27,13 +27,13 @@ public class FullTextFileCreate {
     /**
      * The absolute path to the file to be created.
      */
-    @Schema(description = "The absolute path to the file.", required = true)
+    @Schema(description = "The absolute path to the file.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String path;
 
     /**
      * The full initial content for the new file.
      */
-    @Schema(description = "The initial content for the file.", required = true)
+    @Schema(description = "The initial content for the file.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String content;
 
     /**

@@ -57,7 +57,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     /**
      * The linear list of structural changes to apply.
      */
-    @Schema(description = "The linear list of structural changes to apply.", required = true)
+    @Schema(description = "The linear list of structural changes to apply.", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<CodeRefinementIntent> intents = new ArrayList<>();
 
     /**

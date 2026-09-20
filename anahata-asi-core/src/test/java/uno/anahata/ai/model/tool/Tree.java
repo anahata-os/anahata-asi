@@ -31,7 +31,7 @@ public class Tree {
     /**
      * The name of this tree. Used to verify required-field logic in the schema.
      */
-    @Schema(description = "The name of this tree.", required = true)
+    @Schema(description = "The name of this tree.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
     
     /**

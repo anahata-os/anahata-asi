@@ -23,13 +23,13 @@ public class LineDeletion extends AbstractLineEdit {
     /**
      * The 1-based line number where the deletion sequence begins (Inclusive).
      */
-    @Schema(description = "The 1-based line number where deletion starts (Inclusive).", required = true)
+    @Schema(description = "The 1-based line number where deletion starts (Inclusive).", requiredMode = Schema.RequiredMode.REQUIRED)
     private int startLine;
 
     /**
      * The 1-based line number where the deletion sequence ends (Inclusive).
      */
-    @Schema(description = "The 1-based line number where deletion ends (Inclusive).", required = true)
+    @Schema(description = "The 1-based line number where deletion ends (Inclusive).", requiredMode = Schema.RequiredMode.REQUIRED)
     private int endLine;
 
     /**
@@ -40,7 +40,7 @@ public class LineDeletion extends AbstractLineEdit {
      * file integrity.
      * </p>
      */
-    @Schema(description = "The number of lines you expect to delete. Used as a checksum.", required = true)
+    @Schema(description = "The number of lines you expect to delete. Used as a checksum.", requiredMode = Schema.RequiredMode.REQUIRED)
     private int expectedCount;
 
     /**

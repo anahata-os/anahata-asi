@@ -54,7 +54,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     /**
      * The ordered list of structural modifications to apply.
      */
-    @Schema(description = "The ordered list of member-level modifications to apply atomically.", required = true)
+    @Schema(description = "The ordered list of member-level modifications to apply atomically.", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<CodeRefinementIntent> intents = new ArrayList<>();
 
     /**

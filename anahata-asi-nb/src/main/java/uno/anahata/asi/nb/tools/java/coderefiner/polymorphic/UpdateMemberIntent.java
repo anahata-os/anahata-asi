@@ -33,7 +33,7 @@ import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 public class UpdateMemberIntent extends CodeRefinementIntentPolymorphic {
 
     /** The absolute FQN of the structural member to target for the update. */
-    @Schema(description = "The ABSOLUTE FQN of the member to update (e.g. 'com.foo.Bar.myMethod()').", required = true)
+    @Schema(description = "The ABSOLUTE FQN of the member to update (e.g. 'com.foo.Bar.myMethod()').", requiredMode = Schema.RequiredMode.REQUIRED)
     private String memberFqn;
 
     /** The optional new member declaration/signature to replace the old signature. */

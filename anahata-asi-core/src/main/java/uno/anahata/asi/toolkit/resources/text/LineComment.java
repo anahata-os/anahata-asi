@@ -24,12 +24,12 @@ public class LineComment {
     /**
      * The 1-based line number that this comment refers to.
      */
-    @Schema(description = "The 1-based line number.", required = true)
+    @Schema(description = "The 1-based line number.", requiredMode = Schema.RequiredMode.REQUIRED)
     private int lineNumber;
 
     /**
      * The text content of the comment.
      */
-    @Schema(description = "The comment text.", required = true)
+    @Schema(description = "The comment text.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String comment;
 }

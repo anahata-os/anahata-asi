@@ -21,7 +21,7 @@ public abstract class AbstractLineEdit {
      * feedback in the UI during the resource application lifecycle.
      * </p>
      */
-    @Schema(description = "The reason for this specific change.", required = true)
+    @Schema(description = "The reason for this specific change.", requiredMode = Schema.RequiredMode.REQUIRED)
     protected String reason;
 
     /**

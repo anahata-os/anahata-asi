@@ -24,7 +24,7 @@ public class TextReplacement {
     /**
      * The exact string to be replaced.
      */
-    @Schema(description = "The exact string to be replaced.", required = true)
+    @Schema(description = "The exact string to be replaced.", requiredMode = Schema.RequiredMode.REQUIRED)
     private String target;
 
     /**

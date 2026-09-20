@@ -40,7 +40,7 @@ public class CodeRefinementBatchPolymorphic extends AbstractTextResourceWrite {
     /**
      * The structural change intents.
      */
-    @Schema(description = "The list of structural changes to apply, in order. Note the intents will be mapped to one of the listed java types", required = true)
+    @Schema(description = "The list of structural changes to apply, in order. Note the intents will be mapped to one of the listed java types", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<CodeRefinementIntentPolymorphic> intents = new ArrayList<>();
 
     /**

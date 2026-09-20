@@ -30,14 +30,14 @@ public abstract class AbstractTextResourceWrite {
     /**
      * The absolute path to the file to be updated.
      */
-    @Schema(description = "The resource uuid .", required = true)
+    @Schema(description = "The resource uuid .", requiredMode = Schema.RequiredMode.REQUIRED)
     protected String resourceUuid;
 
     /**
      * Optimistic locking: the expected last modified timestamp of the file on
      * disk.
      */
-    @Schema(description = "Optimistic locking: the expected last modified timestamp of the file on disk.", required = true)
+    @Schema(description = "Optimistic locking: the expected last modified timestamp of the file on disk.", requiredMode = Schema.RequiredMode.REQUIRED)
     protected long lastModified;
 
     /**

@@ -29,7 +29,7 @@ import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
 public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
 
     /** The full member declaration signature. */
-    @Schema(description = "The full member declaration (e.g. '@Override public void foo()' or 'private String name').", required = true)
+    @Schema(description = "The full member declaration (e.g. '@Override public void foo()' or 'private String name').", requiredMode = Schema.RequiredMode.REQUIRED)
     private String declaration;
 
     /** The body code or initializer expression. */
@@ -37,7 +37,7 @@ public class InsertMemberIntent extends CodeRefinementIntentPolymorphic {
     private String body;
 
     /** The relative position of insertion. */
-    @Schema(description = "Position relative to the anchor member.", required = true)
+    @Schema(description = "Position relative to the anchor member.", requiredMode = Schema.RequiredMode.REQUIRED)
     private RelativePosition position;
 
     /** The anchor member name for relative positions. */

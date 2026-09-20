@@ -37,7 +37,7 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
     /**
      * The list of replacements to perform in this file.
      */
-    @Schema(description = "The list of replacements to perform in this file.", required = true)
+    @Schema(description = "The list of replacements to perform in this file.", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<TextReplacement> replacements;
 
     /**
