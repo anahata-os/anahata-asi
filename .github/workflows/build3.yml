@@ -110,6 +110,8 @@ jobs:
           echo " [INFO] Generating Platform Core Javadoc (Excluding IDE Plugins)..."
           echo "================================================================="
           mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -ntp
+          mkdir -p "docs/apidocs/${BASE_VER}/apidocs"
+          cp -r target/reports/apidocs/* "docs/apidocs/${BASE_VER}/apidocs/"
 
           echo "================================================================="
           echo " [INFO] Generating NetBeans Studio Plugin Javadoc..."
@@ -378,6 +380,7 @@ jobs:
 
           # 2. Copy freshly generated Javadocs from parent
           if [ -d "docs/apidocs" ]; then
+            rm -rf "_site/apidocs/${BASE_VER}"
             cp -r docs/apidocs/* _site/apidocs/
           fi
 
