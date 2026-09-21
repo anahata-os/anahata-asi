@@ -12,8 +12,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.netbeans.api.autoupdate.InstallSupport;
 import org.netbeans.api.autoupdate.OperationContainer;
 import org.netbeans.api.autoupdate.OperationSupport;
+import org.netbeans.api.autoupdate.OperationSupport.Restarter;
 import org.netbeans.api.autoupdate.UpdateElement;
 import org.netbeans.api.autoupdate.UpdateManager;
 import org.netbeans.api.autoupdate.UpdateUnit;
@@ -209,28 +211,45 @@ public final class NetBeansModuleUtils {
      */
     @AgiTool("Installs and activates the NetBeans JavaFX runtime support programmatically on demand.")
     public static String installJavaFxSupport() throws Exception {
-        
         UpdateUnit unit = UpdateManager.getDefault().getUpdateUnits(UpdateManager.TYPE.MODULE)
                 .stream()
-                .filter(u -> "org.netbeans.modules.javafx2.kit".equals(u.getCodeName()))
+                .filter(u -> u.getCodeName().startsWith("org.netbeans.libs.javafx."))
                 .findFirst()
-                .orElseThrow(() -> new AgiToolException("JavaFX 2 Support module (org.netbeans.modules.javafx2.kit) not found in NetBeans."));
+                .orElseThrow(() -> new AgiToolException("JavaFX runtime implementation module not found in NetBeans update centers."));
 
         UpdateElement installed = unit.getInstalled();
-        if (installed == null) {
-            throw new AgiToolException("JavaFX 2 Support is not installed on disk.");
-        }
-        if (installed.isEnabled()) {
-            return "JavaFX support is already active. Version: " + NetBeansModuleUtils.getJavaFxVersion();
-        }
-
-        OperationContainer<OperationSupport> container = OperationContainer.createForEnable();
-        OperationContainer.OperationInfo<OperationSupport> info = container.add(installed);
-        if (info != null) {
-            container.add(info.getRequiredElements());
-            OperationSupport support = container.getSupport();
-            support.doOperation(null);
-            return "JavaFX support successfully activated! Version: " + NetBeansModuleUtils.getJavaFxVersion();
+        if (installed != null) {
+            if (installed.isEnabled()) {
+                return "JavaFX support is already active. Version: " + NetBeansModuleUtils.getJavaFxVersion();
+            }
+            OperationContainer<OperationSupport> container = OperationContainer.createForEnable();
+            OperationContainer.OperationInfo<OperationSupport> info = container.add(installed);
+            if (info != null) {
+                container.add(info.getRequiredElements());
+                OperationSupport support = container.getSupport();
+                Restarter restarter = support.doOperation(null);
+                if (restarter != null) {
+                    support.doRestartLater(restarter);
+                    return "JavaFX support activated and will take effect after NetBeans restart. Version: " + NetBeansModuleUtils.getJavaFxVersion();
+                }
+                return "JavaFX support successfully activated! Version: " + NetBeansModuleUtils.getJavaFxVersion();
+            }
+        } else if (!unit.getAvailableUpdates().isEmpty()) {
+            UpdateElement toInstall = unit.getAvailableUpdates().get(0);
+            OperationContainer<InstallSupport> container = OperationContainer.createForInstall();
+            OperationContainer.OperationInfo<InstallSupport> info = container.add(toInstall);
+            if (info != null) {
+                container.add(info.getRequiredElements());
+                InstallSupport support = container.getSupport();
+                InstallSupport.Validator validator = support.doDownload(null, false, true);
+                InstallSupport.Installer installer = support.doValidate(validator, null);
+                Restarter restarter = support.doInstall(installer, null);
+                if (restarter != null) {
+                    support.doRestartLater(restarter);
+                    return "JavaFX runtime support installed and will be activated after the next NetBeans restart.";
+                }
+                return "JavaFX runtime support activated successfully! Version: " + NetBeansModuleUtils.getJavaFxVersion();
+            }
         }
         return "Unable to enable JavaFX support.";
     }

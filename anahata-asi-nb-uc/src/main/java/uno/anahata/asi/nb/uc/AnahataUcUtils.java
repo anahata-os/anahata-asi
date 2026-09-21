@@ -11,6 +11,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JOptionPane;
 import org.netbeans.api.autoupdate.InstallSupport;
 import org.netbeans.api.autoupdate.OperationContainer;
 import org.netbeans.api.autoupdate.OperationSupport;
@@ -77,11 +78,6 @@ public final class AnahataUcUtils {
      * Code name base for the standalone update center plugin module.
      */
     public static final String UC_CODE_NAME = "uno.anahata.asi.nb.uc";
-
-    /**
-     * Code name base for JavaFX runtime kit module.
-     */
-    public static final String JAVAFX_KIT_CODE_NAME = "org.netbeans.modules.javafx2.kit";
 
     /**
      * Universal update center catalog URL.
@@ -640,9 +636,24 @@ public final class AnahataUcUtils {
         Restarter restarter = support.doInstall(installer, null);
 
         if (restarter != null) {
-            support.doRestartLater(restarter);
-            return "Anahata ASI Studio v" + element.getSpecificationVersion()
-                    + " installed and will be activated after the next NetBeans restart.";
+            int choice = JOptionPane.showOptionDialog(
+                    null,
+                    "Anahata ASI Studio v" + element.getSpecificationVersion() + " has been installed.\nNetBeans must be restarted to complete activation.\n\nWould you like to restart NetBeans now?",
+                    "Restart Required",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.QUESTION_MESSAGE,
+                    null,
+                    new Object[]{"Restart Now", "Restart Later"},
+                    "Restart Now"
+            );
+            if (choice == JOptionPane.YES_OPTION) {
+                support.doRestart(restarter, null);
+                return "Restarting NetBeans...";
+            } else {
+                support.doRestartLater(restarter);
+                return "Anahata ASI Studio v" + element.getSpecificationVersion()
+                        + " installed and will be activated after the next NetBeans restart.";
+            }
         }
 
         return "Anahata ASI Studio v" + element.getSpecificationVersion() + " installed successfully!";
@@ -818,20 +829,39 @@ public final class AnahataUcUtils {
 
         UpdateUnit unit = UpdateManager.getDefault().getUpdateUnits(UpdateManager.TYPE.MODULE)
                 .stream()
-                .filter(u -> JAVAFX_KIT_CODE_NAME.equals(u.getCodeName()))
+                .filter(u -> u.getCodeName().startsWith("org.netbeans.libs.javafx."))
                 .findFirst()
-                .orElseThrow(() -> new Exception("JavaFX 2 Support module (org.netbeans.modules.javafx2.kit) not found."));
+                .orElseThrow(() -> new Exception("JavaFX runtime implementation module not found in NetBeans update centers."));
 
         UpdateElement installed = unit.getInstalled();
         if (installed != null) {
             if (installed.isEnabled()) {
-                return "JavaFX support is already active.";
+                return "JavaFX runtime support is already active.";
             }
             OperationContainer<OperationSupport> container = OperationContainer.createForEnable();
             OperationContainer.OperationInfo<OperationSupport> info = container.add(installed);
             if (info != null) {
                 container.add(info.getRequiredElements());
-                container.getSupport().doOperation(null);
+                Restarter restarter = container.getSupport().doOperation(null);
+                if (restarter != null) {
+                    int choice = JOptionPane.showOptionDialog(
+                            null,
+                            "JavaFX runtime support has been activated.\nNetBeans must be restarted to complete activation.\n\nWould you like to restart NetBeans now?",
+                            "Restart Required",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            new Object[]{"Restart Now", "Restart Later"},
+                            "Restart Now"
+                    );
+                    if (choice == JOptionPane.YES_OPTION) {
+                        container.getSupport().doRestart(restarter, null);
+                        return "Restarting NetBeans...";
+                    } else {
+                        container.getSupport().doRestartLater(restarter);
+                        return "JavaFX runtime support activated and will be available after the next NetBeans restart.";
+                    }
+                }
                 return "JavaFX runtime support successfully activated!";
             }
         } else if (!unit.getAvailableUpdates().isEmpty()) {
@@ -845,8 +875,23 @@ public final class AnahataUcUtils {
                 InstallSupport.Installer installer = support.doValidate(validator, null);
                 Restarter restarter = support.doInstall(installer, null);
                 if (restarter != null) {
-                    support.doRestartLater(restarter);
-                    return "JavaFX runtime support installed and will be activated after the next NetBeans restart.";
+                    int choice = JOptionPane.showOptionDialog(
+                            null,
+                            "JavaFX runtime support has been installed.\nNetBeans must be restarted to complete activation.\n\nWould you like to restart NetBeans now?",
+                            "Restart Required",
+                            JOptionPane.YES_NO_OPTION,
+                            JOptionPane.QUESTION_MESSAGE,
+                            null,
+                            new Object[]{"Restart Now", "Restart Later"},
+                            "Restart Now"
+                    );
+                    if (choice == JOptionPane.YES_OPTION) {
+                        support.doRestart(restarter, null);
+                        return "Restarting NetBeans...";
+                    } else {
+                        support.doRestartLater(restarter);
+                        return "JavaFX runtime support installed and will be activated after the next NetBeans restart.";
+                    }
                 }
                 return "JavaFX runtime support activated successfully!";
             }
