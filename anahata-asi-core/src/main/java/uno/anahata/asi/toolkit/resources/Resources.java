@@ -109,23 +109,31 @@ public class Resources extends AnahataToolkit {
             @AgiToolParam(value = "Initial viewport settings for text resources. If not provided, it uses the system default viewport (0-128K chars, 1024 chars col width incluedLines=true)", required = false) TextViewportSettings initialSettings) throws Exception {
 
         List<Resource> toRegister = new ArrayList<>();
+        List<String> toSetProvidingToTrue = new ArrayList<>();
         List<String> ids = new ArrayList<>();
         ResourceManager manager = getAgi().getResourceManager();
 
         for (String uriString : uriStrings) {
+            log("Loading " + uriString);
             Optional<Resource> existing = manager.findByUri(uriString);
             if (existing.isPresent()) {
+                log("  Resource Already registered: " + existing.get().getName() + " " + existing.get().getDescription());
                 if (initialSettings != null && existing.get().getView() instanceof TextView tv) {
+                    log("  Updating viewport for already registered resource with given Viewport settings for " + existing.get().getName());
                     tv.getViewport().setSettings(initialSettings.copy());
-                }
+                } 
+                if (!existing.get().isProviding()) {
+                    log("  Updating providing state to true for already registered resource");
+                    toSetProvidingToTrue.add(existing.get().getId());
+                } 
                 ids.add(existing.get().getId());
                 continue;
             }
 
             URI uri = URI.create(uriString);
             ResourceHandle handle = getAgi().getConfig().createResourceHandle(uri);
+            log("Created handle " + handle);
             Resource resource = new Resource(handle);
-
             if (initialSettings != null) {
                 resource.setView(new TextView(resource, initialSettings.copy()));
             }
@@ -133,8 +141,16 @@ public class Resources extends AnahataToolkit {
             toRegister.add(resource);
             ids.add(resource.getId());
         }
-
+        
+        log("Total to register: " + toRegister.size());
         manager.registerAll(toRegister, "Resource Loaded by " + getActor());
+        log(toRegister.size() + " resources registered");
+        if (!toSetProvidingToTrue.isEmpty()) {
+            log("Total Resources that were already registered but in not providing state: " + toSetProvidingToTrue.size() + ". Marking them as providing=true");
+            manager.setProviding(toSetProvidingToTrue, true);
+            log(toRegister.size() + " resources that were already registered have been switched to providing = true");
+        }
+        
         return ids;
     }
 
@@ -231,15 +247,19 @@ public class Resources extends AnahataToolkit {
             if (matches.size() > 1) {
                 throw new AgiToolException("Cannot unload by URI. Multiple resources found for URI: " + uri);
             } else if (matches.size() == 1) {
+                log("Resource found for " + uri + " uuid: " + matches.get(0).getId());
                 uuidsToUnload.add(matches.get(0).getId());
             } else {
-                log.warn("No resource found in context for URI: {}", uri);
+                error("No resource found in context for URI: " + uri);
             }
         }
         
         if (!uuidsToUnload.isEmpty()) {
             unloadResources(uuidsToUnload);
+        } else {
+            error("Nothing to unload");
         }
+        
     }
 
     /**
