@@ -811,6 +811,18 @@
                     </archive>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <offlineLinks>
+                        <offlineLink>
+                            <url>../apidocs/</url>
+                            <location>${maven.multiModuleProjectDirectory}/target/reports/apidocs</location>
+                        </offlineLink>
+                    </offlineLinks>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>
