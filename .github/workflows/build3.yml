@@ -162,9 +162,9 @@ jobs:
             echo "---------------------------------------------------------"
 
             rm -rf anahata-asi-nb/target/*.nbm anahata-asi-nb/target/netbeans_site
-            mvn versions:set -DnewVersion="$stamped_ver" -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
-            mvn install -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
-            mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="$dist_base" -ntp
+            mvn -f anahata-asi-nb/pom.xml versions:set -DnewVersion="$stamped_ver" -DgenerateBackupPoms=false -ntp
+            mvn -f anahata-asi-nb/pom.xml install -Dnetbeans.version="RELEASE$target" -ntp
+            mvn -f anahata-asi-nb/pom.xml nbm:autoupdate -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="$dist_base" -ntp
 
             if [ "$IS_RELEASE" == "true" ] && [ "${{ inputs.deploy_central }}" == "true" ]; then
               local should_deploy="false"
@@ -175,7 +175,7 @@ jobs:
               fi
               if [ "$should_deploy" == "true" ]; then
                 echo "[INFO] Deploying NetBeans $major ASI Studio ($stamped_ver) to Maven Central..."
-                mvn deploy -pl :anahata-asi-nb -P release -Dnetbeans.version="RELEASE$target" -ntp
+                mvn -f anahata-asi-nb/pom.xml deploy -P release -Dnetbeans.version="RELEASE$target" -ntp
               fi
             fi
 
@@ -219,7 +219,7 @@ jobs:
           echo "================================================================="
           echo " [INFO] Packaging anahata-asi-nb-uc NBM for GitHub Releases..."
           echo "================================================================="
-          mvn clean install -pl :anahata-asi-nb-uc -am -ntp
+          mvn -f anahata-asi-nb-uc/pom.xml clean install -ntp
           cp anahata-asi-nb-uc/target/*.nbm staging-binaries/
 
           # 2. ONLY on official tagged releases with release_nb_uc selected, generate and stage prod updates.xml
@@ -228,10 +228,10 @@ jobs:
             mkdir -p staging-catalogs/nb
             if [ "${{ inputs.deploy_central }}" == "true" ]; then
               echo "[INFO] Staging anahata-asi-nb-uc catalog with Maven Central distribution base..."
-              mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
+              mvn -f anahata-asi-nb-uc/pom.xml nbm:autoupdate -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
             else
               echo "[INFO] Staging anahata-asi-nb-uc catalog with GitHub Releases distribution base..."
-              mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/v${VERSION}" -ntp
+              mvn -f anahata-asi-nb-uc/pom.xml nbm:autoupdate -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/v${VERSION}" -ntp
             fi
             cp anahata-asi-nb-uc/target/netbeans_site/updates.xml staging-catalogs/nb/updates.xml
           fi
