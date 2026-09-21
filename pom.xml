@@ -349,10 +349,6 @@
                         <detectJavaApiLink>true</detectJavaApiLink>
                         <detectOfflineLinks>true</detectOfflineLinks>
                         <show>private</show>
-                        <javadocDirectory>${maven.multiModuleProjectDirectory}/src/main/javadoc</javadocDirectory>
-                        <addStylesheets>
-                            <addStylesheet>anahata-barca-theme.css</addStylesheet>
-                        </addStylesheets>
 
                         <top>
                             <![CDATA[
@@ -392,6 +388,10 @@
                             <phase>site</phase>
                             <inherited>false</inherited>
                             <configuration>
+                                <javadocDirectory>${maven.multiModuleProjectDirectory}/src/main/javadoc</javadocDirectory>
+                                <addStylesheets>
+                                    <addStylesheet>anahata-barca-theme.css</addStylesheet>
+                                </addStylesheets>
                                 <outputDirectory>${maven.multiModuleProjectDirectory}/docs/apidocs/${project.version}/apidocs</outputDirectory>
                             </configuration>
                         </execution>

@@ -295,6 +295,10 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
+                    <javadocDirectory>${project.parent.basedir}/src/main/javadoc</javadocDirectory>
+                    <addStylesheets>
+                        <addStylesheet>anahata-barca-theme.css</addStylesheet>
+                    </addStylesheets>
                     <offlineLinks>
                         <offlineLink>
                             <url>../apidocs/</url>
