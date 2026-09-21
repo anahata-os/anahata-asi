@@ -161,6 +161,7 @@ jobs:
             echo " [INFO] Distribution Base: $dist_base"
             echo "---------------------------------------------------------"
 
+            rm -rf anahata-asi-nb/target/*.nbm anahata-asi-nb/target/netbeans_site
             mvn versions:set -DnewVersion="$stamped_ver" -DgenerateBackupPoms=false -pl :anahata-asi-nb -ntp
             mvn install -pl :anahata-asi-nb -ntp -Dnetbeans.version="RELEASE$target"
             mvn nbm:autoupdate -pl :anahata-asi-nb -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="$dist_base" -ntp
@@ -206,28 +207,35 @@ jobs:
       # ---------------------------------------------------------------------
       # 3. STANDALONE UPDATE CENTER PLUGIN (anahata-asi-nb-uc)
       # ---------------------------------------------------------------------
-      - name: Build, Deploy & Generate Update Center Catalog
-        if: env.IS_RELEASE == 'true' && inputs.release_nb_uc == true
+      - name: Build & Package Standalone Update Center NBM
         env:
           MAVEN_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
           MAVEN_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "[INFO] Packaging anahata-asi-nb-uc ($VERSION)..."
-          mvn clean install -pl :anahata-asi-nb-uc -am -ntp
-          
-          if [ "${{ inputs.deploy_central }}" == "true" ]; then
-            echo "[INFO] Staging anahata-asi-nb-uc catalog with Maven Central distribution base..."
-            mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
-          else
-            echo "[INFO] Staging anahata-asi-nb-uc catalog with GitHub Releases distribution base..."
-            mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/v${VERSION}" -ntp
-          fi
+          mkdir -p staging-binaries
 
-          mkdir -p staging-catalogs/nb staging-binaries
-          cp anahata-asi-nb-uc/target/*.nbm staging-binaries/ || true
-          cp anahata-asi-nb-uc/target/netbeans_site/updates.xml staging-catalogs/nb/updates.xml
+          # 1. In all builds (including snapshots), compile and stage the NBM for GitHub Releases
+          echo "================================================================="
+          echo " [INFO] Packaging anahata-asi-nb-uc NBM for GitHub Releases..."
+          echo "================================================================="
+          mvn clean install -pl :anahata-asi-nb-uc -am -ntp
+          cp anahata-asi-nb-uc/target/*.nbm staging-binaries/
+
+          # 2. ONLY on official tagged releases with release_nb_uc selected, generate and stage prod updates.xml
+          if [ "$IS_RELEASE" == "true" ] && [ "${{ inputs.release_nb_uc }}" == "true" ]; then
+            VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+            mkdir -p staging-catalogs/nb
+            if [ "${{ inputs.deploy_central }}" == "true" ]; then
+              echo "[INFO] Deploying anahata-asi-nb-uc to Maven Central..."
+              mvn deploy -pl :anahata-asi-nb-uc -P release -ntp
+              mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
+            else
+              echo "[INFO] Staging anahata-asi-nb-uc catalog with GitHub Releases distribution base..."
+              mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://github.com/anahata-os/anahata-asi/releases/download/v${VERSION}" -ntp
+            fi
+            cp anahata-asi-nb-uc/target/netbeans_site/updates.xml staging-catalogs/nb/updates.xml
+          fi
 
       # ---------------------------------------------------------------------
       # 4. INTELLIJ IDEA PLUGIN PACKAGE (.zip)
@@ -390,7 +398,7 @@ jobs:
 
           echo "asi.anahata.uno" > _site/CNAME
 
-          # 3. Restore existing update catalogs from gh-pages
+          # 3. Restore existing update catalogs from gh-pages & sanitize root catalog
           if [ -d "temp-gh-pages/nb" ]; then
             cp -r temp-gh-pages/nb _site/
           fi
