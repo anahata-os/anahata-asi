@@ -51,6 +51,7 @@ import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.SwingAgiConfig.UITheme;
 import uno.anahata.asi.swing.components.AdjustingTabPane;
 import uno.anahata.asi.swing.components.CodeHyperlink;
+import uno.anahata.asi.swing.components.WrapLayout;
 import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
@@ -197,7 +198,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         // --- Arguments Panel (Top) ---
         argsContainer = new JPanel(new BorderLayout());
         argsContainer.setOpaque(false);
-        getCentralContainer().add(argsContainer, "hidemode 3, push, grow, wrap");
+        getCentralContainer().add(argsContainer, "hidemode 3, push, growx, wmin 0, wrap");
 
         // --- Response Panel (Middle) ---
         resultsTabbedPane = new AdjustingTabPane(150);
@@ -260,11 +261,31 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         getCentralContainer().add(responseTitledPanel, "hidemode 3, growx, wrap");
 
         // --- Bottom Control Bar ---
-        JPanel controlBar = new JPanel(new MigLayout("fillx, insets 5", "[][grow][]", "[][]"));
+        JPanel controlBar = new JPanel(new BorderLayout(0, 4));
         controlBar.setOpaque(false);
-        controlBar.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, theme.getChromeBorder()));
+        controlBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, theme.getChromeBorder()),
+                BorderFactory.createEmptyBorder(6, 4, 4, 4)
+        ));
 
-        // Row 1: Permission (Left) and Feedback (Right, Large)
+        // 1. Full-width feedback field at the top
+        feedbackField = new JTextField();
+        PromptSupport.setPrompt("Your comments to the model regarding this tool call", feedbackField);
+        PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, feedbackField);
+        feedbackField.getDocument().addDocumentListener(new AnyChangeDocumentListener(() -> {
+            getPart().getResponse().setUserFeedback(feedbackField.getText());
+        }));
+        controlBar.add(feedbackField, BorderLayout.NORTH);
+
+        // 2. Center panel with two distinct wrapping rows
+        JPanel centerPanel = new JPanel(new MigLayout("fillx, insets 0", "[grow, fill]", "[]2[]"));
+        centerPanel.setOpaque(false);
+
+        // Row A: Permission, Status, Json (Left-aligned WrapLayout)
+        JPanel controlsRow = new JPanel(new WrapLayout(FlowLayout.LEFT, 8, 4));
+        controlsRow.setOpaque(false);
+
+        // Permission combo
         permissionCombo = new JComboBox<>(new ToolPermission[]{
             ToolPermission.PROMPT, ToolPermission.APPROVE_ALWAYS, ToolPermission.DENY
         });
@@ -278,18 +299,13 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
         });
 
-        feedbackField = new JTextField();
-        PromptSupport.setPrompt("Your comments to the model regarding this tool call", feedbackField);
-        PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, feedbackField);
-        feedbackField.getDocument().addDocumentListener(new AnyChangeDocumentListener(() -> {
-            getPart().getResponse().setUserFeedback(feedbackField.getText());
-        }));
+        JPanel permPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        permPanel.setOpaque(false);
+        permPanel.add(new JLabel("Permission:"));
+        permPanel.add(permissionCombo);
+        controlsRow.add(permPanel);
 
-        controlBar.add(new JLabel("Permission:"), "split 2");
-        controlBar.add(permissionCombo);
-        controlBar.add(feedbackField, "growx, pushx, span 2, wrap");
-
-        // Row 2: Status and Run (Right)
+        // Status combo and progress bar
         statusCombo = new JComboBox<>(ToolExecutionStatus.values());
         statusCombo.setRenderer(new ToolExecutionStatusRenderer());
         statusCombo.addActionListener(e -> {
@@ -301,40 +317,50 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
             statusCombo.setForeground(SwingAgiConfig.getColor(status));
         });
 
+        toolProgressBar = new JProgressBar();
+        toolProgressBar.setIndeterminate(true);
+        toolProgressBar.setPreferredSize(new Dimension(100, 16));
+        toolProgressBar.setVisible(false);
+
+        JPanel statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        statusPanel.setOpaque(false);
+        statusPanel.add(new JLabel("Status:"));
+        statusPanel.add(statusCombo);
+        statusPanel.add(toolProgressBar);
+        controlsRow.add(statusPanel);
+
+        // Json Link (capitalized 'Json')
+        jsonLink = new CodeHyperlink("Json",
+                () -> "Tool Response: " + getPart().getToolName(),
+                () -> JacksonUtils.prettyPrint(getPart().getResponse()),
+                "json");
+        controlsRow.add(jsonLink);
+
+        centerPanel.add(controlsRow, "growx, wrap");
+
+        // Row B: Action Buttons (Right-aligned WrapLayout)
+        JPanel buttonsRow = new JPanel(new WrapLayout(FlowLayout.RIGHT, 8, 4));
+        buttonsRow.setOpaque(false);
+
         declineButton = new JButton("Decline", agiConfig.getActionIcon(ActionIconKey.CANCEL, 16));
         declineButton.setToolTipText("Set status to DECLINED and collapses the tool call");
         declineButton.addActionListener(e -> {
             getPart().getResponse().decline();
             getPart().setExpanded(false);
         });
+        buttonsRow.add(declineButton);
 
         revertButton = new JButton("Clear response", agiConfig.getActionIcon(ActionIconKey.DELETE, 16));
         revertButton.setToolTipText("Clear execution results, erros and logs and sets the status to DECLINED");
         revertButton.addActionListener(e -> getPart().getResponse().decline());
+        buttonsRow.add(revertButton);
 
         runButton = new JButton("Run", agiConfig.getActionIcon(ActionIconKey.SEND, 16));
+        buttonsRow.add(runButton);
 
-        toolProgressBar = new JProgressBar();
-        toolProgressBar.setIndeterminate(true);
-        toolProgressBar.setPreferredSize(new Dimension(100, 16));
-        toolProgressBar.setVisible(false);
+        centerPanel.add(buttonsRow, "growx");
 
-        jsonLink = new CodeHyperlink("json",
-                () -> "Tool Response: " + getPart().getToolName(),
-                () -> JacksonUtils.prettyPrint(getPart().getResponse()),
-                "json");
-
-        controlBar.add(new JLabel("Status:"), "split 2");
-        controlBar.add(statusCombo);
-        controlBar.add(toolProgressBar, "gapleft 10");
-        controlBar.add(declineButton, "right, skip 1, split 3");
-        controlBar.add(revertButton);
-        controlBar.add(runButton, "right, wrap");
-
-        JPanel jsonLinksPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
-        jsonLinksPanel.setOpaque(false);
-        jsonLinksPanel.add(jsonLink);
-        controlBar.add(jsonLinksPanel, "cell 2 1, right");
+        controlBar.add(centerPanel, BorderLayout.CENTER);
 
         getCentralContainer().add(controlBar, "growx");
     }

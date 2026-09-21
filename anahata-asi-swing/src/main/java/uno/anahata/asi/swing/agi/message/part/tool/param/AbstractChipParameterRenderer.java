@@ -31,10 +31,6 @@ import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.CancelIcon;
-import uno.anahata.asi.swing.icons.CopyIcon;
-import uno.anahata.asi.swing.icons.DeleteIcon;
-import uno.anahata.asi.swing.icons.EditIcon;
-import uno.anahata.asi.swing.icons.ExternalIcon;
 import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.internal.SwingUtils;
 
@@ -155,35 +151,6 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
             }
         });
 
-        copyBtn = new JButton(new CopyIcon(14));
-        copyBtn.setToolTipText("Copy to clipboard");
-        copyBtn.addActionListener(e -> SwingUtils.copyToClipboard(getClipboardContent()));
-
-        pillPanel.add(copyBtn, BorderLayout.WEST);
-
-        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
-        centerPanel.setOpaque(false);
-        centerPanel.add(nameLabel);
-
-        openBtn = new JButton(new ExternalIcon(14));
-        openBtn.setToolTipText("Open");
-        openBtn.addActionListener(e -> onOpen());
-        centerPanel.add(openBtn);
-
-        editBtn = new JButton(new EditIcon(14));
-        editBtn.setToolTipText("Edit in-place");
-        editBtn.addActionListener(e -> setEditing(true));
-        centerPanel.add(editBtn);
-
-        pillPanel.add(centerPanel, BorderLayout.CENTER);
-
-        deleteBtn = new JButton(new DeleteIcon(14));
-        deleteBtn.setToolTipText("Remove");
-        deleteBtn.addActionListener(e -> deleteSelf());
-        deleteBtn.setVisible(false);
-
-        pillPanel.add(deleteBtn, BorderLayout.EAST);
-
         pillRow.setOpaque(false);
         pillRow.add(pillPanel);
 
@@ -197,20 +164,37 @@ public abstract class AbstractChipParameterRenderer extends AbstractParameterRen
 
     /**
      * {@inheritDoc}
-     * <p>Initializes the renderer and configures pill buttons using SwingAgiConfig.</p>
+     * <p>Initializes the renderer and constructs pill action buttons directly via SwingAgiConfig.</p>
      */
     @Override
     public void init(AgiPanel agiPanel, AbstractToolCall<?, ?> call, String paramName, Object value) {
         super.init(agiPanel, call, paramName, value);
-        SwingAgiConfig cfg = agiPanel.getAgiConfig();
-        copyBtn.setIcon(cfg.getActionIcon(ActionIconKey.COPY, 14));
-        cfg.forceSquare(copyBtn, 14);
-        openBtn.setIcon(cfg.getActionIcon(ActionIconKey.EXTERNAL, 14));
-        cfg.forceSquare(openBtn, 14);
-        editBtn.setIcon(cfg.getActionIcon(ActionIconKey.EDIT, 14));
-        cfg.forceSquare(editBtn, 14);
-        deleteBtn.setIcon(cfg.getActionIcon(ActionIconKey.DELETE, 14));
-        cfg.forceSquare(deleteBtn, 14);
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+
+        pillPanel.removeAll();
+
+        copyBtn = config.createSquareButton(ActionIconKey.COPY, 14, "Copy to clipboard");
+        copyBtn.addActionListener(e -> SwingUtils.copyToClipboard(getClipboardContent()));
+        pillPanel.add(copyBtn, BorderLayout.WEST);
+
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        centerPanel.setOpaque(false);
+        centerPanel.add(nameLabel);
+
+        openBtn = config.createSquareButton(ActionIconKey.EXTERNAL, 14, "Open");
+        openBtn.addActionListener(e -> onOpen());
+        centerPanel.add(openBtn);
+
+        editBtn = config.createSquareButton(ActionIconKey.EDIT, 14, "Edit in-place");
+        editBtn.addActionListener(e -> setEditing(true));
+        centerPanel.add(editBtn);
+
+        pillPanel.add(centerPanel, BorderLayout.CENTER);
+
+        deleteBtn = config.createSquareButton(ActionIconKey.DELETE, 14, "Remove");
+        deleteBtn.addActionListener(e -> deleteSelf());
+        deleteBtn.setVisible(parentRenderer != null);
+        pillPanel.add(deleteBtn, BorderLayout.EAST);
     }
 
     /**

@@ -61,14 +61,28 @@ public class WrapLayout extends FlowLayout {
     /**
     /** 
      * {@inheritDoc} 
-     * <p>Calculates the minimum size required to display the components 
-     * with wrapping logic enabled.</p> 
+     * <p>Calculates the minimum size required to display the components.
+     * The minimum width is determined by the widest single visible component,
+     * allowing the container to shrink and wrap down to a single column.</p> 
      */
     @Override
     public Dimension minimumLayoutSize(Container target) {
-        Dimension minimum = layoutSize(target, false);
-        minimum.width -= (getHgap() + 1);
-        return minimum;
+        synchronized (target.getTreeLock()) {
+            Dimension dim = new Dimension(0, 0);
+            int nmembers = target.getComponentCount();
+            for (int i = 0; i < nmembers; i++) {
+                Component m = target.getComponent(i);
+                if (m.isVisible()) {
+                    Dimension d = m.getMinimumSize();
+                    dim.width = Math.max(dim.width, d.width);
+                    dim.height = Math.max(dim.height, d.height);
+                }
+            }
+            Insets insets = target.getInsets();
+            dim.width += insets.left + insets.right + (getHgap() * 2);
+            dim.height += insets.top + insets.bottom + (getVgap() * 2);
+            return dim;
+        }
     }
 
     /**
@@ -92,22 +106,24 @@ public class WrapLayout extends FlowLayout {
      */
     private Dimension layoutSize(Container target, boolean preferred) {
         synchronized (target.getTreeLock()) {
-            // Each row must fit with the width of the parent container.
-            // The height of the layout will be calculated dynamically.
-            int targetWidth = target.getSize().width;
-            
-            // Break circular layout dependency inside JScrollPanes/Viewports by resolving 
-            // the true available viewport constraint instead of target's stale width.
+            // Always resolve the true available width from the parent container if available,
+            // to avoid using target's stale width during layout calculation passes.
+            int targetWidth = 0;
             Container parent = target.getParent();
             while (parent != null) {
-                if (parent instanceof JViewport) {
-                    targetWidth = parent.getWidth();
+                if (parent.getWidth() > 0) {
+                    Insets pi = parent.getInsets();
+                    targetWidth = parent.getWidth() - (pi.left + pi.right);
                     break;
                 }
                 parent = parent.getParent();
             }
 
-            if (targetWidth == 0) {
+            if (targetWidth <= 0) {
+                targetWidth = target.getWidth();
+            }
+
+            if (targetWidth <= 0) {
                 targetWidth = Integer.MAX_VALUE;
             }
 

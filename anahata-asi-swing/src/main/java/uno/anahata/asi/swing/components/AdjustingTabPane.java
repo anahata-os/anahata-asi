@@ -3,6 +3,8 @@ package uno.anahata.asi.swing.components;
 
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import javax.swing.JTabbedPane;
 
 /**
@@ -33,6 +35,18 @@ public class AdjustingTabPane extends JTabbedPane {
     public AdjustingTabPane(int minHeight) {
         this.minHeight = minHeight;
         addChangeListener(e -> refresh());
+        addComponentListener(new ComponentAdapter() {
+            private int lastWidth = -1;
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                int currentWidth = getWidth();
+                if (currentWidth != lastWidth && currentWidth > 0) {
+                    lastWidth = currentWidth;
+                    refresh();
+                }
+            }
+        });
     }
 
     /** 
