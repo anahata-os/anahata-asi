@@ -227,8 +227,7 @@ jobs:
             VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
             mkdir -p staging-catalogs/nb
             if [ "${{ inputs.deploy_central }}" == "true" ]; then
-              echo "[INFO] Deploying anahata-asi-nb-uc to Maven Central..."
-              mvn deploy -pl :anahata-asi-nb-uc -P release -ntp
+              echo "[INFO] Staging anahata-asi-nb-uc catalog with Maven Central distribution base..."
               mvn nbm:autoupdate -pl :anahata-asi-nb-uc -Dnbm.distBase="https://repo1.maven.org/maven2/uno/anahata/anahata-asi-nb-uc/${VERSION}" -ntp
             else
               echo "[INFO] Staging anahata-asi-nb-uc catalog with GitHub Releases distribution base..."
