@@ -819,6 +819,15 @@ ve            <artifactId>org-netbeans-modules-localhistory</artifactId>
                     </archive>
                 </configuration>
             </plugin>
+            <!--
+                NetBeans Studio Javadoc Plugin Configuration:
+                1. Single Source of Truth for Stylesheet: Resolves anahata-barca-theme.css from the parent
+                   root using ${project.parent.basedir}/src/main/javadoc without duplicating CSS files.
+                2. Offline Cross-Linking to Core Platform: Uses offlineLinks to read element-list generated
+                   by the preceding Core aggregate build in target/reports/apidocs. In the browser, all Core
+                   and Swing types (Agi, ToolContext, AgiPanel) render as active, clickable Barça-gold links
+                   pointing directly to the Core Javadoc portal (../apidocs/) without network dependencies.
+            -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>

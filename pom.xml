@@ -413,17 +413,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <inherited>false</inherited>
-                <configuration>
-                    <javadocDirectory>${project.basedir}/src/main/javadoc</javadocDirectory>
-                    <addStylesheets>
-                        <addStylesheet>anahata-barca-theme.css</addStylesheet>
-                    </addStylesheets>
-                </configuration>
-            </plugin>
+
         </plugins>
     </build>
     
@@ -483,6 +473,10 @@
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
+                                <configuration>
+                                    <!-- Clean standard Javadocs for Maven Central artifact JARs (zero website CSS) -->
+                                    <addStylesheets/>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>aggregate</id>
