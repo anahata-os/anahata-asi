@@ -29,7 +29,6 @@ uno.anahata.asi.gemini.schema
 uno.anahata.asi.gemini.tokenizer.forremoval
 uno.anahata.asi.huggingface
 uno.anahata.asi.internal
-uno.anahata.asi.javafx.util
 uno.anahata.asi.minimax
 uno.anahata.asi.mistral
 uno.anahata.asi.modal
