@@ -13,7 +13,7 @@
  *   <li><b>AGI Session Templates:</b> {@link uno.anahata.asi.swing.settings.TemplatesPanel} delivers a master-detail workspace
  *       for creating, customizing, cloning, and launching active sessions from templates, including designating the canonical
  *       {@code default.kryo} bootstrap template.</li>
- *   <li><b>Telemetry & Diagnostics:</b> {@link uno.anahata.asi.swing.settings.AsiContainerAboutPanel} presents real-time JVM heap
+ *   <li><b>Telemetry and Diagnostics:</b> {@link uno.anahata.asi.swing.settings.AsiContainerAboutPanel} presents real-time JVM heap
  *       memory telemetry (Generational ZGC utilization), verified storage paths on disk, container identity metadata, and boot notifications.</li>
  * </ul>
  * <p>
