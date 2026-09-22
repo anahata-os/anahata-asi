@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.agi.tool.spi;
 
+import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.HashMap;
@@ -210,6 +211,22 @@ public abstract class AbstractToolCall<T extends AbstractTool<?, ?>, R extends A
         int callTokens = model.countTokens(this);
         int responseTokens = response != null ? response.getTokenCount() : 0;
         return callTokens + responseTokens;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * An actively executing tool call is immune to pruning, guaranteeing that it
+     * remains visible in the prompt and is never garbage collected while its
+     * background execution is still underway.
+     * </p>
+     */
+    @Override
+    public boolean isEffectivelyPruned() {
+        if (response.getStatus() == ToolExecutionStatus.EXECUTING) {
+            return false;
+        }
+        return super.isEffectivelyPruned();
     }
 
     /**
