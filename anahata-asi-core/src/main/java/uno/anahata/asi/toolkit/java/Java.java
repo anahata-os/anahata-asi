@@ -748,17 +748,17 @@ public class Java extends AnahataToolkit {
                             // 4. CHILD-FIRST: Try to find the class in our own URLs (e.g., target/classes)
                             c = findClass(name);
                             log.info("Loaded class from child URLs (Child-First): {}", name);
-                        } catch (ClassNotFoundException e) {
-                            // 5. FALLBACK: Ask the toolkit if it can find the bytes elsewhere (e.g. MR-JARs)
-                            byte[] fallbackBytes = findClassFallbackBytes(name);
-                            if (fallbackBytes != null) {
-                                logClassloading("[AnahataClassLoader] Loaded class from Fallback Bridge: " + name);
-                                c = defineClass(name, fallbackBytes, 0, fallbackBytes.length);
-                            } else {
-                                // 6. PARENT-LAST: If not found, delegate to the parent classloader (AgiClassLoader).
-                                try {
-                                    c = super.loadClass(name, resolve);
-                                } catch (ClassNotFoundException parentEx) {
+                        } catch (ClassNotFoundException childEx) {
+                            // 5. PARENT-LAST: Delegate to parent (AgiClassLoader -> Host/OneModuleClassLoader)
+                            try {
+                                c = super.loadClass(name, resolve);
+                            } catch (ClassNotFoundException parentEx) {
+                                // 6. FALLBACK BRIDGE: Used if host loader lacks MR-JAR support (e.g. NetBeans < 31)
+                                byte[] fallbackBytes = findClassFallbackBytes(name);
+                                if (fallbackBytes != null) {
+                                    logClassloading("[AnahataClassLoader] Loaded class from Fallback Bridge: " + name);
+                                    c = defineClass(name, fallbackBytes, 0, fallbackBytes.length);
+                                } else {
                                     // 7. SIBLING / EXTRA CLASSLOADERS: (e.g., NetBeans JavaFX module)
                                     for (ClassLoader extraLoader : getExtraClassLoaders()) {
                                         try {
