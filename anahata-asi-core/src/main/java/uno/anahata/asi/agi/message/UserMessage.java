@@ -2,8 +2,10 @@
 package uno.anahata.asi.agi.message;
 
 import java.nio.file.Path;
+import java.util.stream.Collectors;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.internal.TextUtils;
+import lombok.NonNull;
 
 /**
  * Represents a conversation message originating from the end-user.
@@ -90,5 +92,71 @@ public class UserMessage extends AbstractMessage {
     @Override
     public final BlobPart addBlobPart(Path path) throws Exception {
         return UserBlobPart.from(this, path);
+    }
+
+    /**
+     * Appends the text and attachment content of another user message into this
+     * message.
+     *
+     * @param other The incoming user message to merge into this one.
+     */
+    public void append(@NonNull UserMessage other) {
+        for (AbstractPart part : other.getParts()) {
+            if (part instanceof TextPart tp && tp.getText() != null && !tp.getText().isBlank()) {
+                addTextPart(tp.getText());
+            } else if (part instanceof BlobPart bp) {
+                addBlobPart(bp.getMimeType(), bp.getData());
+            }
+        }
+    }
+
+    /**
+     * Concatenates the text content of all {@link TextPart}s in this message,
+     * excluding binary attachments and tool representations.
+     *
+     * @return The combined text of all text parts, or an empty string if no
+     * text exists.
+     */
+    public String getAllText() {
+        return getParts().stream()
+                .filter(TextPart.class::isInstance)
+                .map(p -> ((TextPart) p).getText())
+                .filter(t -> t != null && !t.isBlank())
+                .collect(Collectors.joining("\n\n"));
+    }
+
+    /**
+     * Generates a concise, single-line summary of the message suitable for UI
+     * previews, window titles, or staged message badges. Collapses all newlines
+     * and whitespace into single spaces, truncates text, and appends attachment
+     * counts.
+     *
+     * @param maxTextLength The maximum number of text characters before
+     * truncating with "...".
+     * @return A clean, formatted summary string (e.g. "message1 message2 (+2
+     * attachments)").
+     */
+    public String getBriefSummary(int maxTextLength) {
+        String text = getAllText().replaceAll("\\s+", " ").trim();
+        if (text.length() > maxTextLength) {
+            text = text.substring(0, Math.max(0, maxTextLength - 3)).trim() + "...";
+        }
+        long attachmentCount = getParts().stream().filter(BlobPart.class::isInstance).count();
+        String suffix = attachmentCount > 0 ? " (+" + attachmentCount + (attachmentCount == 1 ? " attachment)" : " attachments)") : "";
+
+        if (text.isEmpty() && attachmentCount > 0) {
+            return attachmentCount + (attachmentCount == 1 ? " attachment" : " attachments");
+        }
+        return text + suffix;
+    }
+
+    /**
+     * Generates a concise summary of this message defaulting to a 50-character
+     * text limit.
+     *
+     * @return A formatted summary string.
+     */
+    public String getBriefSummary() {
+        return getBriefSummary(50);
     }
 }
