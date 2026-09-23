@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 
@@ -109,7 +110,33 @@ public class InputUserMessage extends UserMessage {
      */
     public void addAttachments(Collection<Path> paths) throws Exception {
         for (Path path : paths) {
-            addAttachment(path); 
+            addAttachment(path);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Concatenates incoming text parts into the primary editable text part,
+     * separated by double newlines, and appends all blob attachments.
+     * </p>
+     *
+     * @param other The incoming user message to merge.
+     */
+    @Override
+    public void append(@NonNull UserMessage other) {
+        for (AbstractPart part : other.getParts()) {
+            if (part instanceof TextPart tp && tp.getText() != null && !tp.getText().isBlank()) {
+                String incoming = tp.getText();
+                String existing = getText();
+                if (existing == null || existing.isBlank()) {
+                    setText(incoming);
+                } else {
+                    setText(existing + "\n\n" + incoming);
+                }
+            } else if (part instanceof BlobPart bp) {
+                addBlobPart(bp.getMimeType(), bp.getData());
+            }
         }
     }
 }
