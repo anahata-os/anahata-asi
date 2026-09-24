@@ -9,8 +9,10 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -50,7 +52,6 @@ import uno.anahata.asi.swing.agi.resources.ResourceUI;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.swing.agi.resources.ResourcesNode;
 import uno.anahata.asi.swing.components.ScrollablePanel;
-import uno.anahata.asi.swing.icons.RestartIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.swing.icons.ActionIconKey;
@@ -147,12 +148,14 @@ public class ContextPanel extends JPanel {
     private EdtPropertyChangeListener resourcesListener;
 
     /**
-     * Listener for batch resource providing changes to update row styling without structural rebuilds.
+     * Listener for batch resource providing changes to update row styling
+     * without structural rebuilds.
      */
     private EdtPropertyChangeListener resourcesProvidingListener;
 
     /**
-     * Listener for session status changes to trigger organic token recalculation upon turn completion.
+     * Listener for session status changes to trigger organic token
+     * recalculation upon turn completion.
      */
     private EdtPropertyChangeListener statusListener;
     /**
@@ -496,12 +499,15 @@ public class ContextPanel extends JPanel {
 
         JMenuItem removeItem = new JMenuItem("Remove from Context", getAgiPanel().getAgiConfig().getActionIcon(ActionIconKey.DELETE, 16));
         removeItem.addActionListener(e -> {
+            List<String> uuids = new ArrayList<>();
             for (int row : treeTable.getSelectedRows()) {
                 Object node = treeTable.getPathForRow(row).getLastPathComponent();
                 if (node instanceof ResourceNode r2n) {
-                    agi.getResourceManager().unregister(r2n.getUserObject().getId());
+                    uuids.add(r2n.getUserObject().getId());
                 }
             }
+            log.info("Manually removing " + uuids.size() + " reosurces from context");
+            agi.getResourceManager().unregisterAll(uuids);
         });
 
         JMenuItem toggleItem = new JMenuItem("Toggle Providing");
@@ -516,6 +522,7 @@ public class ContextPanel extends JPanel {
                     r2n.getUserObject().setProviding(!r2n.getUserObject().isProviding());
                 }
             }
+            //why refresh on this one only and not in RemoveFromContext?
             refresh(false);
         });
 
@@ -611,6 +618,7 @@ public class ContextPanel extends JPanel {
 
     /**
      * Delegates resource opening to the active ResourceUI strategy.
+     *
      * @param res The resource to open.
      */
     private void openResource(Resource res) {
@@ -629,16 +637,16 @@ public class ContextPanel extends JPanel {
      * targeted even if the user has reordered or hidden them.
      * </p>
      */
-        private void applyColumnWidths() {
+    private void applyColumnWidths() {
         if (treeTable.getColumnCount() == 0) {
             return;
         }
 
         // 1. Name Column (300px instead of 400px to give width to Total!) - Model Index 0
-        applyColumnWidth(0, 300, 150);
+        applyColumnWidth(0, 330, 150);
 
         // 2. Total Column (Model Index 1)
-        applyColumnWidth(1, 80, 50);
+        applyColumnWidth(1, 108, 50);
 
         // 3. Token Columns (Instructions, Declarations, History, RAG) - Model Indices 2-5
         for (int i = 2; i <= 5; i++) {
@@ -646,7 +654,7 @@ public class ContextPanel extends JPanel {
         }
 
         // 4. Status Column - Model Index 6
-        applyColumnWidth(6, 120, 80);
+        applyColumnWidth(6, 150, 80);
 
         // Hide secondary metric columns by default so table is clean: Name | Total | Status
         hideSecondaryColumnsByDefault();
@@ -654,9 +662,9 @@ public class ContextPanel extends JPanel {
 
     /**
      * Hides secondary metric columns by default so the tree table remains lean:
-     * Name | Total | Status.
-     * Users can re-enable Instructions, Declarations, History, and RAG anytime
-     * from the JXTreeTable Column Control button in the corner.
+     * Name | Total | Status. Users can re-enable Instructions, Declarations,
+     * History, and RAG anytime from the JXTreeTable Column Control button in
+     * the corner.
      */
     private void hideSecondaryColumnsByDefault() {
         for (String colName : new String[]{"Instructions", "Declarations", "History", "RAG"}) {
@@ -790,8 +798,9 @@ public class ContextPanel extends JPanel {
     /**
      * Triggers a background recalculation of token counts.
      * <p>
-     * Implementation details: Emits {@code firePathChanged} in the tree table model,
-     * repainting metrics without collapsing folders or interrupting active row selection.
+     * Implementation details: Emits {@code firePathChanged} in the tree table
+     * model, repainting metrics without collapsing folders or interrupting
+     * active row selection.
      * </p>
      *
      * @param onDone Optional callback to run after tokens are refreshed.
