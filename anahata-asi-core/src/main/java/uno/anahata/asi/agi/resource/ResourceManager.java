@@ -383,7 +383,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
      */
     @Override
     public String getId() {
-        return "resources2";
+        return "ResourceManager";
     }
 
     /**
@@ -391,7 +391,7 @@ public class ResourceManager extends BasicPropertyChangeSource implements Rebind
      */
     @Override
     public String getName() {
-        return "Resources (V2)";
+        return "Resource Manager";
     }
 
     /**
