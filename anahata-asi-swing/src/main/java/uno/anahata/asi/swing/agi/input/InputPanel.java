@@ -24,24 +24,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.jdesktop.swingx.JXTextArea;
 
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.agi.message.AbstractModelMessage;
 import uno.anahata.asi.agi.message.InputUserMessage;
 import uno.anahata.asi.agi.message.UserMessage;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.agi.resource.ResourceManager;
 import uno.anahata.asi.agi.status.AgiStatus;
-import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.AgiTransferHandler;
 import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.internal.AnyChangeDocumentListener;
-import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.UICapture;
 import uno.anahata.asi.swing.audio.MicrophonePanel;
 import java.net.URI;
+import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.components.ExceptionDialog;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 
 /**
  * A fully functional and responsive user input component for the V2 agi.
@@ -120,7 +120,15 @@ public class InputPanel extends JPanel {
      * Reactive property change listener for session status changes.
      */
     private EdtPropertyChangeListener statusListener;
-    
+
+    /**
+     * Reactive property change listener for active turn message updates.
+     */
+    private EdtPropertyChangeListener activeTurnListener;
+    /**
+     * Reactive property change listener for remaining tools countdown updates.
+     */
+    private EdtPropertyChangeListener remainingToolsListener;
     /**
      * UndoManager tracking edits within the input text area.
      */
@@ -133,28 +141,29 @@ public class InputPanel extends JPanel {
     protected InputUserMessage currentMessage;
 
     /**
-     * Constructs a new InputPanel.
+     * Constructs a new InputPanel with reactive listeners for status, staged
+     * messages, and live tool countdowns.
      *
      * @param agiPanel The parent agi panel.
      */
     public InputPanel(AgiPanel agiPanel) {
-        super(new BorderLayout(5, 5)); 
+        super(new BorderLayout(5, 5));
         this.agiPanel = agiPanel;
         this.agi = agiPanel.getAgi();
         initComponents();
-        
+
         this.stagedListener = new EdtPropertyChangeListener(this, agi, "stagedUserMessage", evt -> updateStagedMessageUI());
         this.statusListener = new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateSendButtonState());
+        this.activeTurnListener = new EdtPropertyChangeListener(this, agi, "activeTurnMessage", evt -> {
+            bindRemainingToolsListener(agi.getToolPromptMessage());
+            updateSendButtonState();
+        });
+        bindRemainingToolsListener(agi.getToolPromptMessage());
     }
 
     /**
-     * Initializes the UI components and sets up the real-time model binding.
-     */
-    /**
-     * Initializes the UI components and sets up the real-time model binding.
-     * This method constructs the input area, preview pane, and action buttons,
-     * ensuring that the split pane is correctly balanced for a seamless
-     * composition experience.
+     * Initializes the UI components and sets up layout with staged message
+     * panel in NORTH, split pane in CENTER, and action buttons in SOUTH.
      */
     private void initComponents() {
         setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -206,7 +215,7 @@ public class InputPanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (sendButton.isEnabled()) {
-                    sendMessage();
+                    handleSendAction();
                 } else if (stopButton.isVisible() && stopButton.isEnabled()) {
                     agi.stop();
                 }
@@ -233,10 +242,10 @@ public class InputPanel extends JPanel {
 
         SwingAgiConfig config = agiPanel.getAgiConfig();
 
-        // --- STAGED MESSAGE PANEL ---
+        // --- STAGED MESSAGE PANEL (Placed in NORTH above split pane) ---
         stagedMessagePanel = new JPanel(new BorderLayout(5, 0));
         stagedMessagePanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(1, 0, 1, 0, config.getTheme().getChromeBorder()),
+                BorderFactory.createMatteBorder(0, 0, 1, 0, config.getTheme().getChromeBorder()),
                 BorderFactory.createEmptyBorder(2, 5, 2, 5)
         ));
         stagedMessagePanel.setBackground(config.getTheme().getChipBackground());
@@ -250,7 +259,7 @@ public class InputPanel extends JPanel {
 
         revertStagedButton = new JButton("Edit", config.getActionIcon(ActionIconKey.EDIT, 16));
         revertStagedButton.setToolTipText("Move staged message back to input for editing");
-        revertStagedButton.addActionListener(e -> revertStagedMessage());
+        revertStagedButton.addActionListener(e -> editStagedMessage());
 
         deleteStagedButton = config.createSquareButton(ActionIconKey.DELETE, 16, "Delete staged message");
         deleteStagedButton.addActionListener(e -> deleteStagedMessage());
@@ -261,12 +270,9 @@ public class InputPanel extends JPanel {
         stagedMessagePanel.add(stagedMessageLabel, BorderLayout.CENTER);
         stagedMessagePanel.add(stagedButtons, BorderLayout.EAST);
 
+        // Layout: Staged Message in NORTH, SplitPane in CENTER, Action Bar in SOUTH
+        add(stagedMessagePanel, BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
-
-        JPanel southContainer = new JPanel(new BorderLayout(0, 5));
-        southContainer.setOpaque(false);
-
-        southContainer.add(stagedMessagePanel, BorderLayout.NORTH);
 
         JPanel southButtonPanel = new JPanel(new BorderLayout(5, 0));
         southButtonPanel.setOpaque(false);
@@ -308,7 +314,7 @@ public class InputPanel extends JPanel {
         declineAndSendButton.setVisible(false);
 
         sendButton = new JButton("Send", config.getActionIcon(ActionIconKey.SEND, 16));
-        sendButton.addActionListener(e -> sendMessage());
+        sendButton.addActionListener(e -> handleSendAction());
 
         stopButton = new JButton("Stop", config.getActionIcon(ActionIconKey.STOP, 16));
         stopButton.addActionListener(e -> agi.stop());
@@ -321,42 +327,58 @@ public class InputPanel extends JPanel {
         southButtonPanel.add(actionButtonPanel, BorderLayout.WEST);
         southButtonPanel.add(eastButtonPanel, BorderLayout.EAST);
 
-        southContainer.add(southButtonPanel, BorderLayout.CENTER);
-        add(southContainer, BorderLayout.SOUTH);
+        add(southButtonPanel, BorderLayout.SOUTH);
 
         updateStagedMessageUI();
         updateSendButtonState();
     }
 
     /**
-     * Resynchronizes the input panel with the current {@link Agi} session
-     * state.
-     * <p>
-     * This method is invoked to ensure the UI component is observing the
-     * correct
-     * {@link Agi} instance. It re-initializes reactive property change listeners,
-     * clears current input buffers, and updates the send button and staged message 
-     * visibility to match the new session's state.
-     * </p>
+     * Resynchronizes the input panel with the current Agi session state,
+     * rebinding all listeners including tool countdowns.
      */
     public void reload() {
         this.agi = agiPanel.getAgi();
-        
+
         if (stagedListener != null) {
             stagedListener.unbind();
         }
         this.stagedListener = new EdtPropertyChangeListener(this, agi, "stagedUserMessage", evt -> updateStagedMessageUI());
-        
+
         if (statusListener != null) {
             statusListener.unbind();
         }
         this.statusListener = new EdtPropertyChangeListener(this, agi.getStatusManager(), "currentStatus", evt -> updateSendButtonState());
+
+        if (activeTurnListener != null) {
+            activeTurnListener.unbind();
+        }
+        this.activeTurnListener = new EdtPropertyChangeListener(this, agi, "activeTurnMessage", evt -> {
+            bindRemainingToolsListener(agi.getToolPromptMessage());
+            updateSendButtonState();
+        });
+        bindRemainingToolsListener(agi.getToolPromptMessage());
 
         resetMessage();
         updateStagedMessageUI();
         updateSendButtonState();
     }
 
+    /**
+     * Binds the remaining tools property change listener to the active tool
+     * prompt message.
+     *
+     * @param promptMessage The current tool prompt message, or null to unbind.
+     */
+    private void bindRemainingToolsListener(AbstractModelMessage promptMessage) {
+        if (remainingToolsListener != null) {
+            remainingToolsListener.unbind();
+            remainingToolsListener = null;
+        }
+        if (promptMessage != null) {
+            this.remainingToolsListener = new EdtPropertyChangeListener(this, promptMessage, "remainingTools", evt -> updateSendButtonState());
+        }
+    }
     /** Updates the underlying message model with the text area content. */
     /** 
      * Updates the underlying message model with the text area content. 
@@ -491,30 +513,45 @@ public class InputPanel extends JPanel {
         });
     }
 
-    /** Sends the current message asynchronously. */
-    /** 
-     * Orchestrates the asynchronous sending of the current message.
-     * This method resets the input buffer and handles the transition to the
-     * API call phase, ensuring UI responsiveness during the network request.
+    /**
+     * Handles the send action, executing pending tools first if in TOOL_PROMPT
+     * status, or sending the message directly.
+     */
+    private void handleSendAction() {
+        if (agi.getStatusManager().getCurrentStatus() == AgiStatus.TOOL_PROMPT) {
+            AbstractModelMessage promptMsg = agi.getToolPromptMessage();
+            if (promptMsg != null && promptMsg.hasPendingTools()) {
+                executeTask("Executing Pending Tools", () -> {
+                    return promptMsg.executeAllPending();
+                }, done -> {
+                    sendMessage();
+                }, error -> {
+                    log.error("Failed to execute pending tools", error);
+                });
+                return;
+            }
+        }
+        sendMessage();
+    }
+    /**
+     * Orchestrates the asynchronous sending of the current message without disabling input actions, preserving full compose and attach capabilities while background operations or turns are active.
      */
     private void sendMessage() {
-        setButtonsEnabled(false);
-        final InputUserMessage messageToSend = this.currentMessage; 
+        final InputUserMessage messageToSend = this.currentMessage;
         resetMessage();
         executeTask("Send Message", () -> {
             agi.sendMessage(messageToSend);
             return null;
         }, (result) -> {
-            setButtonsEnabled(true);
             SwingUtilities.invokeLater(() -> inputTextArea.requestFocusInWindow());
         }, (error) -> {
-            setButtonsEnabled(true);
         });
     }
 
     /**
-     * Declines all pending tool calls from the previous turn and sends the current message.
-     * This provides a "clean slate" shortcut for the user to continue the conversation
+     * Declines all pending tool calls from the previous turn and sends the
+     * current message. This provides a "clean slate" shortcut for the user to
+     * continue the conversation
      * without approving or manually declining individual tools.
      */
     private void declinePendingAndSend() {
@@ -526,29 +563,15 @@ public class InputPanel extends JPanel {
     }
 
     /**
-     * Synchronizes the staged message panel visibility and content with the current {@link Agi} state.
-     * <p>
-     * If a message is staged (e.g., waiting for user review after a tool call), this method
-     * updates the summary label with a preview of the text and makes the panel visible.
-     * Otherwise, it hides the panel.
-     * </p>
-     */
-    /**
-     * Synchronizes the staged message panel visibility and content with the current {@link Agi} state.
-     * <p>
-     * If a message is staged (e.g., waiting for user review after a tool call), this method
-     * updates the summary label with a preview of the text and makes the panel visible.
-     * Otherwise, it hides the panel.
-     * </p>
+     * Synchronizes the staged message panel visibility and text preview
+     * by delegating directly to UserMessage#getBriefSummary(), ensuring whitespace
+     * and attachment indicators are formatted cleanly without raw control
+     * characters.
      */
     private void updateStagedMessageUI() {
         UserMessage staged = agi.getStagedUserMessage();
-        if (staged != null && staged instanceof InputUserMessage stagedInputUserMessage) {
-            String text = stagedInputUserMessage.getText();
-            if (text.length() > 50) {
-                text = text.substring(0, 47) + "...";
-            }
-            stagedMessageLabel.setText("Staged Message: " + text);
+        if (staged != null && !staged.isEmpty()) {
+            stagedMessageLabel.setText("Staged Message: " + staged.getBriefSummary());
             stagedMessagePanel.setVisible(true);
         } else {
             stagedMessagePanel.setVisible(false);
@@ -558,21 +581,29 @@ public class InputPanel extends JPanel {
     }
 
     /**
-     * Updates the state and text of the send and stop buttons based on the current {@link AgiStatus}.
-     * <p>
-     * This method handles the logic for switching between the "Send" and "Run Pending and Send"
-     * states, manages the visibility of the "Stop" button during active API calls, and
-     * ensures the "Decline Pending and Send" button is correctly toggled when tools are pending.
-     * </p>
+     * Updates the state, text, and countdown label of the send and stop buttons
+     * based on current AgiStatus and remaining tools.
      */
     private void updateSendButtonState() {
         AgiStatus status = agi.getStatusManager().getCurrentStatus();
-        boolean isApiActive = status == AgiStatus.AWAKENING_KUNDALINI || status == AgiStatus.API_CALL_IN_PROGRESS || status == AgiStatus.WAITING_WITH_BACKOFF;
-        stopButton.setVisible(isApiActive);
-        stopButton.setEnabled(isApiActive);
+        boolean isStoppable = status == AgiStatus.AWAKENING_KUNDALINI
+                || status == AgiStatus.API_CALL_IN_PROGRESS
+                || status == AgiStatus.WAITING_WITH_BACKOFF
+                || status == AgiStatus.AUTO_EXECUTING_TOOLS;
+        stopButton.setVisible(isStoppable);
+        stopButton.setEnabled(isStoppable);
+
+        AbstractModelMessage promptMsg = agi.getToolPromptMessage();
+        int remaining = (promptMsg != null) ? promptMsg.getRemainingToolCallsCount() : 0;
+        if (status == AgiStatus.AUTO_EXECUTING_TOOLS && remaining > 0) {
+            stopButton.setText("Stop Remaining (" + remaining + ")");
+        } else {
+            stopButton.setText("Stop");
+        }
+
         boolean canSend = status != AgiStatus.CANDIDATE_CHOICE_PROMPT;
         sendButton.setEnabled(canSend);
-        if (status == AgiStatus.TOOL_PROMPT) {
+        if (status == AgiStatus.TOOL_PROMPT && promptMsg != null) {
             sendButton.setText("Run Pending & Send");
             sendButton.setIcon(agiPanel.getAgiConfig().getActionIcon(ActionIconKey.RUN_AND_SEND, 16));
             declineAndSendButton.setVisible(true);
@@ -584,16 +615,20 @@ public class InputPanel extends JPanel {
     }
 
     /**
-     * Moves a staged message back into the active input area for editing.
-     * This allows the user to refine a message that was automatically generated or
-     * suggested by the ASI before final submission.
+     * Moves the accumulated text and attachments from the staged message back
+     * into the active input buffer for editing.
      */
-    private void revertStagedMessage() {
+    private void editStagedMessage() {
         UserMessage staged = agi.getStagedUserMessage();
-        if (staged != null && staged instanceof InputUserMessage stagedInputUserMessage) {
+        if (staged != null) {
             agi.setStagedUserMessage(null);
-            this.currentMessage = stagedInputUserMessage;
-            inputTextArea.setText(stagedInputUserMessage.getText());
+            if (staged instanceof InputUserMessage stagedInputUserMessage) {
+                this.currentMessage = stagedInputUserMessage;
+            } else {
+                this.currentMessage = new InputUserMessage(agi);
+                this.currentMessage.append(staged);
+            }
+            inputTextArea.setText(currentMessage.getText());
             InputUserMessagePanel newRenderer = new InputUserMessagePanel(agiPanel, this.currentMessage);
             previewScrollPane.setViewportView(newRenderer);
             this.inputMessagePreview = newRenderer;
@@ -651,19 +686,4 @@ public class InputPanel extends JPanel {
         updateSendButtonState();
     }
 
-    /**
-     * Toggles the enabled state of all interactive components in the action panel.
-     * This is used to prevent concurrent operations during sensitive phases like
-     * API calls or resource registration.
-     * 
-     * @param enabled True to enable, false to disable.
-     */
-    private void setButtonsEnabled(boolean enabled) {
-        attachButton.setEnabled(enabled);
-        screenshotButton.setEnabled(enabled);
-        captureFramesButton.setEnabled(enabled);
-        addUrlButton.setEnabled(enabled);
-        microphonePanel.setMicrophoneComponentsEnabled(enabled);
-        declineAndSendButton.setEnabled(enabled);
-    }
 }

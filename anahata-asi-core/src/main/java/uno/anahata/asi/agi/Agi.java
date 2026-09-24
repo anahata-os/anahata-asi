@@ -150,12 +150,6 @@ public class Agi extends BasicPropertyChangeSource {
      */
     private final List<AbstractModelMessage> activeCandidates = new ArrayList<>();
 
-    /**
-     * The model message that initiated the tool calls currently awaiting user
-     * approval. This is only non-null when the status is
-     * {@link AgiStatus#TOOL_PROMPT}.
-     */
-    private AbstractModelMessage toolPromptMessage;
 
     /**
      * A ReentrantLock to synchronize access to shared mutable state (e.g.,
@@ -163,6 +157,10 @@ public class Agi extends BasicPropertyChangeSource {
      */
     private transient ReentrantLock runningLock = new ReentrantLock();
 
+    /**
+     * The message currently active in the execution turn (either the incoming user message or the resulting model message). Acts as the single source of truth for turn ownership.
+     */
+    private volatile AbstractMessage activeTurnMessage;
     /**
      * A high-level summary of the conversation's current state or topic.
      */
@@ -379,42 +377,59 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
-     * Sets the staged user message and fires a property change event.
+     * Sets or appends to the staged user message and fires a property change
+     * event. Delegates directly to UserMessage.append to consolidate text and
+     * attachments across turns, forcing event broadcast even on in-place
+     * mutations.
      *
-     * @param stagedUserMessage The new staged message.
+     * @param stagedUserMessage The message to stage or append, or null to
+     * clear.
      */
     public void setStagedUserMessage(UserMessage stagedUserMessage) {
         UserMessage oldMessage = this.stagedUserMessage;
-        this.stagedUserMessage = stagedUserMessage;
-        propertyChangeSupport.firePropertyChange("stagedUserMessage", oldMessage, stagedUserMessage);
+        if (stagedUserMessage == null) {
+            this.stagedUserMessage = null;
+            propertyChangeSupport.firePropertyChange("stagedUserMessage", oldMessage, null);
+        } else if (this.stagedUserMessage != null) {
+            this.stagedUserMessage.append(stagedUserMessage);
+            // Force event broadcast because this.stagedUserMessage was mutated in-place
+            propertyChangeSupport.firePropertyChange("stagedUserMessage", null, this.stagedUserMessage);
+        } else {
+            this.stagedUserMessage = stagedUserMessage;
+            propertyChangeSupport.firePropertyChange("stagedUserMessage", null, this.stagedUserMessage);
+        }
     }
 
     /**
-     * The primary entry point for the UI to send a message. This method is
-     * designed to be called from a background thread (e.g., a SwingWorker).
-     * <ul>
-     * <li>If the agi is idle, this method will start the processing loop and
-     * block the calling thread until the entire conversation turn is
-     * complete.</li>
-     * <li>If the agi is already busy, it will stage the message for later
-     * processing and return immediately. The ongoing loop will pick up the
-     * staged message when its current turn is complete.</li>
-     * </ul>
+     * The primary entry point for sending a user message. Non-null contract enforced. Claims activeTurnMessage ownership. If an API call is actively in progress, the message is staged; during WAITING_WITH_BACKOFF or tool execution, the new message supersedes previous activity.
      *
-     * @param message The user's message. Can be null or empty to trigger a
-     * context resend.
+     * @param message The non-null user message to send.
      */
-    public void sendMessage(UserMessage message) {
+    public void sendMessage(@NonNull UserMessage message) {
+        AbstractMessage myTurnMessage = message;
+
         runningLock.lock();
         try {
+            AbstractMessage previous = this.activeTurnMessage;
+            setActiveTurnMessage(myTurnMessage);
+
+            if (previous instanceof AbstractModelMessage amm) {
+                amm.stopRunningAllPending();
+            }
+
             if (running) {
-                if (message != null && !message.isEmpty()) {
-                    log.info("Agi is busy. Staging message.");
-                    setStagedUserMessage(message);
-                } else {
-                    log.info("Agi is busy. Ignoring empty message/resend request.");
+                if (statusManager.getCurrentStatus() == AgiStatus.WAITING_WITH_BACKOFF) {
+                    log.info("User sent message during WAITING_WITH_BACKOFF. Adding directly to context.");
+                    contextManager.addMessage(message);
+                    autoSave("sendMessage added message " + message.getSequentialId() + " to context");
+                    return;
                 }
-                return;
+
+                if (statusManager.getCurrentStatus() == AgiStatus.API_CALL_IN_PROGRESS) {
+                    log.info("API call in flight. Staging message.");
+                    setStagedUserMessage(message);
+                    return;
+                }
             }
 
             setRunning(true);
@@ -424,16 +439,19 @@ public class Agi extends BasicPropertyChangeSource {
 
         try {
             statusManager.fireStatusChanged(AgiStatus.AWAKENING_KUNDALINI);
-            processPendingTools();
-            if (message != null && !message.isEmpty()) {
-                log.info("Adding user message to context  {}", message);
-                contextManager.addMessage(message);
-                autoSave("sendMessage added message " + message.getSequentialId() + " to context");
-            }
+            log.info("Adding user message to context  {}", message);
+            contextManager.addMessage(message);
+            autoSave("sendMessage added message " + message.getSequentialId() + " to context");
             executeTurnLoop();
         } finally {
-            setRunning(false);
-            processStagedMessage();
+            if (this.activeTurnMessage == myTurnMessage) {
+                setRunning(false);
+                processStagedMessage();
+            } else {
+                log.info("Turn for message #{} was superseded by #{}. Exiting without modifying running state.",
+                        myTurnMessage.getSequentialId(),
+                        activeTurnMessage != null ? activeTurnMessage.getSequentialId() : "null");
+            }
         }
     }
 
@@ -687,15 +705,12 @@ public class Agi extends BasicPropertyChangeSource {
     }
 
     /**
-     * Adds a chosen model message to the history, handles tool execution, and
-     * continues the conversation if necessary.
-     *
+     * Adds a chosen model message to the history, handles tool execution, and continues the conversation turn loop if auto-replying on full batch completion.
      * @param message The model message to add.
      * @return true if the conversation turn is complete, false if it should
      * continue.
      */
     public boolean chooseCandidate(@NonNull AbstractModelMessage message) {
-        // Clear active candidates and add the chosen one to the history.
         setActiveCandidates(Collections.emptyList());
 
         if (!contextManager.getHistory().contains(message)) {
@@ -703,29 +718,61 @@ public class Agi extends BasicPropertyChangeSource {
         }
         autoSave("chooseCandidate " + message.getSequentialId());
 
-        // Check if tools can be executed automatically.
+        setActiveTurnMessage(message);
+
         if (message.isAutoRunnable()) {
             log.info("Auto-executing {} tool calls.", message.getToolCalls().size());
             statusManager.fireStatusChanged(AgiStatus.AUTO_EXECUTING_TOOLS);
-            message.executeAllPending();
+            boolean allCompleted = message.executeAllPending();
 
-            if (config.isAutoReplyTools()) {
+            if (this.activeTurnMessage != message) {
+                log.info("Tool execution for message #{} was superseded by #{}. Halting auto-reply loop.",
+                        message.getSequentialId(), activeTurnMessage != null ? activeTurnMessage.getSequentialId() : "null");
+                return true;
+            }
+
+            if (config.isAutoReplyTools() && allCompleted) {
                 log.info("Auto-replying after tool execution.");
-                return false; // Continue loop
+                return false;
             }
         }
 
-        // The turn has ended. Determine the final status based on whether there are pending tool calls.
         if (message.hasPendingTools()) {
-            setToolPromptMessage(message);
             statusManager.fireStatusChanged(AgiStatus.TOOL_PROMPT);
         } else {
-            setToolPromptMessage(null);
             statusManager.fireStatusChanged(AgiStatus.IDLE);
         }
         return true;
     }
 
+    /**
+     * Sets the active turn message and fires both activeTurnMessage and derived
+     * toolPromptMessage property change events.
+     *
+     * @param message The new active turn message.
+     */
+    public void setActiveTurnMessage(AbstractMessage message) {
+        AbstractMessage old = this.activeTurnMessage;
+        this.activeTurnMessage = message;
+        propertyChangeSupport.firePropertyChange("activeTurnMessage", old, message);
+    }
+
+    /**
+     * Resolves the model message whose tool calls are currently awaiting review
+     *      * or execution, derived directly from the active turn message single
+     * source
+  
+     *
+     f truth.
+     *
+     * @return The active model message if it has pending tools, or null.
+     */
+    public AbstractModelMessage getToolPromptMessage() {
+        if (activeTurnMessage instanceof AbstractModelMessage amm && amm.hasPendingTools()) {
+            return amm;
+        }
+        return null;
+    }
     /**
      * Sets the active candidates and fires a property change event.
      *
@@ -738,50 +785,9 @@ public class Agi extends BasicPropertyChangeSource {
         propertyChangeSupport.firePropertyChange("activeCandidates", oldCandidates, this.activeCandidates);
     }
 
-    /**
-     * Sets the tool prompt message and fires a property change event. If set to
-     * null while in TOOL_PROMPT status, it reverts the status to IDLE.
-     *
-     * @param toolPromptMessage The new tool prompt message.
-     */
-    private void setToolPromptMessage(AbstractModelMessage toolPromptMessage) {
-        AbstractModelMessage oldMessage = this.toolPromptMessage;
-        this.toolPromptMessage = toolPromptMessage;
 
-        if (toolPromptMessage == null && statusManager.getCurrentStatus() == AgiStatus.TOOL_PROMPT) {
-            statusManager.fireStatusChanged(AgiStatus.IDLE);
-        }
 
-        propertyChangeSupport.firePropertyChange("toolPromptMessage", oldMessage, toolPromptMessage);
-    }
 
-    /**
-     * Clears the current tool prompt and reverts the status to IDLE if
-     * necessary.
-     */
-    public void clearToolPrompt() {
-        setToolPromptMessage(null);
-    }
-
-    /**
-     * Checks if the current tool prompt is complete (no pending tools) and
-     * clears it if so.
-     */
-    public void checkToolPromptCompletion() {
-        if (toolPromptMessage != null && !toolPromptMessage.hasPendingTools()) {
-            clearToolPrompt();
-        }
-    }
-
-    /**
-     * Processes all tool responses associated with the current tool prompt
-     * message. This method is called when the user clicks 'Run'.
-     */
-    public void processPendingTools() {
-        if (statusManager.getCurrentStatus() == AgiStatus.AWAKENING_KUNDALINI && toolPromptMessage != null) {
-            toolPromptMessage.processPendingTools();
-        }
-    }
 
     /**
      * Gets an unmodifiable view of the active candidates.
@@ -802,15 +808,9 @@ public class Agi extends BasicPropertyChangeSource {
         toolManager.reset();
         conversationSummary = "Conversation history cleared.";
         setActiveCandidates(Collections.emptyList());
-        setToolPromptMessage(null);
+        this.activeTurnMessage = null;
         setStagedUserMessage(null);
         log.info("Agi history cleared. Managed resources still in context");
-        /*
-        String newSessionId = UUID.randomUUID().toString();
-        config.setSessionId(newSessionId);
-         */
-        //this.nickname = null;
-        //log.info("Agi session cleared. New session ID: {}", newSessionId);
     }
 
     /**

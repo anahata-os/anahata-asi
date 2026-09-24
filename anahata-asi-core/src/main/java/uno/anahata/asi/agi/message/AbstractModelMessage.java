@@ -20,7 +20,6 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.tool.spi.AbstractToolResponse;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import uno.anahata.asi.agi.tool.ToolPermission;
-import uno.anahata.asi.agi.status.AgiStatus;
 
 /**
  * Represents a message originating from the AI model. It extends
@@ -76,13 +75,14 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      */
     private String safetyRatings;
 
-
     /**
-     * The number of billed prompt (input) tokens for this candidate, as reported by the API.
+     * The number of billed prompt (input) tokens for this candidate, as
+     * reported by the API.
      */
     private int billedPromptTokens;
     /**
-     * The number of billed completion (output) tokens for this candidate, as reported by the API.
+     * The number of billed completion (output) tokens for this candidate, as
+     * reported by the API.
      */
     private int billedCompletionTokens;
     /**
@@ -106,6 +106,11 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      */
     private boolean streaming = false;
 
+    /**
+     * Whether a batch execution of all pending tools is actively underway on
+     * this message.
+     */
+    private volatile boolean runningAllPending = false;
     /**
      * A turn scoped map for tools to store turn-scoped attributes.
      */
@@ -193,9 +198,9 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         propertyChangeSupport.firePropertyChange("rawJson", oldJson, this.rawJson);
     }
 
-
     /**
      * Sets the billed prompt token count and fires a property change event.
+     *
      * @param billedPromptTokens The new billed prompt token count.
      */
     public void setBilledPromptTokens(int billedPromptTokens) {
@@ -206,6 +211,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Sets the billed completion token count and fires a property change event.
+     *
      * @param billedCompletionTokens The new billed completion token count.
      */
     public void setBilledCompletionTokens(int billedCompletionTokens) {
@@ -213,6 +219,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         this.billedCompletionTokens = billedCompletionTokens;
         propertyChangeSupport.firePropertyChange("billedCompletionTokens", oldBilledCompletionTokens, billedCompletionTokens);
     }
+
     /**
      * Sets the finish reason and fires a property change event.
      *
@@ -254,27 +261,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         return getAgi() != null && getAgi().getToolPromptMessage() == this;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void removePart(AbstractPart part) {
-        super.removePart(part);
-        if (isToolPromptMessage()) {
-            getAgi().checkToolPromptCompletion();
-        }
-    }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void remove() {
-        super.remove();
-        if (isToolPromptMessage()) {
-            getAgi().clearToolPrompt();
-        }
-    }
 
     /**
      * Filters and returns only the tool call parts from this message.
@@ -289,6 +276,38 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Filters and returns all tool calls belonging to this model message that
+     * are currently awaiting execution in {@link ToolExecutionStatus#PENDING}
+     * state.
+     * <p>
+     * This method acts as the authoritative domain selector for batch tool
+     * dispatching, UI pending counter badges, and human-in-the-loop review
+     * actions.
+     * </p>
+     *
+     * @return a list of pending {@link AbstractToolCall} instances in this
+     * message.
+     */
+    public List<AbstractToolCall<?, ?>> getPendingToolCalls() {
+        return getToolCalls().stream()
+                .filter(call -> call.getResponse().getStatus() == ToolExecutionStatus.PENDING)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Calculates the number of tool calls in this message that are currently
+     * active in the execution queue (either actively EXECUTING or still
+     * PENDING).
+     *
+     * @return The count of remaining tools in the execution pipeline.
+     */
+    public int getRemainingToolCallsCount() {
+        return (int) getToolCalls().stream()
+                .filter(c -> c.getResponse().getStatus() == ToolExecutionStatus.PENDING
+                        || c.getResponse().getStatus() == ToolExecutionStatus.EXECUTING)
+                .count();
+    }
     /**
      * Returns all tool responses associated with the tool calls in this
      * message.
@@ -342,41 +361,57 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * Executes all tool calls in this message that are currently in a PENDING
-     * state.
+     * state, sequentially checking runningAllPending before starting each tool
+     * call. Broadcasts remainingTools count updates for live countdown UI
+     * display and automatically collapses successfully executed tools.
+     *
+     * @return true if all pending tool calls were executed, false if execution
+     * was stopped early and tools remain pending.
      */
-    public void executeAllPending() {
-        getToolCalls().stream()
-                .map(AbstractToolCall::getResponse)
-                .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-                .forEach(AbstractToolResponse::execute);
-        // Collapse after execution
-        getToolCalls().forEach(tc -> tc.setExpanded(false));
+    public boolean executeAllPending() {
+        this.runningAllPending = true;
+        propertyChangeSupport.firePropertyChange("runningAllPending", false, true);
+        propertyChangeSupport.firePropertyChange("remainingTools", null, getRemainingToolCallsCount());
+        try {
+            for (AbstractToolCall<?, ?> call : getPendingToolCalls()) {
+                if (!runningAllPending) {
+                    break;
+                }
+                propertyChangeSupport.firePropertyChange("remainingTools", null, getRemainingToolCallsCount());
+                call.getResponse().execute();
+                if (call.getResponse().getStatus() == ToolExecutionStatus.EXECUTED) {
+                    call.setExpanded(false);
+                }
+                propertyChangeSupport.firePropertyChange("remainingTools", null, getRemainingToolCallsCount());
+            }
+            return !hasPendingTools();
+        } finally {
+            this.runningAllPending = false;
+            propertyChangeSupport.firePropertyChange("runningAllPending", true, false);
+            propertyChangeSupport.firePropertyChange("remainingTools", null, getRemainingToolCallsCount());
+        }
+    }
+
+    /**
+     * Signals the sequential tool execution on this message to halt after the
+     * currently executing tool finishes, leaving any subsequent unstarted tools
+     * in PENDING state.
+     */
+    public void stopRunningAllPending() {
+        if (this.runningAllPending) {
+            this.runningAllPending = false;
+            propertyChangeSupport.firePropertyChange("runningAllPending", true, false);
+        }
     }
 
     /**
      * Sets all tool calls in this message that are currently in a PENDING state
-     * to DECLINED.
+     * to DECLINED and collapses them.
      */
     public void declineAllPending() {
-        getToolCalls().stream()
-                .map(AbstractToolCall::getResponse)
-                .filter(response -> response.getStatus() == ToolExecutionStatus.PENDING)
-                .forEach(response -> response.setStatus(ToolExecutionStatus.DECLINED));
-        // Collapse after declining
-        getToolCalls().forEach(tc -> tc.setExpanded(false));
-    }
-
-    /**
-     * Processes all tool responses associated with this message that are
-     * currently in a PENDING state. Tools with APPROVE_ALWAYS permission are
-     * executed, while others are rolled to DECLINED.
-     */
-    public void processPendingTools() {
-        if (hasPendingTools()) {
-            getAgi().getStatusManager().fireStatusChanged(AgiStatus.AUTO_EXECUTING_TOOLS);
-            executeAllPending();
-        } else {
-            getToolCalls().forEach(tc -> tc.setExpanded(false));
+        for (AbstractToolCall<?, ?> call : getPendingToolCalls()) {
+            call.getResponse().setStatus(ToolExecutionStatus.DECLINED);
+            call.setExpanded(false);
         }
     }
 

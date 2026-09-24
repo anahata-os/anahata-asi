@@ -161,9 +161,10 @@ public abstract class AbstractToolResponse<C extends AbstractToolCall<?, ?>> ext
         this.status = status;
         updateTokenCount();
         propertyChangeSupport.firePropertyChange("status", oldStatus, status);
+        if (call != null && call.getMessage() != null && (oldStatus == ToolExecutionStatus.PENDING || status == ToolExecutionStatus.PENDING)) {
+            call.getMessage().getPropertyChangeSupport().firePropertyChange("remainingTools", null, call.getMessage().getRemainingToolCallsCount());
+        }
         if (getAgi() != null) {
-            getAgi().checkToolPromptCompletion();
-
             // Transactional Save Guard: Save on terminal states only.
             if (status != ToolExecutionStatus.PENDING && status != ToolExecutionStatus.EXECUTING) {
                 log.info("Calling autoSave on tool call status changed  " + oldStatus + "->" + status + " (" + this + ")");

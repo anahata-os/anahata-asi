@@ -1383,7 +1383,6 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
         templateAgi.getConfig().setParentUuid(null);
         templateAgi.setOpen(false);
         templateAgi.setStagedUserMessage(null);
-        templateAgi.clearToolPrompt();
         templateAgi.bindToContainer(this);
         registerTemplate(templateAgi);
         saveAgi(templateAgi);
