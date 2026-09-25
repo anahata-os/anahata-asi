@@ -261,7 +261,45 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
         return getAgi() != null && getAgi().getToolPromptMessage() == this;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Checks tool prompt completion after a part removal.</p>
+     */
+    @Override
+    public void removePart(AbstractPart part) {
+        super.removePart(part);
+        if (getAgi() != null) {
+            getAgi().checkToolPromptCompletion();
+        }
+    }
 
+    /**
+     * {@inheritDoc}
+     * <p>Checks tool prompt completion after message removal.</p>
+     */
+    @Override
+    public void remove() {
+        super.remove();
+        if (getAgi() != null) {
+            getAgi().checkToolPromptCompletion();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Reacts to pruning state changes on tool calls, broadcasting remainingTools
+     * updates and re-evaluating tool prompt completion.</p>
+     */
+    @Override
+    protected void onPartPruningStateChanged(AbstractPart part, PruningState oldState, PruningState newState) {
+        super.onPartPruningStateChanged(part, oldState, newState);
+        if (part instanceof AbstractToolCall) {
+            propertyChangeSupport.firePropertyChange("remainingTools", null, getRemainingToolCallsCount());
+            if (getAgi() != null) {
+                getAgi().checkToolPromptCompletion();
+            }
+        }
+    }
 
     /**
      * Filters and returns only the tool call parts from this message.
@@ -291,6 +329,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      */
     public List<AbstractToolCall<?, ?>> getPendingToolCalls() {
         return getToolCalls().stream()
+                .filter(call -> !call.isEffectivelyPruned())
                 .filter(call -> call.getResponse().getStatus() == ToolExecutionStatus.PENDING)
                 .collect(Collectors.toList());
     }
@@ -304,6 +343,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      */
     public int getRemainingToolCallsCount() {
         return (int) getToolCalls().stream()
+                .filter(c -> !c.isEffectivelyPruned())
                 .filter(c -> c.getResponse().getStatus() == ToolExecutionStatus.PENDING
                         || c.getResponse().getStatus() == ToolExecutionStatus.EXECUTING)
                 .count();
@@ -335,13 +375,13 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
             return false;
         }
 
-        List<AbstractToolCall<?, ?>> calls = getToolCalls();
+        List<AbstractToolCall<?, ?>> calls = getPendingToolCalls();
         if (calls.isEmpty()) {
             return false;
         }
 
         for (AbstractToolCall<?, ?> call : calls) {
-            if (call.getTool().getPermission() != ToolPermission.APPROVE_ALWAYS || call.getResponse().getStatus() != ToolExecutionStatus.PENDING) {
+            if (call.getTool().getPermission() != ToolPermission.APPROVE_ALWAYS) {
                 return false;
             }
         }
@@ -356,6 +396,7 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
      */
     public boolean hasPendingTools() {
         return getToolCalls().stream()
+                .filter(call -> !call.isEffectivelyPruned())
                 .anyMatch(call -> call.getResponse().getStatus() == ToolExecutionStatus.PENDING);
     }
 

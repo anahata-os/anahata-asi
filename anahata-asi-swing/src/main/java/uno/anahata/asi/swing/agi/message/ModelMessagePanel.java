@@ -162,24 +162,27 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
 
         if (!hasPending && !runningAll) {
             batchToolsPanel.setVisible(false);
+            runAllPendingButton.setVisible(false);
+            declineAllPendingButton.setVisible(false);
+            stopBatchButton.setVisible(false);
             return;
         }
 
         batchToolsPanel.setVisible(true);
-        int remaining = message.getRemainingToolCallsCount();
 
         if (runningAll) {
             runAllPendingButton.setVisible(false);
             declineAllPendingButton.setVisible(false);
-            stopBatchButton.setVisible(true);
-            stopBatchButton.setText(remaining > 1 ? "Stop Remaining (" + remaining + ")" : "Stop Remaining");
+            int pendingToStop = message.getPendingToolCalls().size();
+            stopBatchButton.setVisible(pendingToStop > 0);
+            stopBatchButton.setText(pendingToStop > 1 ? "Stop Remaining (" + pendingToStop + ")" : "Stop Remaining");
         } else {
+            stopBatchButton.setVisible(false);
             int pendingCount = message.getPendingToolCalls().size();
             runAllPendingButton.setText(pendingCount > 1 ? "Run All Pending (" + pendingCount + ")" : "Run Pending");
             declineAllPendingButton.setText(pendingCount > 1 ? "Decline All Pending (" + pendingCount + ")" : "Decline Pending");
             runAllPendingButton.setVisible(true);
             declineAllPendingButton.setVisible(true);
-            stopBatchButton.setVisible(false);
         }
     }
 
@@ -190,7 +193,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
     private void executeBatchTools() {
         new SwingTask<Boolean>(agiPanel, "Executing Batch Tools", () -> {
             return message.executeAllPending();
-        }).start();
+        }, result -> updateBatchToolsUI()).start();
     }
     /** 
      * {@inheritDoc} 

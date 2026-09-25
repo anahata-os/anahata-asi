@@ -149,6 +149,18 @@ public abstract class AbstractMessage extends BasicPropertyChangeSource {
     }
 
     /**
+     * Lifecycle callback invoked whenever a child part's pruning state changes.
+     * Subclasses can override to propagate reactive updates.
+     *
+     * @param part The part whose pruning state changed.
+     * @param oldState The previous pruning state.
+     * @param newState The new pruning state.
+     */
+    protected void onPartPruningStateChanged(AbstractPart part, PruningState oldState, PruningState newState) {
+        // Base hook for subclasses
+    }
+
+    /**
      * Removes this message from the agi history.
      */
     public void remove() {

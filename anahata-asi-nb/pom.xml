@@ -505,13 +505,14 @@
             <version>${netbeans.version}</version>
         </dependency>
         -->
-        <!--
+        
+        
         <dependency>
             <groupId>org.netbeans.modules</groupId>
-ve            <artifactId>org-netbeans-modules-localhistory</artifactId>
+            <artifactId>org-netbeans-modules-localhistory</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
-        -->
+        
         
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -751,13 +752,10 @@ ve            <artifactId>org-netbeans-modules-localhistory</artifactId>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-core-windows</id>
                         </dependency>
-                        
-                        <!--
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-localhistory</id>
                         </dependency>
-                                -->
                     </moduleDependencies>
                     <publicPackages>
                         <publicPackage>uno.anahata.asi.nb</publicPackage>

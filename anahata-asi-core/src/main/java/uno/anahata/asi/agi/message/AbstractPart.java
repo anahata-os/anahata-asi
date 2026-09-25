@@ -109,6 +109,9 @@ public abstract class AbstractPart extends BasicPropertyChangeSource {
         this.pruningState = pruningState;
         this.prunedReason = reason;
         propertyChangeSupport.firePropertyChange("pruningState", oldState, pruningState);
+        if (message != null) {
+            message.onPartPruningStateChanged(this, oldState, pruningState);
+        }
     }
 
     /**
