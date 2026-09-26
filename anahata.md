@@ -49,7 +49,13 @@ This project uses a set of key documents to guide development. For detailed info
 - **Identity & Distributed Observability**: Message metadata must distinguish between the Logical Actor (`getFrom()`) and the Physical/Virtual Host (`getDevice()`).
 - **No Reinventing Commons**: Use existing libraries like **Apache Commons Lang 3**.
 - **No Quietly Catching Exceptions**: You are strictly forbidden from catching exceptions and doing nothing. All exceptions should be logged. 
-- **Clean Execution**: Do not use try-catch blocks inside `@AgiTool` methods unless performing specific recovery. The framework handles exceptions automatically. If you need to throw an error intended for the user, prefer throwing an `AgiToolException` to ensure a clean message without stack traces.
+- **Clean Execution & Automated Tool Exception Lifecycle**:
+    Do not write redundant try-catch blocks inside `@AgiTool` methods that merely catch, log, and rethrow exceptions or wrap them in `RuntimeException`. The Anahata framework (`JavaMethodToolResponse.execute()`) automatically intercepts all throwables escaping `@AgiTool` methods:
+    1. **Automatic Reflection Unwrapping**: If an exception is wrapped in an `InvocationTargetException` (e.g. from Swing `runInEDTAndWait` or dynamic reflection), `JavaMethodToolResponse` automatically extracts `cause = (e instanceof InvocationTargetException && e.getCause() != null) ? e.getCause() : e`.
+    2. **Automated Error & Stack Trace Formatting**: For any general exception, `JavaMethodToolResponse` automatically formats and attaches the complete causal chain via `ExceptionUtils.getStackTrace(cause)` directly into the tool response's `errors` tab for both user and model inspection.
+    3. **Automated Logging**: `JavaMethodToolResponse` automatically logs the full exception and tool call details to SLF4J.
+    4. **Clean User Errors via `AgiToolException`**: If you need to communicate a clean, user-facing error without stack traces, simply throw an `AgiToolException("...")`. The framework catches it and puts only the clean message into `errors`.
+    5. **Clean Method Signatures**: Simply declare `@AgiTool public ... myTool(...) throws Exception` and let errors propagate cleanly to the framework. Only use `try-catch` when performing genuine domain recovery or resource cleanup in `finally`.
 - **Mandatory Braces**: Always use curly braces `{}` for all control flow statements (`if`, `else`, `for`, `while`, `do`). Single-line lambdas without braces (e.g., `list.stream().filter(m -> m.isCool())...`) are perfectly fine and often preferred for readability.
 - **Logging Standard**: Use SLF4J (`@Slf4j`) for all logging. Never use `System.out.println()`.
 - **Lombok Purity**: Rely on Lombok annotation processing; do not add explicit getters/setters for Lombok-managed fields.
