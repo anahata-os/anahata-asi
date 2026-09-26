@@ -512,11 +512,13 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
             <version>1.83</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
             <version>1.83</version>
+            <scope>provided</scope>
         </dependency>
         
         
@@ -766,6 +768,10 @@
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-git</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.api:org-netbeans-lig-bit</id>
                         </dependency>
                     </moduleDependencies>
                     <publicPackages>
