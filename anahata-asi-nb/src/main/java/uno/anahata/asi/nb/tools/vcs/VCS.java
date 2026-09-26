@@ -635,7 +635,7 @@ public class VCS extends AnahataToolkit {
         ToolProgressMonitor monitor = new ToolProgressMonitor();
         try {
             GitPushResult pushResult = client.push(remoteName, pushRefSpecs, Collections.emptyList(), monitor);
-            log("Pushed to remote '" + remoteName + "' in " + repoRoot.getName());
+            log("Pushed to remote '" + remoteName + "' in " + repoRoot.getName() + " result=" + pushResult);
             return "Successfully pushed to remote '" + remoteName + "' for " + repoRoot.getName();
         } finally {
             client.release();
