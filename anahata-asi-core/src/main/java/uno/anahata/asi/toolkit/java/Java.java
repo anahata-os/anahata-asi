@@ -1578,19 +1578,6 @@ public class Java extends AnahataToolkit {
     }
 
     /**
-     * Compiles a modular Java class into the in-memory classpath of this AGI
-     * session without executing it.
-     *
-     * @param classFqn The fully qualified class name (e.g.
-     * 'uno.anahata.benchmarks.FlightContact').
-     * @param sourceCode The Java source code of the class.
-     * @param extraClassPath Optional extra classpath entries.
-     * @param compilerOptions Optional compiler options.
-     * @param jdk Optional JDK name or explicit path to a javac binary.
-     * @return Confirmation message with compilation summary.
-     * @throws Exception on compilation error.
-     */
-    /**
      * Compiles one or more modular Java classes into the in-memory classpath of
      * this AGI session without executing them.
      * <p>
