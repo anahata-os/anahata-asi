@@ -17,6 +17,7 @@ uno.anahata.asi.nb.tools.project.alerts
 uno.anahata.asi.nb.tools.project.components
 uno.anahata.asi.nb.tools.project.context
 uno.anahata.asi.nb.tools.terminal
+uno.anahata.asi.nb.tools.vcs
 uno.anahata.asi.nb.ui.render
 uno.anahata.asi.nb.ui.resources
 uno.anahata.asi.nb.util
