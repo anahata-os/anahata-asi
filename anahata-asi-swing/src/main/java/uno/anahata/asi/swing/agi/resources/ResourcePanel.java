@@ -277,7 +277,7 @@ public class ResourcePanel extends ScrollablePanel {
     private void saveContent(String content) {
         new SwingTask<Void>(agiPanel, "Saving Resource", () -> {
             log.info("Saving content to {}", currentResource);
-            currentResource.write(content);
+            currentResource.write(content, "Manual save from UI");
             return null;
         }).start();
     }
@@ -462,7 +462,7 @@ public class ResourcePanel extends ScrollablePanel {
         // Snapshot current resource for thread safety
         final Resource resourceSnapshot = currentResource;
 
-        new SwingTask<RagMessage>(agiPanel, "Model Perspective: " + resourceSnapshot.getName(), () -> {
+        new SwingTask<>(agiPanel, "Model Perspective: " + resourceSnapshot.getName(), () -> {
             RagMessage rawMsg = new RagMessage(agiPanel.getAgi());
             try {
                 rawMsg.addTextPart(resourceSnapshot.getHeader());
