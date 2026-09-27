@@ -2,26 +2,20 @@
 
 This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2) project.
 
-## 1. 1.2.8 tasks
-*(Format: `[Implemented] [Tested]`)*
+## 2. 1.3.0 tasks
+
+- [ ] **[CORE] Generic "TOO LARGE" Response Handling**: Implement a mechanism to detect when a `JavaMethodToolResponse` (including logs, errors, and result) exceeds a safe token/size threshold. If too large, the status should be set to `TOO_LARGE` and it should dump the json represntation of the JavaMethodToolResponse to a text file and registered as a resource with the default viewport so the model can paginate on it if its worth it. Large responses even crash the ToolCallPanel's result text area exhausting the EDT thread in line wrapping calculations. So bad.
+
 - [] [ ]  **[SWING] Resources and Toolkits or Context Providers in context should be shown in status bar or intput bar**: 
 - [] [ ]  **[SWING] Staged message should show above input text area, not below** and sending a message when there is already a staged message should maybe just append more parts to the staged message or turn the staged message into a list of staged messages: 
 - [] [ ]  **[TOKENS] Show tokens (according to the selecte model) on message headers and partformat**: make it in headers in square brackets [108] **: 
 
-    
-## 2. 1.3.0 tasks
 
 - [ ] "add / remove to AGI Context for "files in a jar" in netbeans first
 
 - [ ] check playback lines on linux actually match what the user sess on his ubuntu because in output lines currently shows 6 HDMI entries when there are only 2 monitors and it doesn't tell you 'which' monitor it is.
 
 - [ ] tell helder to hurry up so we can merge helders netbeans database branch
-
-- [ ] **[CORE] Generic "TOO LARGE" Response Handling**: Implement a mechanism to detect when a `JavaMethodToolResponse` (including logs, errors, and result) exceeds a safe token/size threshold. If too large, the status should be set to `TOO_LARGE` and it should dump the json represntation of the JavaMethodToolResponse to a text file and registered as a resource with the default viewport so the model can paginate on it if its worth it. Large responses even crash the ToolCallPanel's result text area exhausting the EDT thread in line wrapping calculations. So bad.
-
-- [ ] **NetBeans Local History File System Integration **:
-    - [ ] Local History integration via change messages.
-    - [ ] Version Control with line numbers (text based glyph gutter)
 
 - [ ] Metabollic Donut Chart with click in to expand any section to an inner donut chart 
 
