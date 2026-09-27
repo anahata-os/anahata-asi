@@ -237,11 +237,13 @@ public class YouTube extends AnahataToolkit {
                 () -> {
                     try {
                         int devIdx = overlayHolder[0].getSelectedDeviceIndex();
-                        log("Starting screen recording on Screen " + devIdx + " for title: " + videoTitle);
+                        boolean recDesktop = overlayHolder[0].isRecordDesktopAudio();
+                        boolean recMic = overlayHolder[0].isRecordMicrophone();
+                        log("Starting screen recording on Screen " + devIdx + " (DesktopAudio=" + recDesktop + ", Mic=" + recMic + ") for title: " + videoTitle);
                         if (customTargetFilePath != null && !customTargetFilePath.isBlank()) {
-                            recorder.startRecording(Paths.get(customTargetFilePath), devIdx);
+                            recorder.startRecording(Paths.get(customTargetFilePath), devIdx, recDesktop, recMic);
                         } else {
-                            recorder.startRecording("RECORDING", "desktop", devIdx);
+                            recorder.startRecording("RECORDING", "desktop", devIdx, recDesktop, recMic);
                         }
                     } catch (Exception e) {
                         log.error("Failed to start screen recording", e);
@@ -732,7 +734,12 @@ public class YouTube extends AnahataToolkit {
 
         // Snippet
         ObjectNode snippet = root.putObject("snippet");
-        snippet.put("title", request.title());
+        String title = request.title();
+        if (title != null && title.length() > 100) {
+            log.warn("YouTube video title exceeds 100 characters ({} chars). Truncating to 100 characters to comply with API limits: {}", title.length(), title);
+            title = title.substring(0, 97) + "...";
+        }
+        snippet.put("title", title);
         snippet.put("description", request.description());
         snippet.put("categoryId", "28"); // Science & Technology
 

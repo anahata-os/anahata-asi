@@ -269,6 +269,21 @@
             </exclusions>
         </dependency>
 
+        <!-- Bundled Git4Idea plugin API (GitRepositoryManager, GitRepository, Git, GitBrancher, ...).
+        Transitives excluded as standard for JetBrains provided plugins. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.vcs</groupId>
+            <artifactId>git</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Unit tests (JUnit 5; versions managed by the parent). -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>

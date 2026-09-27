@@ -8,8 +8,8 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 | Metric | Value | Status |
 | :--- | :--- | :--- |
 | **Subscribers** | 42 | Growth Phase |
-| **Total Views** | 2,084 | Core Reach |
-| **Total Videos** | 40 | Active Library |
+| **Total Views** | 2,162 | Core Reach |
+| **Total Videos** | 43 | Active Library |
 
 --- 
 
@@ -17,7 +17,23 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 
 | Publish Date | Video Title | Video ID | Views | Likes | Comments | Link |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-08-06 | **NovaRouteAI + Anahata ASI Setup \| One API Key for Qwen, DeepSeek and Kimi** | `u0mTyEZI8Fo` | 17 | 0 | 0 | [Watch](https://youtu.be/u0mTyEZI8Fo) |
+| 2026-09-27 | **⚡ Pure JavaFX Lemmings Cyber-Arcade \| Level 3: Blockers & Builders! Anahata ASI** | `M0PQoCZSDdo` | 0 | 0 | 0 | [Watch](https://youtu.be/M0PQoCZSDdo) |
+| 2026-09-27 | **⚡ Pure JavaFX Lemmings Cyber-Arcade Edition \| Level 2: Only Floaters Can Survive This! Anahata ASI** | `6B_a_m1mSGI` | 0 | 0 | 0 | [Watch](https://youtu.be/6B_a_m1mSGI) |
+| 2026-09-25 | **⚡ Pure JavaFX Lemmings Cyber-Arcade Edition \| 60 FPS Recreation (Level 1: Just Dig!) Anahata ASI** | `1jmHhGQDs9o` | 23 | 1 | 0 | [Watch](https://youtu.be/1jmHhGQDs9o) |
+| 2026-09-24 | **Pure Java Lemmings (1991) Recreation - Level 1: Just Dig!** | `SxFgUxWxGKI` | 21 | 0 | 0 | [Watch](https://youtu.be/SxFgUxWxGKI) |
+| 2026-09-11 | **⚡ Anahata-AGI-1: deepseek-ai/deepseek-v4-pro-0813 on JAVA-ARKANOID-1 (Retro Arcade Game Execution)** | `h-O9D0PZ97s` | 26 | 0 | 1 | [Watch](https://youtu.be/h-O9D0PZ97s) |
+| 2026-09-11 | **⚡ Anahata-AGI-1: poolside/laguna-s-2.1 on JAVA-ARKANOID-1 (Retro Arcade Game Execution)** | `AKVALoefC_o` | 11 | 0 | 0 | [Watch](https://youtu.be/AKVALoefC_o) |
+| 2026-09-10 | **Second test of Java-EARTH-GLOBE-1** | `76pWS0WFu_U` | 131 | 1 | 0 | [Watch](https://youtu.be/76pWS0WFu_U) |
+| 2026-09-10 | **First test of JAVA-EARTH-GLOBE-1 - gemini 3.8 flash** | `d2W0QYYPhlQ` | 18 | 0 | 0 | [Watch](https://youtu.be/d2W0QYYPhlQ) |
+| 2026-09-09 | **⚡ gemini-3.8-flash goes JavaFX for 3D Photorealistic Earth & Satellite C4ISR Tracker** | `iHLBVt5VP9Y` | 56 | 0 | 0 | [Watch](https://youtu.be/iHLBVt5VP9Y) |
+| 2026-09-08 | **⚡ Anahata-AGI-1: qwen3.8-max on JAVA-JNA-1 (OS Hardware & System Values Dashboard)** | `cNMZGJSD7g0` | 39 | 1 | 0 | [Watch](https://youtu.be/cNMZGJSD7g0) |
+| 2026-09-08 | **⚡ Anahata-AGI-1: kimi/kimi-k3 on JAVA-JNA-1 (OS Hardware & System Values Dashboard)** | `ueqHne1uGPU` | 13 | 0 | 0 | [Watch](https://youtu.be/ueqHne1uGPU) |
+| 2026-09-08 | **⚡ Anahata-AGI-1: moonshotai/Kimi-K3 on JAVA-JNA-1 (OS Hardware & System Values Dashboard)** | `y8ok9OIg3Ew` | 37 | 0 | 0 | [Watch](https://youtu.be/y8ok9OIg3Ew) |
+| 2026-09-07 | **⚡ Anahata-AGI-1: gemini-3.6-flash on JAVA-JNA-1 (OS Hardware & System Values Dashboard)** | `QyjbjPg-CVQ` | 6 | 0 | 0 | [Watch](https://youtu.be/QyjbjPg-CVQ) |
+| 2026-09-07 | **⚡ Anahata-AGI-1: gemini-3.7-flash on JAVA-JNA-1 (OS Hardware & System Values Dashboard)** | `zjUZXxQql5s` | 15 | 0 | 0 | [Watch](https://youtu.be/zjUZXxQql5s) |
+| 2026-09-07 | **⚡ Anahata-AGI-1: gemini-3.8-flash on JAVA-JNA-1 (OS Hardware & System Values Dashboard)** | `KH_LqQGkeF0` | 20 | 1 | 0 | [Watch](https://youtu.be/KH_LqQGkeF0) |
+| 2026-09-07 | **Anahata Native JNA Telemetry Dashboard \| Gemini 3.7 Flash** | `pYQgztRSKCs` | 11 | 0 | 0 | [Watch](https://youtu.be/pYQgztRSKCs) |
+| 2026-08-06 | **NovaRouteAI + Anahata ASI Setup \| One API Key for Qwen, DeepSeek and Kimi** | `u0mTyEZI8Fo` | 22 | 0 | 0 | [Watch](https://youtu.be/u0mTyEZI8Fo) |
 | 2026-08-04 | **Gemini 3.6 Flash Thinkining Mode - Java Arkanoid Benchmark** | `tbP3Vpr3tLE` | 19 | 0 | 0 | [Watch](https://youtu.be/tbP3Vpr3tLE) |
 | 2026-08-04 | **Qwen 3.8 Max: Default vs HIGH Thinking Mode (Pure Java Benchmark) - AnahataASI NovaRouteAI** | `Gx2W0X5K9yg` | 43 | 0 | 0 | [Watch](https://youtu.be/Gx2W0X5K9yg) |
 | 2026-08-04 | **DeepSeek v4 Flash - High vs Default - NovaRouteAI - JavaFX** | `marYtKN_CQo` | 65 | 0 | 0 | [Watch](https://youtu.be/marYtKN_CQo) |
@@ -51,6 +67,9 @@ This ledger tracks live reach, developer engagement, and video-by-video view met
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-09-27 18:02 | Level 3 Video Upload: `M0PQoCZSDdo` | MAX | Pure JavaFX Lemmings Level 3 recorded with desktop audio & published directly via YouTube toolkit (Video ID: `M0PQoCZSDdo`, Total Videos: 43) |
+| 2026-09-27 14:48 | Level 2 Video Upload: `6B_a_m1mSGI` | MAX | Pure JavaFX Lemmings Level 2 recorded & published directly via YouTube toolkit (Video ID: `6B_a_m1mSGI`, Total Videos: 42) |
+| 2026-09-27 12:36 | Channel Refresh: Subs=42, Views=2,162, Videos=41 | High | Subs: +0, Views: +78 (1.07 Views/hr), 1 New Video in 72.6 hours since 2026-09-24 12:01 |
 | 2026-09-24 12:01 | Channel Scrape: Subs=42, Views=2,084, Videos=40 | High | Subs: +2, Views: +426 (0.56 Views/hr), 13 New Videos in 754.6 hours since 2026-08-24 01:23 |
 | 2026-08-24 01:23 | Channel Scrape: Subs=40, Views=1,658 | High | Subs: +0, Views: +19 (0.35 Views/hr) in 53.8 hours since 2026-08-21 19:38 |
 | 2026-08-21 19:38 | Channel Scrape: Subs=40, Views=1,639 | High | Subs: +0, Views: +3 (0.09 Views/hr) in 32.6 hours since 2026-08-20 11:01 |

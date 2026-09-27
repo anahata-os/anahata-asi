@@ -103,6 +103,30 @@ public class ScreenRecordingOverlay extends JDialog {
     private int selectedDeviceIndex = 0;
 
     /**
+     * Whether to capture system / computer desktop audio (what you hear).
+     */
+    @Getter
+    @Setter
+    private boolean recordDesktopAudio = true;
+
+    /**
+     * Whether to capture microphone voice input.
+     */
+    @Getter
+    @Setter
+    private boolean recordMicrophone = false;
+
+    /**
+     * Toggle button for computer desktop sounds.
+     */
+    private JButton soundToggleBtn;
+
+    /**
+     * Toggle button for microphone voice recording.
+     */
+    private JButton micToggleBtn;
+
+    /**
      * The title displayed on the overlay header.
      */
     @Getter
@@ -430,7 +454,18 @@ public class ScreenRecordingOverlay extends JDialog {
             }
         }
 
-        rootPanel.add(centerMonitorsPanel, BorderLayout.CENTER);
+        JPanel centerContainer = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 0));
+        centerContainer.setOpaque(false);
+        centerContainer.add(centerMonitorsPanel);
+
+        // Subtle divider between monitor cards and audio toggle buttons
+        JLabel divider = new JLabel("│");
+        divider.setForeground(new Color(71, 85, 105));
+        divider.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
+        centerContainer.add(divider);
+
+        centerContainer.add(createAudioControlsPanel());
+        rootPanel.add(centerContainer, BorderLayout.CENTER);
 
         // Buttons Panel
         JPanel rightControlPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
@@ -493,10 +528,24 @@ public class ScreenRecordingOverlay extends JDialog {
         titleLbl.setForeground(new Color(237, 187, 0));
         statusRow.add(titleLbl);
 
+        if (recordDesktopAudio) {
+            JLabel soundBadge = new JLabel("🔊");
+            soundBadge.setToolTipText("Capturing Computer Audio");
+            statusRow.add(soundBadge);
+        }
+        if (recordMicrophone) {
+            JLabel micBadge = new JLabel("🎤");
+            micBadge.setToolTipText("Capturing Microphone");
+            statusRow.add(micBadge);
+        }
+
         leftPanel.add(statusRow);
         leftPanel.add(Box.createVerticalStrut(3));
 
-        JLabel infoLbl = new JLabel((headerSubtitle != null ? headerSubtitle : "") + " (Screen " + selectedDeviceIndex + ")");
+        String audioDesc = (recordDesktopAudio && recordMicrophone) ? "Sound + Mic"
+                : (recordDesktopAudio ? "Sound Only"
+                : (recordMicrophone ? "Mic Only" : "Muted"));
+        JLabel infoLbl = new JLabel((headerSubtitle != null ? headerSubtitle : "") + " (Screen " + selectedDeviceIndex + " | " + audioDesc + ")");
         infoLbl.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         infoLbl.setForeground(new Color(148, 163, 184));
         leftPanel.add(infoLbl);
@@ -557,6 +606,73 @@ public class ScreenRecordingOverlay extends JDialog {
         rootPanel.add(buttonPanel, BorderLayout.EAST);
         rootPanel.revalidate();
         rootPanel.repaint();
+    }
+
+    /**
+     * Builds the Kooha-style audio control buttons panel for toggling computer sound and microphone.
+     *
+     * @return The configured audio controls panel.
+     */
+    private JPanel createAudioControlsPanel() {
+        JPanel audioPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 6, 0));
+        audioPanel.setOpaque(false);
+
+        soundToggleBtn = new JButton();
+        soundToggleBtn.setFocusPainted(false);
+        soundToggleBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        soundToggleBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        soundToggleBtn.addActionListener(e -> {
+            recordDesktopAudio = !recordDesktopAudio;
+            updateAudioButtonStyles();
+        });
+
+        micToggleBtn = new JButton();
+        micToggleBtn.setFocusPainted(false);
+        micToggleBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        micToggleBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+        micToggleBtn.addActionListener(e -> {
+            recordMicrophone = !recordMicrophone;
+            updateAudioButtonStyles();
+        });
+
+        updateAudioButtonStyles();
+
+        audioPanel.add(soundToggleBtn);
+        audioPanel.add(micToggleBtn);
+        return audioPanel;
+    }
+
+    /**
+     * Refreshes the styling, text, and tooltips of the audio toggle buttons based on active states.
+     */
+    private void updateAudioButtonStyles() {
+        if (soundToggleBtn != null) {
+            if (recordDesktopAudio) {
+                soundToggleBtn.setText("🔊 Sound: ON");
+                soundToggleBtn.setBackground(new Color(2, 132, 199)); // Sky Blue #0284c7
+                soundToggleBtn.setForeground(Color.WHITE);
+                soundToggleBtn.setToolTipText("Record Computer Sounds (Game, Discord, Music) - [ACTIVE]");
+            } else {
+                soundToggleBtn.setText("🔇 Sound: OFF");
+                soundToggleBtn.setBackground(new Color(51, 65, 85)); // Slate 700
+                soundToggleBtn.setForeground(new Color(148, 163, 184)); // Muted text
+                soundToggleBtn.setToolTipText("Computer Sounds MUTED (Click to enable)");
+            }
+        }
+
+        if (micToggleBtn != null) {
+            if (recordMicrophone) {
+                micToggleBtn.setText("🎤 Mic: ON");
+                micToggleBtn.setBackground(new Color(22, 163, 74)); // Emerald Green #16a34a
+                micToggleBtn.setForeground(Color.WHITE);
+                micToggleBtn.setToolTipText("Record Microphone (Your Voice) - [ACTIVE]");
+            } else {
+                micToggleBtn.setText("🎙️ Mic: OFF");
+                micToggleBtn.setBackground(new Color(51, 65, 85)); // Slate 700
+                micToggleBtn.setForeground(new Color(148, 163, 184)); // Muted text
+                micToggleBtn.setToolTipText("Microphone MUTED (Click to enable)");
+            }
+        }
     }
 
     /**

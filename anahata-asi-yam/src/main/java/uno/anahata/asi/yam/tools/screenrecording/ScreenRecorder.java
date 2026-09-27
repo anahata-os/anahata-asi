@@ -46,6 +46,25 @@ public class ScreenRecorder {
     private Process ffmpegProcess;
 
     /**
+     * Ring buffer storing the most recent lines emitted by FFmpeg for rapid diagnosis.
+     */
+    private final List<String> lastFfmpegLogLines = java.util.Collections.synchronizedList(new ArrayList<>());
+
+    /**
+     * Whether to capture system / computer desktop audio (what you hear).
+     */
+    @Getter
+    @Setter
+    private boolean recordDesktopAudio = true;
+
+    /**
+     * Whether to capture microphone voice input.
+     */
+    @Getter
+    @Setter
+    private boolean recordMicrophone = false;
+
+    /**
      * The absolute path to the .mp4 file currently being recorded.
      */
     @Getter
@@ -110,17 +129,34 @@ public class ScreenRecorder {
      * @throws Exception If launching the FFmpeg process fails.
      */
     public synchronized Path startRecording(Path targetFilePath, int deviceIndex) throws Exception {
+        return startRecording(targetFilePath, deviceIndex, this.recordDesktopAudio, this.recordMicrophone);
+    }
+
+    /**
+     * Initiates a new screen recording session to an explicit target file path with discrete audio flags.
+     *
+     * @param targetFilePath The exact destination .mp4 file path.
+     * @param deviceIndex The 0-based screen graphics device index to record.
+     * @param recordDesktopAudio Whether to capture computer / desktop audio.
+     * @param recordMicrophone Whether to capture microphone voice input.
+     * @return The path to the destination .mp4 file.
+     * @throws Exception If launching the FFmpeg process fails.
+     */
+    public synchronized Path startRecording(Path targetFilePath, int deviceIndex, boolean recordDesktopAudio, boolean recordMicrophone) throws Exception {
         if (isRecording()) {
             log.warn("Recording already in progress. Stopping previous recording first.");
             cancelRecording();
         }
 
         this.selectedDeviceIndex = deviceIndex;
+        this.recordDesktopAudio = recordDesktopAudio;
+        this.recordMicrophone = recordMicrophone;
         this.currentVideoPath = targetFilePath;
+        this.lastFfmpegLogLines.clear();
         Files.createDirectories(targetFilePath.getParent());
         this.startEpochMillis = System.currentTimeMillis();
 
-        List<String> command = buildFfmpegCommand(currentVideoPath.toString(), deviceIndex);
+        List<String> command = buildFfmpegCommand(currentVideoPath.toString(), deviceIndex, recordDesktopAudio, recordMicrophone);
         log.info("Starting screen recording with command: {}", String.join(" ", command));
 
         ProcessBuilder pb = new ProcessBuilder(command);
@@ -134,6 +170,12 @@ public class ScreenRecorder {
                 String line;
                 while ((line = reader.readLine()) != null) {
                     log.trace("[FFmpeg] {}", line);
+                    synchronized (lastFfmpegLogLines) {
+                        if (lastFfmpegLogLines.size() > 50) {
+                            lastFfmpegLogLines.remove(0);
+                        }
+                        lastFfmpegLogLines.add(line);
+                    }
                 }
             } catch (IOException ignored) {
             }
@@ -141,7 +183,8 @@ public class ScreenRecorder {
         drainThread.setDaemon(true);
         drainThread.start();
 
-        log.info("FFmpeg screen recording started on Screen {} -> {}", deviceIndex, currentVideoPath);
+        log.info("FFmpeg screen recording started on Screen {} (DesktopAudio={}, Mic={}) -> {}",
+                deviceIndex, recordDesktopAudio, recordMicrophone, currentVideoPath);
         return currentVideoPath;
     }
 
@@ -155,13 +198,28 @@ public class ScreenRecorder {
      * @throws Exception If launching FFmpeg fails.
      */
     public synchronized Path startRecording(String prefix, String identifier, int deviceIndex) throws Exception {
+        return startRecording(prefix, identifier, deviceIndex, this.recordDesktopAudio, this.recordMicrophone);
+    }
+
+    /**
+     * Initiates a new screen recording session using a generated filename with discrete audio flags.
+     *
+     * @param prefix The filename prefix (e.g., "desktop", "java-jna-1").
+     * @param identifier The descriptor identifier (e.g., "gemini-3.6-flash").
+     * @param deviceIndex The 0-based screen graphics device index.
+     * @param recordDesktopAudio Whether to capture computer / desktop audio.
+     * @param recordMicrophone Whether to capture microphone voice input.
+     * @return The path to the destination .mp4 file.
+     * @throws Exception If launching FFmpeg fails.
+     */
+    public synchronized Path startRecording(String prefix, String identifier, int deviceIndex, boolean recordDesktopAudio, boolean recordMicrophone) throws Exception {
         String safePrefix = prefix != null ? prefix.replaceAll("[^a-zA-Z0-9.-]", "_") : "recording";
         String safeId = identifier != null ? identifier.replaceAll("[^a-zA-Z0-9.-]", "_") : "session";
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String filename = safePrefix + "_" + safeId + "_" + timestamp + ".mp4";
 
         Path target = getEffectiveRecordingsDirectory().resolve(filename);
-        return startRecording(target, deviceIndex);
+        return startRecording(target, deviceIndex, recordDesktopAudio, recordMicrophone);
     }
 
     /**
@@ -176,6 +234,11 @@ public class ScreenRecorder {
     public synchronized RecordedSession stopRecording(boolean captureThumbnail, Path thumbnailDestination) throws Exception {
         if (!isRecording()) {
             log.warn("No active recording process to stop.");
+            synchronized (lastFfmpegLogLines) {
+                if (!lastFfmpegLogLines.isEmpty()) {
+                    log.error("FFmpeg was not running when stopRecording was called. Last log output:\n{}", String.join("\n", lastFfmpegLogLines));
+                }
+            }
             return null;
         }
 
@@ -281,13 +344,15 @@ public class ScreenRecorder {
     }
 
     /**
-     * Builds the OS-specific FFmpeg CLI command for the given screen device.
+     * Builds the OS-specific FFmpeg CLI command for the given screen device and audio preferences.
      *
      * @param outputPath The target output .mp4 file path.
      * @param deviceIndex The target screen graphics device index.
+     * @param recordDesktopAudio Whether to record computer/desktop sound.
+     * @param recordMicrophone Whether to record microphone voice input.
      * @return List of command arguments.
      */
-    private List<String> buildFfmpegCommand(String outputPath, int deviceIndex) {
+    private List<String> buildFfmpegCommand(String outputPath, int deviceIndex, boolean recordDesktopAudio, boolean recordMicrophone) {
         String osName = System.getProperty("os.name", "").toLowerCase();
         List<String> cmd = new ArrayList<>();
         cmd.add("ffmpeg");
@@ -321,13 +386,62 @@ public class ScreenRecorder {
                 display = display + "+" + bounds.x + "," + bounds.y;
             }
             cmd.add(display);
+
+            // Audio configuration for Linux (PulseAudio / PipeWire)
+            if (recordDesktopAudio && recordMicrophone) {
+                // Input 1: Desktop audio (speaker/headphone monitor)
+                cmd.add("-f");
+                cmd.add("pulse");
+                cmd.add("-i");
+                cmd.add("@DEFAULT_SINK@.monitor");
+
+                // Input 2: Microphone input
+                cmd.add("-f");
+                cmd.add("pulse");
+                cmd.add("-i");
+                cmd.add("default");
+
+                // Blend desktop audio and microphone together
+                cmd.add("-filter_complex");
+                cmd.add("[1:a][2:a]amix=inputs=2:duration=longest[aout]");
+                cmd.add("-map");
+                cmd.add("0:v");
+                cmd.add("-map");
+                cmd.add("[aout]");
+            } else if (recordDesktopAudio) {
+                cmd.add("-f");
+                cmd.add("pulse");
+                cmd.add("-i");
+                cmd.add("@DEFAULT_SINK@.monitor");
+                cmd.add("-map");
+                cmd.add("0:v");
+                cmd.add("-map");
+                cmd.add("1:a");
+            } else if (recordMicrophone) {
+                cmd.add("-f");
+                cmd.add("pulse");
+                cmd.add("-i");
+                cmd.add("default");
+                cmd.add("-map");
+                cmd.add("0:v");
+                cmd.add("-map");
+                cmd.add("1:a");
+            } else {
+                cmd.add("-an");
+            }
         } else if (osName.contains("mac")) {
             cmd.add("-f");
             cmd.add("avfoundation");
             cmd.add("-r");
             cmd.add("30");
             cmd.add("-i");
-            cmd.add((deviceIndex + 1) + ":0");
+            String screenDevice = String.valueOf(deviceIndex + 1);
+            if (recordMicrophone || recordDesktopAudio) {
+                cmd.add(screenDevice + ":default");
+            } else {
+                cmd.add(screenDevice + ":none");
+                cmd.add("-an");
+            }
         } else if (osName.contains("win")) {
             cmd.add("-f");
             cmd.add("gdigrab");
@@ -341,6 +455,9 @@ public class ScreenRecorder {
             cmd.add(bounds.width + "x" + bounds.height);
             cmd.add("-i");
             cmd.add("desktop");
+            if (!recordDesktopAudio && !recordMicrophone) {
+                cmd.add("-an");
+            }
         } else {
             cmd.add("-f");
             cmd.add("x11grab");
@@ -350,6 +467,9 @@ public class ScreenRecorder {
             cmd.add(bounds.width + "x" + bounds.height);
             cmd.add("-i");
             cmd.add(":0.0+" + bounds.x + "," + bounds.y);
+            if (!recordDesktopAudio && !recordMicrophone) {
+                cmd.add("-an");
+            }
         }
 
         // Fast video encoding presets optimized for low CPU overhead and rapid YouTube HD processing
@@ -363,6 +483,16 @@ public class ScreenRecorder {
         cmd.add("60");
         cmd.add("-pix_fmt");
         cmd.add("yuv420p");
+
+        if (recordDesktopAudio || recordMicrophone) {
+            cmd.add("-c:a");
+            cmd.add("aac");
+            cmd.add("-b:a");
+            cmd.add("192k");
+            cmd.add("-ar");
+            cmd.add("48000");
+        }
+
         cmd.add("-movflags");
         cmd.add("+faststart");
         cmd.add(outputPath);
