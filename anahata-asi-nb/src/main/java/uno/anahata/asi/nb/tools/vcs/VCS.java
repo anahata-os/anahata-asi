@@ -26,6 +26,7 @@ import org.netbeans.libs.git.GitMergeResult;
 import org.netbeans.libs.git.GitPullResult;
 import org.netbeans.libs.git.GitPushResult;
 import org.netbeans.libs.git.GitRemoteConfig;
+import org.netbeans.libs.git.GitRepository.FastForwardOption;
 import org.netbeans.libs.git.GitRevisionInfo;
 import org.netbeans.libs.git.GitStatus;
 import org.netbeans.libs.git.GitTransportUpdate;
@@ -40,7 +41,6 @@ import org.netbeans.modules.localhistory.store.LocalHistoryStore;
 import org.netbeans.modules.localhistory.store.StoreEntry;
 import org.netbeans.modules.versioning.core.api.VCSFileProxy;
 import org.netbeans.modules.versioning.spi.VCSHistoryProvider;
-import org.netbeans.modules.versioning.spi.VCSHistoryProvider.HistoryEntry;
 import org.netbeans.modules.versioning.spi.VersioningSupport;
 import org.netbeans.modules.versioning.spi.VersioningSystem;
 import org.netbeans.modules.versioning.spi.VCSContext;
@@ -52,6 +52,10 @@ import org.netbeans.modules.git.GitFileNode.GitLocalFileNode;
 import org.netbeans.modules.versioning.util.common.VCSCommitOptions;
 import org.openide.util.HelpCtx;
 import uno.anahata.asi.swing.internal.SwingUtils;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
+import uno.anahata.asi.agi.resource.vcs.VcsDiff;
+import uno.anahata.asi.agi.resource.vcs.VcsFileStatus;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -70,19 +74,8 @@ import uno.anahata.asi.agi.tool.ToolPermission;
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("Universal toolkit for NetBeans Versioning Systems and Local History.")
+//@AgiToolkit("Universal toolkit for NetBeans Versioning Systems and Local History.")
 public class VCS extends AnahataToolkit {
-
-    /**
-     * Immutable DTO representing a normalized history entry across NetBeans VCS and Local History.
-     *
-     * @param date The timestamp of the revision.
-     * @param revision The short revision identifier (commit hash, revision number, or 'Local').
-     * @param user The author or user who made the change.
-     * @param message The commit message or Local History label.
-     * @param origin The source system (e.g. 'Git', 'Subversion', 'LocalHistory').
-     */
-    private record UnifiedHistoryEntry(Date date, String revision, String user, String message, String origin) {}
 
     /**
      * {@inheritDoc}
@@ -92,21 +85,38 @@ public class VCS extends AnahataToolkit {
     public List<String> getSystemInstructions() {
         return List.of("""
         ### NetBeans VCS & Git Engine Direct Access:
-        For advanced Git operations not exposed as discrete `@AgiTool` methods (such as merge, cherry-pick, rebase, tag, stash, or branch creation), you can use `NbJava.compileAndExecute` to obtain NetBeans's managed `GitClient`:
+        For advanced Git operations not exposed as discrete `@AgiTool` methods (such as cherry-pick, interactive rebase, stash, hard reset, or tag management), you can use `NbJava.compileAndExecute` to obtain NetBeans's managed `GitClient`:
         ```java
         File repoRoot = new File("/path/to/repo");
         GitClient client = Git.getInstance().getClient(repoRoot);
         try {
-            // client.merge(branch, ...);
-            // client.rebase(op, branch, ...);
-            // client.createBranch(branchName, revision, ...);
             // client.cherryPick(revision, ...);
+            // client.rebase(op, branch, ...);
+            // client.stashSave(message, ...);
+            // client.createTag(tagName, revision, ...);
+            // client.reset(revision, type, ...);
         } finally {
             client.release();
         }
         ```
         This client is pre-wired with NetBeans's Keyring credentials, SSH session factory, and VFS synchronization.
         """);
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>Populates the RAG message with application-wide Git user configuration.</p>
+     */
+    @Override
+    public void populateMessage(RagMessage message) {
+        GitUser user = getGlobalGitUser();
+        if (user != null) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("## Global Git User Configuration\n");
+            sb.append("- **Name**: ").append(user.getName()).append("\n");
+            sb.append("- **Email**: ").append(user.getEmailAddress()).append("\n");
+            message.addTextPart(sb.toString().trim());
+        }
     }
 
     /**
@@ -148,17 +158,18 @@ public class VCS extends AnahataToolkit {
      *
      * @param filePath The absolute path of the file.
      * @param maxEntries Maximum number of history entries to return. Defaults to 10 if null.
-     * @return A Markdown table containing the chronological history.
+     * @return A list of {@link HistoryEntry} DTOs sorted in reverse chronological order.
      * @throws Exception if querying history fails.
      */
     @AgiTool(value = "Queries the unified chronological history of a file, combining VCS commits and NetBeans Local History.", permission = ToolPermission.APPROVE_ALWAYS)
-    public String getHistory(
+    public List<HistoryEntry> getHistory(
             @AgiToolParam(value = "The absolute path of the file.", rendererId = "path") String filePath,
             @AgiToolParam(value = "Maximum number of history entries to return. Defaults to 10.", required = false) Integer maxEntries) throws Exception {
 
         File file = resolveFile(filePath);
         int limit = (maxEntries != null && maxEntries > 0) ? maxEntries : 10;
-        List<UnifiedHistoryEntry> history = new ArrayList<>();
+        List<HistoryEntry> history = new ArrayList<>();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         // 1. VCS entries via NetBeans VersioningSupport (works for Git, SVN, Mercurial)
         VersioningSystem vs = VersioningSupport.getOwner(file);
@@ -169,11 +180,12 @@ public class VCS extends AnahataToolkit {
             }
             VCSHistoryProvider hp = vs.getVCSHistoryProvider();
             if (hp != null) {
-                HistoryEntry[] entries = hp.getHistory(new File[]{file}, null);
+                VCSHistoryProvider.HistoryEntry[] entries = hp.getHistory(new File[]{file}, null);
                 if (entries != null) {
-                    for (HistoryEntry ge : entries) {
+                    for (VCSHistoryProvider.HistoryEntry ge : entries) {
                         String msg = ge.getMessage() != null ? ge.getMessage().replace("\n", " ").trim() : "";
-                        history.add(new UnifiedHistoryEntry(ge.getDateTime(), ge.getRevisionShort(), ge.getUsernameShort(), msg, vcsName));
+                        Date d = ge.getDateTime();
+                        history.add(new HistoryEntry(d.getTime(), sdf.format(d), vcsName, ge.getRevisionShort(), ge.getUsernameShort(), msg));
                     }
                 }
             }
@@ -188,37 +200,16 @@ public class VCS extends AnahataToolkit {
                 for (StoreEntry se : storeEntries) {
                     Date date = new Date(se.getTimestamp());
                     String label = se.getLabel() != null ? se.getLabel().trim() : "";
-                    history.add(new UnifiedHistoryEntry(date, "Local", "", label, "LocalHistory"));
+                    history.add(new HistoryEntry(se.getTimestamp(), sdf.format(date), "Local History", "Local", "", label));
                 }
             }
         }
 
-        // 3. Sort descending (newest first)
-        history.sort((a, b) -> b.date().compareTo(a.date()));
+        // 3. Sort descending (newest first, via HistoryEntry.compareTo)
+        Collections.sort(history);
 
-        if (history.isEmpty()) {
-            return "No history entries found for: " + filePath;
-        }
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        StringBuilder sb = new StringBuilder();
-        sb.append("### Unified History for: ").append(file.getName()).append("\n\n");
-        sb.append("| Date | Revision | User | Origin | Message |\n");
-        sb.append("| :--- | :--- | :--- | :--- | :--- |\n");
-
-        int count = Math.min(limit, history.size());
-        for (int i = 0; i < count; i++) {
-            UnifiedHistoryEntry e = history.get(i);
-            sb.append("| ")
-              .append(sdf.format(e.date())).append(" | ")
-              .append(e.revision()).append(" | ")
-              .append(e.user() != null ? e.user() : "").append(" | ")
-              .append(e.origin()).append(" | ")
-              .append(e.message() != null ? e.message() : "").append(" |\n");
-        }
-
-        log("Found " + history.size() + " total history entries for " + file.getName() + ", showing " + count);
-        return sb.toString().trim();
+        log("Found " + history.size() + " total history entries for " + file.getName() + ", returning " + Math.min(limit, history.size()));
+        return history.size() <= limit ? history : new ArrayList<>(history.subList(0, limit));
     }
 
     /**
@@ -226,11 +217,11 @@ public class VCS extends AnahataToolkit {
      *
      * @param filePath The absolute path of the file to inspect.
      * @param revision Optional revision identifier (e.g. commit hash or revision number). If omitted, diffs against the repository pristine base.
-     * @return The standard unified diff text.
+     * @return A {@link VcsDiff} DTO containing diff text and status classification.
      * @throws Exception if diff generation fails.
      */
     @AgiTool(value = "Generates a unified diff for a file against repository base or a specific revision using NetBeans APIs.", permission = ToolPermission.APPROVE_ALWAYS)
-    public String getDiff(
+    public VcsDiff getDiff(
             @AgiToolParam(value = "The absolute path of the file to inspect.", rendererId = "path") String filePath,
             @AgiToolParam(value = "Optional revision identifier (e.g. commit hash or revision number). If omitted, diffs against repository base.", required = false) String revision) throws Exception {
 
@@ -248,10 +239,10 @@ public class VCS extends AnahataToolkit {
             if (hp == null) {
                 throw new AgiToolException("VCS History Provider is not available for " + vs.getProperty(VersioningSystem.PROP_DISPLAY_NAME));
             }
-            HistoryEntry[] entries = hp.getHistory(new File[]{file}, null);
-            HistoryEntry targetEntry = null;
+            VCSHistoryProvider.HistoryEntry[] entries = hp.getHistory(new File[]{file}, null);
+            VCSHistoryProvider.HistoryEntry targetEntry = null;
             if (entries != null) {
-                for (HistoryEntry e : entries) {
+                for (VCSHistoryProvider.HistoryEntry e : entries) {
                     if (e.getRevisionShort() != null && e.getRevisionShort().equalsIgnoreCase(revision.trim())) {
                         targetEntry = e;
                         break;
@@ -264,11 +255,16 @@ public class VCS extends AnahataToolkit {
             targetEntry.getRevisionFile(file, tempBase);
         } else {
             vs.getOriginalFile(file, tempBase);
-        }
-
-        if (!tempBase.exists() || tempBase.length() == 0 && file.length() > 0 && !tempBase.createNewFile()) {
-            // Check if getOriginalFile wrote nothing
-            log("Base file not created by VersioningSystem: " + tempBase.getAbsolutePath());
+            if (!tempBase.exists() || (tempBase.length() == 0 && file.length() > 0)) {
+                
+                return VcsDiff.builder()
+                        .filePath(file.getAbsolutePath())
+                        .status(VcsFileStatus.NEW)
+                        .baseRevision(revision != null ? revision : "HEAD")
+                        .targetRevision("WORKING_COPY")
+                        .build();
+                
+            }
         }
 
         List<String> originalLines = Files.readAllLines(tempBase.toPath(), StandardCharsets.UTF_8);
@@ -279,11 +275,25 @@ public class VCS extends AnahataToolkit {
 
         if (unifiedDiff.isEmpty()) {
             log("File is identical to base revision: " + filePath);
-            return "No differences found for: " + filePath + " against " + (revision != null ? revision : "repository base");
+            
+            return VcsDiff.builder()
+                    .filePath(file.getAbsolutePath())
+                    .status(VcsFileStatus.CLEAN)
+                    .baseRevision(revision != null ? revision : "HEAD")
+                    .targetRevision("WORKING_COPY")
+                    .build();
+            
         }
 
         log("Generated unified diff (" + unifiedDiff.size() + " lines) for: " + file.getName());
-        return String.join("\n", unifiedDiff);
+        
+        return VcsDiff.builder()
+                .filePath(file.getAbsolutePath())
+                .status(VcsFileStatus.MODIFIED)
+                .baseRevision(revision != null ? revision : "HEAD")
+                .targetRevision("WORKING_COPY")
+                .diff(String.join("\n", unifiedDiff))
+                .build();
     }
 
     /**
@@ -422,7 +432,7 @@ public class VCS extends AnahataToolkit {
      */
     @AgiTool("Stages one or more files into the Git index.")
     public String gitAdd(
-            @AgiToolParam(value = "List of file paths to stage into the Git index.") List<String> filePaths) throws Exception {
+            @AgiToolParam(value = "List of file paths to stage into the Git index.", rendererId = "path") List<String> filePaths) throws Exception {
 
         if (filePaths == null || filePaths.isEmpty()) {
             throw new AgiToolException("No files specified to stage.");
@@ -475,7 +485,7 @@ public class VCS extends AnahataToolkit {
     @AgiTool("Commits changes headlessly in a single shot (auto-stages files if specified).")
     public String gitCommit(
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
-            @AgiToolParam(value = "Optional list of specific files to stage and commit. If omitted, commits all staged files.", required = false) List<String> filePaths,
+            @AgiToolParam(value = "Optional list of specific files to stage and commit. If omitted, commits all staged files.", required = false, rendererId = "path") List<String> filePaths,
             @AgiToolParam(value = "The commit message.") String message,
             @AgiToolParam(value = "Optional author name.", required = false) String authorName,
             @AgiToolParam(value = "Optional author email.", required = false) String authorEmail) throws Exception {
@@ -495,7 +505,11 @@ public class VCS extends AnahataToolkit {
             if (filePaths != null && !filePaths.isEmpty()) {
                 List<File> list = new ArrayList<>();
                 for (String p : filePaths) {
-                    list.add(resolveFile(p));
+                    File f = resolveRepoFile(repoRoot, p);
+                    if (!f.exists()) {
+                        throw new AgiToolException("File does not exist: " + f.getAbsolutePath());
+                    }
+                    list.add(f);
                 }
                 filesToCommit = list.toArray(File[]::new);
                 client.add(filesToCommit, monitor);
@@ -533,7 +547,7 @@ public class VCS extends AnahataToolkit {
     @AgiTool("Opens the native NetBeans Git Commit dialog on the UI with pre-filled message and selected files.")
     public String gitOpenCommitDialog(
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
-            @AgiToolParam(value = "Optional list of files to pre-select in the commit dialog.", required = false) List<String> filePaths,
+            @AgiToolParam(value = "Optional list of files to pre-select in the commit dialog.", required = false, rendererId = "path") List<String> filePaths,
             @AgiToolParam(value = "The initial commit message to pre-fill.") String message,
             @AgiToolParam(value = "Optional author name.", required = false) String authorName,
             @AgiToolParam(value = "Optional author email.", required = false) String authorEmail) throws Exception {
@@ -552,7 +566,11 @@ public class VCS extends AnahataToolkit {
         final List<File> files = new ArrayList<>();
         if (filePaths != null && !filePaths.isEmpty()) {
             for (String p : filePaths) {
-                files.add(resolveFile(p));
+                File f = resolveRepoFile(repoRoot, p);
+                if (!f.exists()) {
+                    throw new AgiToolException("File does not exist: " + f.getAbsolutePath());
+                }
+                files.add(f);
             }
         } else {
             files.add(target);
@@ -622,7 +640,8 @@ public class VCS extends AnahataToolkit {
     public String gitPush(
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
             @AgiToolParam(value = "The remote name (e.g. 'origin', 'helder'). If omitted, uses the tracked remote or 'origin'.", required = false) String remote,
-            @AgiToolParam(value = "Optional branch name to push. If omitted, pushes current active branch.", required = false) String branch) throws Exception {
+            @AgiToolParam(value = "Optional branch name to push. If omitted, pushes current active branch.", required = false) String branch,
+            @AgiToolParam(value = "Whether to force-push (allow non-fast-forward updates). Defaults to false.", required = false) Boolean force) throws Exception {
 
         File repoRoot = requireRepoRoot(repoPath);
 
@@ -635,9 +654,11 @@ public class VCS extends AnahataToolkit {
 
             GitRemoteConfig remoteCfg = client.getRemote(remoteName, monitor);
             List<String> fetchRefSpecs = resolveFetchRefSpecs(remoteCfg, remoteName);
-            List<String> pushRefSpecs = Collections.singletonList("refs/heads/" + branchName + ":refs/heads/" + branchName);
+            boolean forcePush = force != null && force;
+            String prefix = forcePush ? "+" : "";
+            List<String> pushRefSpecs = Collections.singletonList(prefix + "refs/heads/" + branchName + ":refs/heads/" + branchName);
 
-            log("Pushing branch '" + branchName + "' to remote '" + remoteName + "' in " + repoRoot.getName());
+            log("Pushing branch '" + branchName + "' to remote '" + remoteName + "' in " + repoRoot.getName() + (forcePush ? " (FORCE)" : ""));
             GitPushResult pushResult = client.push(remoteName, pushRefSpecs, fetchRefSpecs, monitor);
 
             StringBuilder sb = new StringBuilder();
@@ -645,6 +666,9 @@ public class VCS extends AnahataToolkit {
             sb.append("- **Repository**: ").append(repoRoot.getName()).append("\n");
             sb.append("- **Branch**: `").append(branchName).append("`\n");
             sb.append("- **Remote**: `").append(remoteName).append("`\n");
+            if (forcePush) {
+                sb.append("- **Force Push**: true\n");
+            }
 
             if (!pushResult.getRemoteRepositoryUpdates().isEmpty()) {
                 sb.append("- **Remote Updates**: ").append(pushResult.getRemoteRepositoryUpdates().keySet()).append("\n");
@@ -789,7 +813,8 @@ public class VCS extends AnahataToolkit {
             @AgiToolParam(value = "Maximum number of commits to retrieve. Defaults to 10.", required = false) Integer maxEntries,
             @AgiToolParam(value = "Optional file or directory path to limit the commit log to.", required = false, rendererId = "path") String filePath,
             @AgiToolParam(value = "Optional author name or email filter.", required = false) String author,
-            @AgiToolParam(value = "Whether to exclude merge commits. Defaults to false.", required = false) Boolean noMerges) throws Exception {
+            @AgiToolParam(value = "Whether to exclude merge commits. Defaults to false.", required = false) Boolean noMerges,
+            @AgiToolParam(value = "Optional regex or keyword filter for commit messages.", required = false) String grep) throws Exception {
 
         File repoRoot = requireRepoRoot(repoPath);
 
@@ -807,6 +832,9 @@ public class VCS extends AnahataToolkit {
             }
             if (noMerges != null && noMerges) {
                 crit.setIncludeMerges(false);
+            }
+            if (grep != null && !grep.isBlank()) {
+                crit.setMessage(grep.trim());
             }
             if (filePath != null && !filePath.isBlank()) {
                 crit.setFiles(new File[]{resolveRepoFile(repoRoot, filePath)});
@@ -858,7 +886,8 @@ public class VCS extends AnahataToolkit {
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
             @AgiToolParam(value = "The base branch or revision hash (e.g. 'main', 'HEAD~1').") String baseRevision,
             @AgiToolParam(value = "The target branch or revision hash (e.g. 'helder/feat.service-database-tool', 'HEAD').") String targetRevision,
-            @AgiToolParam(value = "Optional specific file or folder path to limit the diff to.", required = false, rendererId = "path") String filePath) throws Exception {
+            @AgiToolParam(value = "Optional specific file or folder path to limit the diff to.", required = false, rendererId = "path") String filePath,
+            @AgiToolParam(value = "If true, returns only the list of modified/added/deleted file paths instead of the full patch text. Defaults to false.", required = false) Boolean summaryOnly) throws Exception {
 
         File repoRoot = requireRepoRoot(repoPath);
 
@@ -876,10 +905,63 @@ public class VCS extends AnahataToolkit {
             if (diff.isBlank()) {
                 return "No differences found between " + baseRevision + " and " + targetRevision + (filePath != null ? " for " + filePath : "");
             }
+
+            if (summaryOnly != null && summaryOnly) {
+                return parseDiffSummary(diff, repoRoot.getName(), baseRevision, targetRevision);
+            }
+
             return diff;
         } finally {
             client.release();
         }
+    }
+
+    /**
+     * Parses unified diff text into a concise Markdown summary table of changed files and their change types.
+     *
+     * @param diff The raw unified diff output.
+     * @param repoName The repository name for display.
+     * @param baseRev The base revision.
+     * @param targetRev The target revision.
+     * @return Markdown summary table.
+     */
+    private static String parseDiffSummary(String diff, String repoName, String baseRev, String targetRev) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("### Git Diff Summary: ").append(repoName).append(" [").append(baseRev).append("...").append(targetRev).append("]\n\n");
+        sb.append("| Change | File |\n");
+        sb.append("| :--- | :--- |\n");
+
+        String[] lines = diff.split("\n");
+        String currentFile = null;
+        String changeType = "[M]";
+        int count = 0;
+
+        for (String line : lines) {
+            if (line.startsWith("diff --git ")) {
+                if (currentFile != null) {
+                    sb.append("| `").append(changeType).append("` | `").append(currentFile).append("` |\n");
+                    count++;
+                }
+                changeType = "[M]";
+                String[] parts = line.split(" ");
+                if (parts.length >= 4) {
+                    currentFile = parts[3].startsWith("b/") ? parts[3].substring(2) : parts[3];
+                }
+            } else if (line.startsWith("new file mode ")) {
+                changeType = "[A]";
+            } else if (line.startsWith("deleted file mode ")) {
+                changeType = "[D]";
+            }
+        }
+        if (currentFile != null) {
+            sb.append("| `").append(changeType).append("` | `").append(currentFile).append("` |\n");
+            count++;
+        }
+
+        if (count == 0) {
+            return "No changed files found in diff between " + baseRev + " and " + targetRev;
+        }
+        return "- **Total Changed Files**: " + count + "\n\n" + sb.toString().trim();
     }
 
     /**
@@ -973,6 +1055,64 @@ public class VCS extends AnahataToolkit {
 
             refreshVfs(repoRoot);
             log("Pull completed for " + repoRoot.getName() + " mergeStatus=" + (mergeResult != null ? mergeResult.getMergeStatus() : "unknown"));
+            return sb.toString().trim();
+        } finally {
+            client.release();
+        }
+    }
+
+    /**
+     * Merges a branch or revision into the current active branch.
+     *
+     * @param repoPath Path of the repository or project directory.
+     * @param branchOrRevision The branch name or revision hash to merge into the active branch.
+     * @return Markdown summary of the merge outcome, including merge status, new HEAD, and any conflicts.
+     * @throws Exception if merge fails.
+     */
+    @AgiTool("Merges a branch or revision into the current active branch.")
+    public String gitMerge(
+            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
+            @AgiToolParam(value = "The branch name or revision hash to merge into the active branch.") String branchOrRevision,
+            @AgiToolParam(value = "Fast-forward merge policy. Defaults to FAST_FORWARD.", required = false) FastForwardOption fastForwardOption) throws Exception {
+
+        if (branchOrRevision == null || branchOrRevision.isBlank()) {
+            throw new AgiToolException("Branch name or revision cannot be empty.");
+        }
+
+        File repoRoot = requireRepoRoot(repoPath);
+
+        GitClient client = Git.getInstance().getClient(repoRoot);
+        ToolProgressMonitor monitor = new ToolProgressMonitor();
+        try {
+            GitBranch activeBranch = getActiveBranch(client, monitor);
+            String target = branchOrRevision.trim();
+            String activeName = activeBranch != null ? activeBranch.getName() : "HEAD";
+            FastForwardOption ff = fastForwardOption != null ? fastForwardOption : FastForwardOption.FAST_FORWARD;
+
+            log("Merging '" + target + "' (" + ff + ") into " + activeName + " in " + repoRoot.getName());
+            GitMergeResult mergeResult = client.merge(target, ff, monitor);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("### Git Merge Result: ").append(repoRoot.getName()).append("\n\n");
+            sb.append("- **Active Branch**: `").append(activeName).append("`\n");
+            sb.append("- **Merged Revision/Branch**: `").append(target).append("`\n");
+            sb.append("- **Merge Status**: `").append(mergeResult.getMergeStatus()).append("`\n");
+
+            if (mergeResult.getNewHead() != null) {
+                String newHeadShort = mergeResult.getNewHead().substring(0, Math.min(7, mergeResult.getNewHead().length()));
+                sb.append("- **New HEAD**: `").append(newHeadShort).append("`\n");
+            }
+
+            if (mergeResult.getConflicts() != null && !mergeResult.getConflicts().isEmpty()) {
+                sb.append("\n⚠️ **Conflicts Encountered**:\n");
+                for (File conflict : mergeResult.getConflicts()) {
+                    sb.append("- `").append(repoRoot.toPath().relativize(conflict.toPath())).append("`\n");
+                }
+                sb.append("\nResolve the conflict markers (`<<<<<<<` / `=======` / `>>>>>>>`) in these files, stage them with `gitAdd`, and finalize with `gitCommit`.\n");
+            }
+
+            refreshVfs(repoRoot);
+            log("Merge of " + target + " completed with status: " + mergeResult.getMergeStatus());
             return sb.toString().trim();
         } finally {
             client.release();
@@ -1184,9 +1324,185 @@ public class VCS extends AnahataToolkit {
     }
 
     /**
+     * Checks if a given directory path is the root of a Git repository.
+     *
+     * @param path The directory path to check.
+     * @return true if the directory is a repository root.
+     */
+    public boolean isRepoRoot(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        File target = FileUtil.normalizeFile(new File(path));
+        if (!target.exists() || !target.isDirectory()) {
+            return false;
+        }
+        File repoRoot = findRepoRoot(target);
+        return repoRoot != null && repoRoot.equals(target);
+    }
+
+    /**
+     * Builds a structured Markdown overview of a repository including active branch,
+     * upstream tracking, configured remotes, working tree modification status, and recent commits.
+     * Polymorphically supports Git, Subversion, Mercurial, and any NetBeans VersioningSystem.
+     *
+     * @param repoPath Path of the repository or project directory.
+     * @return Structured Markdown overview of the repository state, or null if unmanaged.
+     * @throws Exception if repository querying fails.
+     */
+    public String getRepositoryOverview(String repoPath) throws Exception {
+        File target = resolveFileOrDirectory(repoPath);
+        VersioningSystem vs = VersioningSupport.getOwner(target);
+        if (vs == null) {
+            return null;
+        }
+
+        File repoRoot = vs.getTopmostManagedAncestor(target);
+        if (repoRoot == null) {
+            repoRoot = target;
+        }
+
+        String vcsName = (String) vs.getProperty(VersioningSystem.PROP_DISPLAY_NAME);
+        if (vcsName == null || vcsName.isBlank()) {
+            vcsName = "VCS";
+        }
+
+        StringBuilder sb = new StringBuilder();
+
+        // 1. Repo-Specific Status
+        if ("Git".equalsIgnoreCase(vcsName) || vcsName.toLowerCase().contains("git")) {
+            GitClient client = Git.getInstance().getClient(repoRoot);
+            ToolProgressMonitor monitor = new ToolProgressMonitor();
+            try {
+                GitBranch active = getActiveBranch(client, monitor);
+                String activeBranch = active != null ? active.getName() : "HEAD";
+                String tracking = (active != null && active.getTrackedBranch() != null)
+                        ? active.getTrackedBranch().getName()
+                        : null;
+
+                sb.append("## Live Version Control: Git [Branch: `").append(activeBranch).append("`");
+                if (tracking != null) {
+                    sb.append(" (tracks `").append(tracking).append("`)");
+                }
+                sb.append("]\n");
+                sb.append("> [!NOTE]\n");
+                sb.append("> This is the live repository status generated JIT for this turn. Do not call `VCS.gitStatus` to re-query.\n\n");
+
+                Map<String, GitRemoteConfig> remotes = client.getRemotes(monitor);
+                if (!remotes.isEmpty()) {
+                    sb.append("  - **Remotes**:\n");
+                    for (GitRemoteConfig rc : remotes.values()) {
+                        String uri = rc.getUris().isEmpty() ? "-" : rc.getUris().get(0);
+                        sb.append("    * `").append(rc.getRemoteName()).append("`: ").append(uri).append("\n");
+                    }
+                }
+
+                Map<File, GitStatus> statusMap = client.getStatus(new File[]{repoRoot}, monitor);
+                int modifiedCount = 0;
+                StringBuilder table = new StringBuilder();
+                table.append("  | Status (Index / Working Tree) | File |\n");
+                table.append("  | :--- | :--- |\n");
+
+                for (Map.Entry<File, GitStatus> entry : statusMap.entrySet()) {
+                    GitStatus s = entry.getValue();
+                    GitStatus.Status headWc = s.getStatusHeadWC();
+                    GitStatus.Status indexWc = s.getStatusIndexWC();
+
+                    if (headWc == GitStatus.Status.STATUS_IGNORED || indexWc == GitStatus.Status.STATUS_IGNORED) {
+                        continue;
+                    }
+                    if (headWc == GitStatus.Status.STATUS_NORMAL && indexWc == GitStatus.Status.STATUS_NORMAL) {
+                        continue;
+                    }
+
+                    String relativePath = repoRoot.toPath().relativize(entry.getKey().toPath()).toString();
+                    table.append("  | `").append(indexWc).append(" / ").append(headWc).append("` | `").append(relativePath).append("` |\n");
+                    modifiedCount++;
+                }
+
+                if (modifiedCount == 0) {
+                    sb.append("  - **Working Tree**: Clean (no uncommitted changes)\n");
+                } else {
+                    sb.append("  - **Working Tree**: ").append(modifiedCount).append(" modified/untracked files\n\n");
+                    sb.append(table).append("\n");
+                }
+            } finally {
+                client.release();
+            }
+        } else {
+            // Subversion / Mercurial / Generic NetBeans VCS
+            sb.append("## Live Version Control: ").append(vcsName).append("\n");
+            sb.append("> [!NOTE]\n");
+            sb.append("> This is the live repository status generated JIT for this turn.\n\n");
+            sb.append("  - **Working Copy Root**: `").append(repoRoot.getAbsolutePath()).append("`\n");
+        }
+
+        // 2. Repo-Tech Agnostic: Recent Commits (works for Git, SVN, Mercurial via VCSHistoryProvider)
+        List<HistoryEntry> recentCommits = getHistory(repoRoot.getAbsolutePath(), 5);
+        if (!recentCommits.isEmpty()) {
+            sb.append("  ### Recent Commits\n");
+            String table = HistoryEntry.toMarkdownTable(repoRoot.getName(), recentCommits);
+            if (table != null) {
+                sb.append("  ").append(table.replace("\n", "\n  ")).append("\n");
+            }
+        }
+
+        return sb.toString().trim();
+    }
+
+    /**
+     * Reads and returns the Git configuration file (.git/config) for a repository.
+     * Handles standard repositories, Git worktrees, and Git submodules.
+     *
+     * @param repoPath Path of the repository or project directory.
+     * @return Raw text content of the Git config, or null if unresolvable.
+     * @throws Exception if reading fails.
+     */
+    @AgiTool(value = "Reads and returns the Git configuration file (.git/config) for a repository.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String getGitConfig(
+            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath) throws Exception {
+
+        File repoRoot = requireRepoRoot(repoPath);
+        File gitConfigFile = resolveGitConfigFile(repoRoot);
+        if (gitConfigFile != null && gitConfigFile.exists() && gitConfigFile.isFile()) {
+            return Files.readString(gitConfigFile.toPath(), StandardCharsets.UTF_8).trim();
+        }
+        return null;
+    }
+
+    /**
+     * Resolves the Git configuration file, supporting standard repositories, Git worktrees, and Git submodules.
+     *
+     * @param repoRoot The repository root folder.
+     * @return The resolved config File, or null if unresolvable.
+     */
+    private static File resolveGitConfigFile(File repoRoot) {
+        File dotGit = new File(repoRoot, ".git");
+        if (dotGit.isDirectory()) {
+            return new File(dotGit, "config");
+        }
+        if (dotGit.isFile()) {
+            try {
+                String line = Files.readString(dotGit.toPath(), StandardCharsets.UTF_8).trim();
+                if (line.startsWith("gitdir:")) {
+                    String targetPath = line.substring("gitdir:".length()).trim();
+                    File gitDir = new File(targetPath);
+                    if (!gitDir.isAbsolute()) {
+                        gitDir = new File(repoRoot, targetPath);
+                    }
+                    return new File(gitDir, "config");
+                }
+            } catch (Exception e) {
+                log.debug("Could not resolve gitdir pointer in {}: {}", dotGit, e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
      * Resolves a GitUser from parameters, repository client defaults, or host system username.
      *
-     * @param client The active GitClient.
+     * @param client The active GitClient (optional).
      * @param authorName Optional provided author name.
      * @param authorEmail Optional provided author email.
      * @return Valid GitUser instance.
@@ -1195,17 +1511,41 @@ public class VCS extends AnahataToolkit {
         if (authorName != null && !authorName.isBlank() && authorEmail != null && !authorEmail.isBlank()) {
             return new GitUser(authorName.trim(), authorEmail.trim());
         }
-        try {
-            GitUser defaultUser = client.getUser();
-            if (defaultUser != null && defaultUser.getName() != null && defaultUser.getEmailAddress() != null) {
-                return defaultUser;
+        if (client != null) {
+            try {
+                GitUser defaultUser = client.getUser();
+                if (defaultUser != null && defaultUser.getName() != null && defaultUser.getEmailAddress() != null) {
+                    return defaultUser;
+                }
+            } catch (Exception ex) {
+                log.warn("Could not retrieve default Git user from GitClient: {}", ex.getMessage());
             }
-        } catch (Exception ex) {
-            log.warn("Could not retrieve default Git user from GitClient: {}", ex.getMessage());
         }
-        String name = (authorName != null && !authorName.isBlank()) ? authorName.trim() : System.getProperty("user.name", "Anahata");
-        String email = (authorEmail != null && !authorEmail.isBlank()) ? authorEmail.trim() : name + "@local";
-        return new GitUser(name, email);
+        return getGlobalGitUser();
+    }
+
+    /**
+     * Resolves the global Git user from ~/.gitconfig or NetBeans system configuration.
+     *
+     * @return The configured GitUser.
+     */
+    private GitUser getGlobalGitUser() {
+        File home = new File(System.getProperty("user.home"));
+        GitClient client = null;
+        try {
+            client = Git.getInstance().getClient(home);
+            GitUser user = client.getUser();
+            if (user != null && user.getName() != null && !user.getName().isBlank()) {
+                return user;
+            }
+        } catch (Exception ignored) {
+        } finally {
+            if (client != null) {
+                client.release();
+            }
+        }
+        String name = System.getProperty("user.name", "Anahata");
+        return new GitUser(name, name + "@local");
     }
 
     /**

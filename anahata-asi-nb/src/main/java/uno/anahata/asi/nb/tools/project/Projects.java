@@ -50,6 +50,7 @@ import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
+import uno.anahata.asi.nb.tools.vcs.VCS;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
@@ -499,6 +500,18 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             log.debug("Failed to get HTML display name for project root", e);
         }
 
+        String vcsOverview = null;
+        if (getAgi() != null) {
+            Optional<VCS> vcsOpt = getAgi().getToolkit(VCS.class);
+            if (vcsOpt.isPresent() && vcsOpt.get().isRepoRoot(projectPath)) {
+                try {
+                    vcsOverview = vcsOpt.get().getRepositoryOverview(projectPath);
+                } catch (Exception e) {
+                    log.debug("Could not resolve VCS overview for {}: {}", projectPath, e.getMessage());
+                }
+            }
+        }
+
         return new ProjectOverview(
                 root.getNameExt(),
                 info.getDisplayName(),
@@ -510,7 +523,8 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
                 javaSourceLevel,
                 javaTargetLevel,
                 sourceEncoding,
-                compileOnSave
+                compileOnSave,
+                vcsOverview
         );
     }
 

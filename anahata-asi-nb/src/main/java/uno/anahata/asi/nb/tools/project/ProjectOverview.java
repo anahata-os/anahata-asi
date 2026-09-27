@@ -66,4 +66,8 @@ public final class ProjectOverview {
     /** The effective status of 'Compile on Save' (includes the configuration source). */
     @Schema(description = "The status of 'Compile on Save' for this project (e.g., 'all', 'none', 'Enabled', 'Disabled').", example = "all (IDE Override)")
     private final String compileOnSave;
+
+    /** Formatted Git or VCS overview if this project is the repository root, or null if not applicable. */
+    @Schema(description = "Formatted Git or VCS overview if this project is the repository root, or null if not applicable.")
+    private final String vcsOverview;
 }
