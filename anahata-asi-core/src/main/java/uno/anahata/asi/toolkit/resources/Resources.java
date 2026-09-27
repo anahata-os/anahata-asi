@@ -318,13 +318,15 @@ public class Resources extends AnahataToolkit {
      * @throws Exception if the update fails.
      */
     @AgiTool(value = "Updates an existing text resource in the RAG message using full content replacement. Returns a standard unified diff of the changes applied. Use only in emergency scenarios if findAndReaplceInTextResource can't do. If you do, Do not quietly remove inline comments or javadocs when using this tool.", maxDepth = 4)
-    public String updateTextResource(@AgiToolParam("The update details.") FullTextResourceUpdate update) throws Exception {
+    public String updateTextResource(
+            @AgiToolParam("The update details.") FullTextResourceUpdate update,
+            @AgiToolParam(value = "The overall reason for updating the text resource.", required = false) String reason) throws Exception {
         update.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(update.getResourceUuid());
         String revised = update.calculateResultingContent(getAgi());
-        res.write(revised);
+        res.write(revised, reason);
         update.setResultingContent(res.asText());
-        log("Updated text file: " + res.getName());
+        log("Updated text file: " + res.getName() + (reason != null && !reason.isBlank() ? " (" + reason + ")" : ""));
         return update.getUnifiedDiff(getAgi()) + "\n---END OF DIFF---\nResource saved. New Last Modified: " + res.getLastLoadTimestamp();
     }
 
@@ -348,7 +350,7 @@ public class Resources extends AnahataToolkit {
         replacements.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(replacements.getResourceUuid());
         String revised = replacements.calculateResultingContent(getAgi());
-        res.write(revised);
+        res.write(revised, reason);
         replacements.setResultingContent(res.asText());
         log("Performed replacements in: " + res.getName() + (reason != null && !reason.isBlank() ? " (" + reason + ")" : ""));
         return replacements.getUnifiedDiff(getAgi()) + "\n---END OF DIFF---\nResource saved. New Last Modified: " + res.getLastLoadTimestamp();
@@ -386,7 +388,7 @@ public class Resources extends AnahataToolkit {
         edits.validate(getAgi());
         Resource res = getAgi().getResourceManager().getResources().get(edits.getResourceUuid());
         String revised = edits.calculateResultingContent(getAgi());
-        res.write(revised);
+        res.write(revised, "Semantic line edits");
         edits.setResultingContent(res.asText());
         log("Applied semantic line edits to: " + res.getName());
         return edits.getUnifiedDiff(getAgi()) + "\n---END OF DIFF---\nResource saved. New Last Modified: " + res.getLastLoadTimestamp();
