@@ -56,6 +56,7 @@ import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
 import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.agi.resource.vcs.VcsFileStatus;
+import uno.anahata.asi.toolkit.vcs.AbstractVCS;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -74,8 +75,8 @@ import uno.anahata.asi.agi.tool.ToolPermission;
  * @author anahata
  */
 @Slf4j
-//@AgiToolkit("Universal toolkit for NetBeans Versioning Systems and Local History.")
-public class VCS extends AnahataToolkit {
+@AgiToolkit("Universal toolkit for NetBeans Versioning Systems and Local History.")
+public class VCS extends AbstractVCS {
 
     /**
      * {@inheritDoc}
@@ -1448,54 +1449,6 @@ public class VCS extends AnahataToolkit {
         return sb.toString().trim();
     }
 
-    /**
-     * Reads and returns the Git configuration file (.git/config) for a repository.
-     * Handles standard repositories, Git worktrees, and Git submodules.
-     *
-     * @param repoPath Path of the repository or project directory.
-     * @return Raw text content of the Git config, or null if unresolvable.
-     * @throws Exception if reading fails.
-     */
-    @AgiTool(value = "Reads and returns the Git configuration file (.git/config) for a repository.", permission = ToolPermission.APPROVE_ALWAYS)
-    public String getGitConfig(
-            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath) throws Exception {
-
-        File repoRoot = requireRepoRoot(repoPath);
-        File gitConfigFile = resolveGitConfigFile(repoRoot);
-        if (gitConfigFile != null && gitConfigFile.exists() && gitConfigFile.isFile()) {
-            return Files.readString(gitConfigFile.toPath(), StandardCharsets.UTF_8).trim();
-        }
-        return null;
-    }
-
-    /**
-     * Resolves the Git configuration file, supporting standard repositories, Git worktrees, and Git submodules.
-     *
-     * @param repoRoot The repository root folder.
-     * @return The resolved config File, or null if unresolvable.
-     */
-    private static File resolveGitConfigFile(File repoRoot) {
-        File dotGit = new File(repoRoot, ".git");
-        if (dotGit.isDirectory()) {
-            return new File(dotGit, "config");
-        }
-        if (dotGit.isFile()) {
-            try {
-                String line = Files.readString(dotGit.toPath(), StandardCharsets.UTF_8).trim();
-                if (line.startsWith("gitdir:")) {
-                    String targetPath = line.substring("gitdir:".length()).trim();
-                    File gitDir = new File(targetPath);
-                    if (!gitDir.isAbsolute()) {
-                        gitDir = new File(repoRoot, targetPath);
-                    }
-                    return new File(gitDir, "config");
-                }
-            } catch (Exception e) {
-                log.debug("Could not resolve gitdir pointer in {}: {}", dotGit, e.getMessage());
-            }
-        }
-        return null;
-    }
 
     /**
      * Resolves a GitUser from parameters, repository client defaults, or host system username.
