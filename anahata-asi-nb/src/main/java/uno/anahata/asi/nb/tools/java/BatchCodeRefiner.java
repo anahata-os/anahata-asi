@@ -41,6 +41,7 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementBatch;
+import uno.anahata.asi.nb.tools.java.coderefiner.CodeRefinementIntent;
 import uno.anahata.asi.nb.tools.java.coderefiner.RelativePosition;
 
 /**
@@ -109,12 +110,21 @@ public class BatchCodeRefiner extends AnahataToolkit {
         batch.validate(getAgi());
 
         Resource resource = getAgi().getResourceManager().get(batch.getResourceUuid());
-        NbHandle handle = (NbHandle) resource.getHandle();
-        FileObject fo = handle.getFileObject();
-
         String finalText = batch.calculateResultingContent(getAgi());
 
-        JavaSourceUtils.writeContent(fo, finalText, batch.isSave());
+        if (batch.isSave()) {
+            String reason = batch.getIntents().stream()
+                    .map(CodeRefinementIntent::getReason)
+                    .filter(r -> r != null && !r.isBlank())
+                    .findFirst()
+                    .orElse("Structural refactoring via BatchCodeRefiner");
+            resource.write(finalText, reason);
+        } else if (resource.getHandle() instanceof NbHandle handle) {
+            FileObject fo = handle.getFileObject();
+            if (fo != null) {
+                JavaSourceUtils.writeContent(fo, finalText, false);
+            }
+        }
 
         batch.setResultingContent(finalText);
 

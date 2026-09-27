@@ -109,8 +109,8 @@ public class PathHandle extends AbstractResourceHandle {
      * <p>Writes content using atomic filesystem options (TRUNCATE_EXISTING).</p>
      */
     @Override
-    public void write(String content) throws IOException {
-        log.info("Persisting content to local file: {}", path);
+    public void write(String content, String reason) throws IOException {
+        log.info("Persisting content to local file: {} (reason: {})", path, reason);
         Files.writeString(Paths.get(path), content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
     }
 

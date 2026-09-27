@@ -14,7 +14,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
+import uno.anahata.asi.swing.components.AdjustingTabPane;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import javax.swing.SwingConstants;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +63,7 @@ public class ContextProviderPanel extends ScrollablePanel {
     /**
      * Tabbed pane containing previews.
      */
-    private final JTabbedPane tabbedPane;
+    private final AdjustingTabPane tabbedPane;
     /**
      * Tab for system instructions from this provider.
      */
@@ -130,7 +130,7 @@ public class ContextProviderPanel extends ScrollablePanel {
 
         add(headerPanel, BorderLayout.NORTH);
 
-        tabbedPane = new JTabbedPane();
+        tabbedPane = new AdjustingTabPane(100);
         thisSysTab = new JPanel(new BorderLayout());
         childrenSysTab = new JPanel(new BorderLayout());
         thisRagTab = new JPanel(new BorderLayout());
@@ -285,6 +285,7 @@ public class ContextProviderPanel extends ScrollablePanel {
                 emptyPanel.add(new JLabel("No context content contributed by this provider.", SwingConstants.CENTER));
                 tabbedPane.addTab("No Content", emptyPanel);
             }
+            tabbedPane.refresh();
         }).start();
     }
 

@@ -5,6 +5,7 @@ import java.lang.reflect.Parameter;
 import java.lang.reflect.Type;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.tool.spi.AbstractToolParameter;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -15,6 +16,7 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
  *
  * @author anahata-gemini-pro-2.5
  */
+@Slf4j
 public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodTool> {
 
     /**
@@ -93,7 +95,8 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
             required = true;          // Assume required by default
             rendererId = "";
         }
-
+        
+        log.info("generating schema for " + p.getName() + " " + paramAnnotation + " ");
         String jsonSchema = SchemaProvider.generateInlinedSchemaString(p.getParameterizedType());
         if (jsonSchema == null) {
             throw new IllegalArgumentException("Could not generate schema for parameter " + p.getName() + " in method " + p.getDeclaringExecutable().getName());

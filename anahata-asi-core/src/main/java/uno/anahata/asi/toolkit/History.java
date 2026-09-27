@@ -3,8 +3,14 @@
  */
 package uno.anahata.asi.toolkit;
 
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
+import uno.anahata.asi.agi.Agi;
+import uno.anahata.asi.internal.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.AgiConfig;
 import uno.anahata.asi.agi.context.ContextManager;
@@ -118,7 +124,7 @@ public class History extends AnahataToolkit {
      */
     @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        uno.anahata.asi.agi.Agi domainAgi = ragMessage.getAgi();
+        Agi domainAgi = ragMessage.getAgi();
         AgiConfig config = domainAgi.getConfig();
         StringBuilder sb = new StringBuilder();
         sb.append("## History Metadata:\n");
@@ -137,9 +143,22 @@ public class History extends AnahataToolkit {
             sb.append(createConsolidatedIndex());
         }
 
-        sb.append("\n Garbage Collector Logs:\n");
-        for (GarbageCollectorRecord lr : domainAgi.getContextManager().getGarbageCollector().getLogRecords()) {
-            sb.append("\n- ").append(lr);
+        sb.append("\n### Garbage Collector Logs:\n");
+        List<GarbageCollectorRecord> gcRecords = new ArrayList<>(domainAgi.getContextManager().getGarbageCollector().getLogRecords());
+        gcRecords.sort(Comparator.comparingLong(GarbageCollectorRecord::getMessageId));
+        if (gcRecords.isEmpty()) {
+            sb.append("\n*No garbage collector records.*\n");
+        } else {
+            sb.append("\n| Msg ID | Timestamp | Type | Tokens Recycled | Parts Summary |\n");
+            sb.append("|---|---|---|---|---|\n");
+            for (GarbageCollectorRecord lr : gcRecords) {
+                sb.append(String.format(Locale.US, "| %d | %s | %s | %,d | %s |\n",
+                        lr.getMessageId(),
+                        TimeUtils.formatSmartTimestamp(Instant.ofEpochMilli(lr.getTimestamp())),
+                        lr.getType(),
+                        lr.getTokenCount(),
+                        lr.getPartsSummary() != null ? lr.getPartsSummary() : ""));
+            }
         }
 
         ragMessage.addTextPart(sb.toString());

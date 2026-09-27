@@ -20,6 +20,8 @@ import uno.anahata.asi.agi.context.ContextPosition;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
+import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
+import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.internal.TimeUtils;
 
@@ -163,18 +165,19 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     }
 
     /**
-     * Authoritatively writes text content back to the source handle and marks
-     * the resource as dirty to ensure a subsequent reload.
+     * Authoritatively writes text content back to the source handle with a descriptive reason,
+     * and marks the resource as dirty to ensure a subsequent reload.
      * <p>
      * <b>Technical Purity:</b> This is the singular entry point for mutations,
      * managing both connectivity and state management in one weld.
      * </p>
      *
      * @param content The text to write.
+     * @param reason The reason or explanation for this modification.
      * @throws IOException if the write fails.
      */
-    public void write(String content) throws IOException {
-        handle.write(content);
+    public void write(String content, String reason) throws IOException {
+        handle.write(content, reason);
         markDirty();
     }
 
@@ -300,6 +303,23 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     public void populateMessage(RagMessage ragMessage) throws Exception {
         if (contextPosition == ContextPosition.PROMPT_AUGMENTATION) {
             view.populateRag(ragMessage);
+
+            if (handle != null) {
+                if (handle.isTextual()) {
+                    VcsDiff diff = handle.getDiffToHead();
+                    if (diff != null && diff.hasChanges() && !diff.isNewFile()) {
+                        ragMessage.addTextPart(diff.toMarkdown());
+                    }
+                }
+
+                List<HistoryEntry> history = handle.getHistory(5);
+                if (history != null && !history.isEmpty()) {
+                    String md = HistoryEntry.toMarkdownTable(getName(), history);
+                    if (md != null && !md.isBlank()) {
+                        ragMessage.addTextPart("### Recent History (`" + getName() + "`):\n" + md);
+                    }
+                }
+            }
         }
     }
 

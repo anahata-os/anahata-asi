@@ -106,12 +106,22 @@ public class StringHandle extends AbstractResourceHandle {
     }
 
     /** 
+     * Convenience method to update the internal string without a reason.
+     *
+     * @param content The new text content.
+     * @throws IOException if writing fails.
+     */
+    public void write(String content) throws IOException {
+        write(content, null);
+    }
+
+    /** 
      * {@inheritDoc} 
      * <p>Updates the internal string and notifies the owner orchestrator. 
      * Implements an equality gate to prevent redundant interpretation cycles.</p>
      */
     @Override
-    public void write(String content) throws IOException {
+    public void write(String content, String reason) throws IOException {
         if (Objects.equals(this.content, content)) {
             return;
         }

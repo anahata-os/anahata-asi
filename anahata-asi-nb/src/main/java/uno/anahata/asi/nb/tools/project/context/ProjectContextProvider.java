@@ -170,6 +170,11 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
                 sb.append(formatDependencyScope(scope, "    "));
             }
         }
+
+        if (overview.getVcsOverview() != null && !overview.getVcsOverview().isBlank()) {
+            sb.append("\n  ").append(overview.getVcsOverview()).append("\n");
+        }
+
         return sb.toString();
     }
 

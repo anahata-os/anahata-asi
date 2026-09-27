@@ -773,6 +773,18 @@ public class Agi extends BasicPropertyChangeSource {
         }
         return null;
     }
+
+    /**
+     * Checks if the active tool prompt message has no more pending tools,
+     * and transitions the Agi status from TOOL_PROMPT to IDLE if complete.
+     */
+    public void checkToolPromptCompletion() {
+        if (statusManager.getCurrentStatus() == AgiStatus.TOOL_PROMPT) {
+            if (getToolPromptMessage() == null) {
+                statusManager.fireStatusChanged(AgiStatus.IDLE);
+            }
+        }
+    }
     /**
      * Sets the active candidates and fires a property change event.
      *

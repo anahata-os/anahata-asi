@@ -24,14 +24,19 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
+import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
+import uno.anahata.asi.agi.resource.vcs.VcsDiff;
+import uno.anahata.asi.intellij.tools.vcs.VCS;
 import uno.anahata.asi.internal.TikaUtils;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.persistence.Rebindable;
 
 /**
@@ -121,7 +126,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
     public synchronized VirtualFile getVirtualFile() {
         if (virtualFile == null || !virtualFile.isValid()) {
             if (path != null) {
-                virtualFile = JavaPsi.findVirtualFile(path);
+                virtualFile = ProjectUtils.findVirtualFile(path);
             }
             if (virtualFile == null && uri != null) {
                 virtualFile = VirtualFileManager.getInstance().findFileByUrl(uri.toString());
@@ -350,8 +355,8 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      * {@inheritDoc}
      */
     @Override
-    public void write(String content) throws IOException {
-        log.info("Persisting content to local file: {}", path);
+    public void write(String content, String reason) throws IOException {
+        log.info("Persisting content to local file: {} (reason: {})", path, reason);
         if (path == null) {
             throw new IOException("Cannot write to resource without local path: " + uri);
         }
@@ -359,6 +364,16 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         VirtualFile vf = getVirtualFile();
         if (vf != null) {
             vf.refresh(false, false);
+            if (reason != null && !reason.isBlank()) {
+                try {
+                    Project project = ProjectUtils.findHostProject(vf);
+                    if (project != null && !project.isDisposed()) {
+                        com.intellij.history.LocalHistory.getInstance().putUserLabel(project, reason.trim());
+                    }
+                } catch (Throwable t) {
+                    log.debug("Could not label Local History in IntelliJ for {}: {}", getName(), t.getMessage());
+                }
+            }
         }
     }
 
@@ -399,7 +414,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         }
         try {
             return ReadAction.computeBlocking(() -> {
-                Project project = JavaPsi.findHostProject(vf);
+                Project project = ProjectUtils.findHostProject(vf);
                 if (project == null || project.isDisposed()) {
                     return null;
                 }
@@ -437,5 +452,52 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
             }
         }
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Queries the session's active {@link VCS} toolkit to generate
+     * a unified diff against the repository pristine base. Returns null if clean, untracked,
+     * newly added, or unsupported.
+     * </p>
+     */
+    @Override
+    public VcsDiff getDiffToHead() {
+        if (owner == null || owner.getAgi() == null || path == null) {
+            return null;
+        }
+        Optional<VCS> vcsOpt = owner.getAgi().getToolkit(VCS.class);
+        if (vcsOpt.isPresent()) {
+            try {
+                return vcsOpt.get().getDiff(path, null);
+            } catch (Exception e) {
+                log.debug("Failed to get diff to head for {}: {}", path, e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Queries the session's active {@link VCS} toolkit to retrieve
+     * recent VCS and Local History revisions.
+     * </p>
+     */
+    @Override
+    public List<HistoryEntry> getHistory(int maxEntries) {
+        if (owner == null || owner.getAgi() == null || path == null) {
+            return Collections.emptyList();
+        }
+        Optional<VCS> vcsOpt = owner.getAgi().getToolkit(VCS.class);
+        if (vcsOpt.isPresent()) {
+            try {
+                return vcsOpt.get().getHistory(path, maxEntries);
+            } catch (Exception e) {
+                log.debug("Failed to get history for {}: {}", path, e.getMessage());
+            }
+        }
+        return Collections.emptyList();
     }
 }

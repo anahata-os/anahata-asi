@@ -3,9 +3,9 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,897 | Brand Awareness / Discovery (id=125) |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,137 | The Singularity / ASI Container (id=135) |
-| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 44 | Autonomous Update Channel (id=141) |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,935 | Brand Awareness / Discovery (id=125) |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,144 | The Singularity / ASI Container (id=135) |
+| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 167 | Autonomous Update Channel (id=141) |
 
  > [!TIP]
  > **One-Shot Portal Scraper & Velocity Guide:**
@@ -24,7 +24,7 @@
  >         StringBuilder sb = new StringBuilder();
  >         sb.append(scrape("V1", "125")).append("\n"); //v1
  >         sb.append(scrape("V2", "135")).append("\n"); //v2
- >         sb.append(scrape("V2", "144")); //update center
+ >         sb.append(scrape("UC", "141")); //update center
  >         return sb.toString();
  >     }
  > 
@@ -32,10 +32,14 @@
  >         try { 
  >             String url = "https://plugins.netbeans.apache.org/catalogue/?id=" + id; 
  >             Document doc = Jsoup.connect(url).get(); 
- >             Element downloadIcon = doc.selectFirst("i.fa-download"); 
+ >             Element downloadIcon = doc.selectFirst("p i.fa-download, i.fa-download"); 
  >             if (downloadIcon != null) { 
+ >                 if (downloadIcon.nextSibling() != null) { 
+ >                     String val = downloadIcon.nextSibling().toString().replaceAll("[^\\d,]", "").trim(); 
+ >                     if (!val.isEmpty()) return version + " Portal Downloads: " + val; 
+ >                 } 
  >                 String text = downloadIcon.parent().text().trim(); 
- >                 Matcher m = Pattern.compile("([\\d,]+)$").matcher(text); 
+ >                 Matcher m = Pattern.compile("([\\d,]+)\\s*$").matcher(text); 
  >                 if (m.find()) return version + " Portal Downloads: " + m.group(1); 
  >                 return version + " Found icon but could not parse count from: " + text; 
  >             } 
@@ -73,6 +77,8 @@
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-09-27 09:15 | Portal Scrape: V1=4,935, V2=1,144, UC=167 | High | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +16 (1.05 DLs/hr) in 15.2 hours (Combined V1+V2: 0.00 DLs/hr, Total: 6,246, Total Velocity: 1.05 DLs/hr) |
+| 2026-09-26 18:03 | Portal Scrape: V1=4,935, V2=1,144, UC=151 | High | V1: +38 (0.69 DLs/hr), V2: +7 (0.13 DLs/hr), UC: +107 (1.95 DLs/hr) in 55.0 hours (Combined V1+V2: 0.82 DLs/hr, Total: 6,230, Total Velocity: 2.77 DLs/hr) |
 | 2026-09-24 11:06 | Portal Scrape: V1=4,897, V2=1,137, UC=44 | High | V1: +237 (0.31 DLs/hr), V2: +112 (0.15 DLs/hr), UC: 44 DLs (id=141) in 753.7 hours (Combined V1+V2: 0.46 DLs/hr, Total: 6,078) |
 | 2026-08-24 01:23 | Portal Scrape: V1=4,660, V2=1,025 | High | V1: +10 (0.19 DLs/hr), V2: +4 (0.07 DLs/hr) in 53.8 hours (Combined: 0.26 DLs/hr) |
 | 2026-08-21 19:37 | Portal Scrape: V1=4,650, V2=1,021 | High | V1: +9 (0.28 DLs/hr), V2: +8 (0.25 DLs/hr) in 32.6 hours (Combined: 0.52 DLs/hr) |

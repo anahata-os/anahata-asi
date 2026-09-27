@@ -6,7 +6,11 @@ import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
+import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
+import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.resource.Resource;
 
@@ -98,22 +102,23 @@ public interface ResourceHandle extends Rebindable {
 
     /**
      * Determines if the resource is writable in the current environment.
-     * @return true if the handle supports the {@link #write(String)} operation.
+     * @return true if the handle supports the {@link #write(String, String)} operation.
      */
     default boolean isWritable() {
         return false;
     }
 
     /**
-     * Agnostically writes text content back to the resource.
+     * Agnostically writes text content back to the resource with a descriptive reason.
      * <p>
      * <b>Purity Note:</b> Read-only handles should throw {@link UnsupportedOperationException}.
      * </p>
      * 
      * @param content The text to write.
+     * @param reason The reason or explanation for this modification, used for version control or local history labels.
      * @throws IOException if the write fails.
      */
-    default void write(String content) throws IOException {
+    default void write(String content, String reason) throws IOException {
         throw new UnsupportedOperationException("Resource handle is read-only: " + getUri());
     }
 
@@ -153,6 +158,26 @@ public interface ResourceHandle extends Rebindable {
      */
     default boolean isModified() {
         return false;
+    }
+
+    /**
+     * Returns the structured diff between the current working state of this resource
+     * and the repository HEAD or pristine base revision.
+     *
+     * @return A {@link VcsDiff} DTO, or null if clean, untracked, or unsupported.
+     */
+    default VcsDiff getDiffToHead() {
+        return null;
+    }
+
+    /**
+     * Returns the recent version control and local history entries for this resource.
+     *
+     * @param maxEntries Maximum number of history entries to return.
+     * @return A list of {@link HistoryEntry} DTOs, or an empty list if unsupported.
+     */
+    default List<HistoryEntry> getHistory(int maxEntries) {
+        return Collections.emptyList();
     }
 
     /**
