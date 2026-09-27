@@ -96,9 +96,11 @@ public final class JavaPsi {
      *
      * @param filePath the absolute filesystem path.
      * @return the virtual file, or {@code null} if it does not exist.
+     * @deprecated Use {@link ProjectUtils#findVirtualFile(String)} instead.
      */
+    @Deprecated
     public static VirtualFile findVirtualFile(String filePath) {
-        return VfsUtil.findFile(Path.of(filePath), true);
+        return ProjectUtils.findVirtualFile(filePath);
     }
 
     /**
@@ -107,26 +109,11 @@ public final class JavaPsi {
      *
      * @param file the file to host.
      * @return a hosting project, or {@code null} if no projects are open.
+     * @deprecated Use {@link ProjectUtils#findHostProject(VirtualFile)} instead.
      */
+    @Deprecated
     public static Project findHostProject(VirtualFile file) {
-        if (file == null) {
-            Project[] open = ProjectManager.getInstance().getOpenProjects();
-            return open.length > 0 ? open[0] : null;
-        }
-        return ReadAction.computeBlocking(() -> {
-            Project[] open = ProjectManager.getInstance().getOpenProjects();
-            for (Project project : open) {
-                if (project != null && !project.isDisposed()) {
-                    try {
-                        if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {
-                            return project;
-                        }
-                    } catch (Throwable ignored) {
-                    }
-                }
-            }
-            return open.length > 0 ? open[0] : null;
-        });
+        return ProjectUtils.findHostProject(file);
     }
 
     /**

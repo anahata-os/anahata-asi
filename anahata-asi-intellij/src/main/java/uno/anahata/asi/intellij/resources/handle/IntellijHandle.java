@@ -36,7 +36,7 @@ import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
 import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.intellij.tools.vcs.VCS;
 import uno.anahata.asi.internal.TikaUtils;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.persistence.Rebindable;
 
 /**
@@ -126,7 +126,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
     public synchronized VirtualFile getVirtualFile() {
         if (virtualFile == null || !virtualFile.isValid()) {
             if (path != null) {
-                virtualFile = JavaPsi.findVirtualFile(path);
+                virtualFile = ProjectUtils.findVirtualFile(path);
             }
             if (virtualFile == null && uri != null) {
                 virtualFile = VirtualFileManager.getInstance().findFileByUrl(uri.toString());
@@ -366,7 +366,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
             vf.refresh(false, false);
             if (reason != null && !reason.isBlank()) {
                 try {
-                    Project project = JavaPsi.findHostProject(vf);
+                    Project project = ProjectUtils.findHostProject(vf);
                     if (project != null && !project.isDisposed()) {
                         com.intellij.history.LocalHistory.getInstance().putUserLabel(project, reason.trim());
                     }
@@ -414,7 +414,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         }
         try {
             return ReadAction.computeBlocking(() -> {
-                Project project = JavaPsi.findHostProject(vf);
+                Project project = ProjectUtils.findHostProject(vf);
                 if (project == null || project.isDisposed()) {
                     return null;
                 }

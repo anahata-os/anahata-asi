@@ -39,23 +39,22 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.internal.AnahataDiffUtils;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
+
+import uno.anahata.asi.toolkit.vcs.AbstractVCS;
 
 /**
  * A toolkit for inspecting version-control status through IntelliJ's generic VCS layer.
  * <p>
- * A beyond-parity capability with no NetBeans equivalent. It uses the provider-agnostic
- * {@link ChangeListManager} — which works for Git and any other configured VCS — to report
- * changed, added, deleted and unversioned files, grouped by change list. VCS-provider-specific
- * operations (Git branch/commit/log/blame) require the {@code git4idea} plugin API, which is
- * not published as a resolvable artifact, so they are intentionally out of scope.
+ * Implements the universal {@link AbstractVCS} contract for IntelliJ IDEA, providing
+ * provider-agnostic VCS status, unified diffs, local history inspection, and working copy revert.
  * </p>
  *
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("A toolkit for inspecting version-control status (changed and unversioned files).")
-public class VCS extends AnahataToolkit {
+@AgiToolkit("Universal toolkit for Version Control Systems and Local History.")
+public class VCS extends AbstractVCS {
 
     /**
      * Constructs the Vcs toolkit (instantiated reflectively via its public no-arg constructor).
@@ -152,7 +151,7 @@ public class VCS extends AnahataToolkit {
 
         File file = resolveFile(filePath);
         VirtualFile vf = LocalFileSystem.getInstance().findFileByIoFile(file);
-        Project project = (vf != null) ? JavaPsi.findHostProject(vf) : null;
+        Project project = (vf != null) ? ProjectUtils.findHostProject(vf) : null;
         if (project == null || project.isDisposed()) {
             Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
             if (openProjects.length > 0) {
@@ -294,7 +293,7 @@ public class VCS extends AnahataToolkit {
 
         File file = resolveFile(filePath);
         VirtualFile vf = LocalFileSystem.getInstance().findFileByIoFile(file);
-        Project project = (vf != null) ? JavaPsi.findHostProject(vf) : null;
+        Project project = (vf != null) ? ProjectUtils.findHostProject(vf) : null;
         if (project == null || project.isDisposed()) {
             Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
             if (openProjects.length > 0) {
@@ -363,6 +362,190 @@ public class VCS extends AnahataToolkit {
 
         Collections.sort(history);
         return history.size() <= limit ? history : new ArrayList<>(history.subList(0, limit));
+    }
+
+    /**
+     * Gets the Version Control metadata and repository root for a file or directory.
+     *
+     * @param path The absolute path of the file or directory to inspect.
+     * @return Formatted Markdown summary of VCS metadata.
+     * @throws Exception if resolution fails.
+     */
+    @Override
+    @AgiTool(value = "Gets the Version Control metadata and repository root for a file or directory.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String getInfo(
+            @AgiToolParam(value = "The absolute path of the file or directory.", rendererId = "path") String path) throws Exception {
+        File file = resolveFile(path);
+        VirtualFile vf = LocalFileSystem.getInstance().findFileByIoFile(file);
+        if (vf == null) {
+            return "Path is not accessible in VFS: " + path;
+        }
+        Project project = ProjectUtils.findHostProject(vf);
+        if (project == null || project.isDisposed()) {
+            Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+            if (openProjects.length > 0) {
+                project = openProjects[0];
+            }
+        }
+        if (project == null) {
+            return "No open project found for: " + path;
+        }
+        ProjectLevelVcsManager vcsMgr = ProjectLevelVcsManager.getInstance(project);
+        AbstractVcs vcs = vcsMgr.getVcsFor(vf);
+        if (vcs == null) {
+            return "Path is not under Version Control: " + path;
+        }
+        VirtualFile vcsRoot = vcsMgr.getVcsRootFor(vf);
+        StringBuilder sb = new StringBuilder();
+        sb.append("### VCS Information: ").append(file.getName()).append("\n\n");
+        sb.append("- **VCS System**: ").append(vcs.getDisplayName()).append("\n");
+        sb.append("- **Repository Root**: ").append(vcsRoot != null ? vcsRoot.getPath() : "None").append("\n");
+        sb.append("- **File Path**: ").append(file.getAbsolutePath()).append("\n");
+        sb.append("- **Is File**: ").append(file.isFile()).append("\n");
+        return sb.toString().trim();
+    }
+
+    /**
+     * Discards unstaged modifications in a file, reverting it to the repository pristine base revision.
+     *
+     * @param filePath The absolute path of the file to revert.
+     * @return Confirmation message of the revert operation.
+     * @throws Exception if revert fails.
+     */
+    @Override
+    @AgiTool("Discards unstaged modifications in a file, reverting it to the repository pristine base revision.")
+    public String revert(
+            @AgiToolParam(value = "The absolute path of the file to revert.", rendererId = "path") String filePath) throws Exception {
+        File file = resolveFile(filePath);
+        VirtualFile vf = LocalFileSystem.getInstance().findFileByIoFile(file);
+        if (vf == null) {
+            throw new AgiToolException("VirtualFile not found for: " + filePath);
+        }
+        Project project = ProjectUtils.findHostProject(vf);
+        if (project == null || project.isDisposed()) {
+            Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+            if (openProjects.length > 0) {
+                project = openProjects[0];
+            }
+        }
+        if (project == null) {
+            throw new AgiToolException("No open project found for: " + filePath);
+        }
+        ChangeListManager clm = ChangeListManager.getInstance(project);
+        Change change = clm.getChange(vf);
+        if (change == null) {
+            return "File has no uncommitted changes to revert: " + file.getName();
+        }
+        ContentRevision before = change.getBeforeRevision();
+        if (before == null) {
+            throw new AgiToolException("Cannot revert newly added file: " + file.getName());
+        }
+        String baseContent = before.getContent();
+        if (baseContent != null) {
+            Files.writeString(file.toPath(), baseContent, StandardCharsets.UTF_8);
+            vf.refresh(false, false);
+            return "Successfully reverted " + file.getName() + " to repository base.";
+        }
+        throw new AgiToolException("Could not retrieve base content to revert: " + file.getName());
+    }
+
+    /**
+     * Checks if a given directory path is the root of a repository.
+     *
+     * @param path The directory path to check.
+     * @return true if the directory is a repository root.
+     */
+    @Override
+    public boolean isRepoRoot(String path) {
+        if (path == null || path.isBlank()) {
+            return false;
+        }
+        File target = new File(path).toPath().normalize().toFile();
+        if (!target.exists() || !target.isDirectory()) {
+            return false;
+        }
+        File dotGit = new File(target, ".git");
+        if (dotGit.exists()) {
+            return true;
+        }
+        VirtualFile vf = LocalFileSystem.getInstance().findFileByIoFile(target);
+        if (vf == null) {
+            return false;
+        }
+        Project project = ProjectUtils.findHostProject(vf);
+        if (project == null || project.isDisposed()) {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
+            if (open.length > 0) {
+                project = open[0];
+            }
+        }
+        if (project == null) {
+            return false;
+        }
+        VirtualFile root = ProjectLevelVcsManager.getInstance(project).getVcsRootFor(vf);
+        return root != null && root.equals(vf);
+    }
+
+    /**
+     * Builds a structured Markdown overview of a repository including branch, tracking,
+     * remotes, working tree status, and recent commits.
+     *
+     * @param repoPath Path of the repository or project directory.
+     * @return Structured Markdown overview of the repository state, or null if unmanaged.
+     * @throws Exception if repository querying fails.
+     */
+    @Override
+    public String getRepositoryOverview(String repoPath) throws Exception {
+        File target = resolveFile(repoPath);
+        VirtualFile vf = LocalFileSystem.getInstance().findFileByIoFile(target);
+        if (vf == null) {
+            return null;
+        }
+        Project project = ProjectUtils.findHostProject(vf);
+        if (project == null || project.isDisposed()) {
+            Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+            if (openProjects.length > 0) {
+                project = openProjects[0];
+            }
+        }
+        if (project == null) {
+            return null;
+        }
+        ProjectLevelVcsManager vcsMgr = ProjectLevelVcsManager.getInstance(project);
+        AbstractVcs vcs = vcsMgr.getVcsFor(vf);
+        if (vcs == null) {
+            return null;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("## Live Version Control: ").append(vcs.getDisplayName()).append("\n");
+        sb.append("> [!NOTE]\n");
+        sb.append("> This is the live repository status generated JIT for this turn.\n\n");
+
+        ChangeListManager clm = ChangeListManager.getInstance(project);
+        Collection<Change> changes = clm.getChangesIn(vf);
+        if (changes == null || changes.isEmpty()) {
+            sb.append("  - **Working Tree**: Clean (no uncommitted changes)\n");
+        } else {
+            sb.append("  - **Working Tree**: ").append(changes.size()).append(" modified files\n\n");
+            sb.append("  | Status | File |\n");
+            sb.append("  | :--- | :--- |\n");
+            for (Change c : changes) {
+                String rel = target.toPath().relativize(new File(pathOf(c)).toPath()).toString();
+                sb.append("  | `").append(statusOf(c)).append("` | `").append(rel).append("` |\n");
+            }
+        }
+
+        List<HistoryEntry> recentCommits = getHistory(repoPath, 5);
+        if (!recentCommits.isEmpty()) {
+            sb.append("\n  ### Recent Commits\n");
+            String table = HistoryEntry.toMarkdownTable(target.getName(), recentCommits);
+            if (table != null) {
+                sb.append("  ").append(table.replace("\n", "\n  ")).append("\n");
+            }
+        }
+
+        return sb.toString().trim();
     }
 
     /**
