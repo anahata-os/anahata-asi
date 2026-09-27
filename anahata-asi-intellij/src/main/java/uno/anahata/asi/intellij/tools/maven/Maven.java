@@ -24,12 +24,19 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
 import org.jetbrains.idea.maven.model.MavenRepoArtifactInfo;
 
 /**
@@ -113,6 +120,27 @@ public class Maven extends AnahataToolkit {
               .append(artifact.isResolved() ? "" : " (UNRESOLVED)").append("\n");
         }
         return sb.toString();
+    }
+
+    /**
+     * Gets the list of dependencies directly declared in the pom.xml, grouped by scope and groupId for maximum token efficiency.
+     *
+     * @param projectPath The absolute path of the Maven project directory or its pom.xml.
+     * @return A list of {@link DependencyScope} objects.
+     * @throws AgiToolException if an error occurs while parsing the pom.xml.
+     */
+    @AgiTool("Gets the list of dependencies directly declared in the pom.xml, grouped by scope and groupId for maximum token efficiency.")
+    public static List<DependencyScope> getDeclaredDependencies(
+            @AgiToolParam("The absolute path of the Maven project directory or its pom.xml.") String projectPath) throws AgiToolException {
+
+        Path path = Path.of(projectPath);
+        Path pom = Files.isDirectory(path) ? path.resolve("pom.xml") : path;
+        try {
+            return parseDeclaredDependencies(pom);
+        } catch (Exception e) {
+            log.error("Failed to parse declared dependencies for: " + projectPath, e);
+            throw new AgiToolException("Failed to parse declared dependencies: " + e.getMessage());
+        }
     }
 
     /**
@@ -306,5 +334,182 @@ public class Maven extends AnahataToolkit {
             throw new AgiToolException("Not a recognized/imported Maven project: " + projectPath);
         }
         return new Object[]{ideProject, mp};
+    }
+
+    /**
+     * Internal record holding raw declared dependency coordinates before scope grouping.
+     */
+    private record RawDependency(
+            String groupId,
+            String artifactId,
+            String version,
+            String scope,
+            String classifier,
+            String type,
+            List<String> exclusions) {}
+
+    /**
+     * Parses the declared dependencies directly from a pom.xml file using standard XML stream parsing.
+     *
+     * @param pomPath The path to the pom.xml file.
+     * @return A list of {@link DependencyScope} instances.
+     * @throws Exception if XML reading or parsing fails.
+     */
+    public static List<DependencyScope> parseDeclaredDependencies(Path pomPath) throws Exception {
+        if (!Files.exists(pomPath)) {
+            return Collections.emptyList();
+        }
+        XMLInputFactory factory = XMLInputFactory.newInstance();
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
+
+        List<RawDependency> rawDeps = new ArrayList<>();
+        try (InputStream is = Files.newInputStream(pomPath)) {
+            XMLStreamReader reader = factory.createXMLStreamReader(is);
+            int depth = 0;
+            boolean inProjectDependencies = false;
+            boolean inDependency = false;
+            boolean inExclusions = false;
+            boolean inExclusion = false;
+
+            String currentTag = "";
+            String groupId = "";
+            String artifactId = "";
+            String version = "";
+            String scope = "compile";
+            String classifier = null;
+            String type = "jar";
+            List<String> exclusions = new ArrayList<>();
+            String exclGroupId = "";
+            String exclArtifactId = "";
+
+            while (reader.hasNext()) {
+                int event = reader.next();
+                switch (event) {
+                    case XMLStreamConstants.START_ELEMENT -> {
+                        depth++;
+                        currentTag = reader.getLocalName();
+                        if (depth == 2 && "dependencies".equals(currentTag)) {
+                            inProjectDependencies = true;
+                        } else if (inProjectDependencies && depth == 3 && "dependency".equals(currentTag)) {
+                            inDependency = true;
+                            groupId = "";
+                            artifactId = "";
+                            version = "";
+                            scope = "compile";
+                            classifier = null;
+                            type = "jar";
+                            exclusions = new ArrayList<>();
+                        } else if (inDependency && depth == 4 && "exclusions".equals(currentTag)) {
+                            inExclusions = true;
+                        } else if (inExclusions && depth == 5 && "exclusion".equals(currentTag)) {
+                            inExclusion = true;
+                            exclGroupId = "";
+                            exclArtifactId = "";
+                        }
+                    }
+                    case XMLStreamConstants.CHARACTERS -> {
+                        String text = reader.getText();
+                        if (text == null || text.isBlank()) {
+                            break;
+                        }
+                        text = text.trim();
+                        if (inExclusion) {
+                            if ("groupId".equals(currentTag)) {
+                                exclGroupId += text;
+                            } else if ("artifactId".equals(currentTag)) {
+                                exclArtifactId += text;
+                            }
+                        } else if (inDependency && !inExclusions) {
+                            switch (currentTag) {
+                                case "groupId" -> groupId += text;
+                                case "artifactId" -> artifactId += text;
+                                case "version" -> version += text;
+                                case "scope" -> scope = text;
+                                case "classifier" -> classifier = text;
+                                case "type" -> type = text;
+                            }
+                        }
+                    }
+                    case XMLStreamConstants.END_ELEMENT -> {
+                        String endTag = reader.getLocalName();
+                        if (inExclusion && "exclusion".equals(endTag)) {
+                            if (!exclGroupId.isEmpty() || !exclArtifactId.isEmpty()) {
+                                exclusions.add(exclGroupId + ":" + exclArtifactId);
+                            }
+                            inExclusion = false;
+                        } else if (inExclusions && "exclusions".equals(endTag)) {
+                            inExclusions = false;
+                        } else if (inDependency && "dependency".equals(endTag)) {
+                            if (!groupId.isEmpty() && !artifactId.isEmpty()) {
+                                rawDeps.add(new RawDependency(
+                                        groupId,
+                                        artifactId,
+                                        version,
+                                        scope.isBlank() ? "compile" : scope,
+                                        classifier,
+                                        type,
+                                        exclusions.isEmpty() ? null : exclusions
+                                ));
+                            }
+                            inDependency = false;
+                        } else if (inProjectDependencies && "dependencies".equals(endTag) && depth == 2) {
+                            inProjectDependencies = false;
+                        }
+                        currentTag = "";
+                        depth--;
+                    }
+                }
+            }
+        }
+        return groupDeclaredDependencies(rawDeps);
+    }
+
+    /**
+     * Groups raw declared dependencies into the hierarchical {@link DependencyScope} structure.
+     *
+     * @param dependencies The list of raw parsed dependencies.
+     * @return A grouped list of {@link DependencyScope} objects.
+     */
+    public static List<DependencyScope> groupDeclaredDependencies(List<RawDependency> dependencies) {
+        Map<String, List<RawDependency>> dependenciesByScope = dependencies.stream()
+                .collect(Collectors.groupingBy(dep -> dep.scope() == null ? "compile" : dep.scope()));
+
+        List<DependencyScope> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<RawDependency>> scopeEntry : dependenciesByScope.entrySet()) {
+            String scope = scopeEntry.getKey();
+            List<RawDependency> depsInScope = scopeEntry.getValue();
+
+            Map<String, List<RawDependency>> dependenciesByGroup = depsInScope.stream()
+                    .collect(Collectors.groupingBy(RawDependency::groupId));
+
+            List<DependencyGroup> dependencyGroups = new ArrayList<>();
+            for (Map.Entry<String, List<RawDependency>> groupEntry : dependenciesByGroup.entrySet()) {
+                String groupId = groupEntry.getKey();
+                List<RawDependency> depsInGroup = groupEntry.getValue();
+
+                List<DeclaredArtifact> declaredArtifacts = new ArrayList<>();
+                for (RawDependency dep : depsInGroup) {
+                    StringBuilder artifactBuilder = new StringBuilder();
+                    artifactBuilder.append(dep.artifactId());
+                    if (!dep.version().isEmpty()) {
+                        artifactBuilder.append(':').append(dep.version());
+                    }
+                    if (dep.classifier() != null && !dep.classifier().isEmpty()) {
+                        artifactBuilder.append(':').append(dep.classifier());
+                    }
+                    if (dep.type() != null && !dep.type().equals("jar")) {
+                        artifactBuilder.append(':').append(dep.type());
+                    }
+
+                    declaredArtifacts.add(new DeclaredArtifact(artifactBuilder.toString(), dep.exclusions()));
+                }
+                dependencyGroups.add(new DependencyGroup(groupId, declaredArtifacts));
+            }
+            result.add(new DependencyScope(scope, dependencyGroups));
+        }
+
+        return result;
     }
 }
