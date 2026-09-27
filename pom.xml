@@ -92,7 +92,7 @@
         <maven.compiler.release>21</maven.compiler.release>
         <!-- Dependency Group Versions -->
         <lombok.version>1.18.48</lombok.version>
-        <swagger.version>2.2.22</swagger.version><!--2.2.48 seems the latest-->
+        <swagger.version>2.2.28</swagger.version>
         <jackson.version>2.18.9</jackson.version><!--bumped from 2.17.1 for GHSA (CVE) fixes; 2.32.2 seems the latest-->
         <slf4j.version>2.0.17</slf4j.version>
         <junit.version>5.10.3</junit.version>
@@ -199,6 +199,14 @@
                 <artifactId>swagger-core</artifactId>
                 <version>${swagger.version}</version>
             </dependency>
+            <!-- Jackson BOM ensures all Jackson modules and transitive dependencies align on the exact same version -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
@@ -277,7 +285,7 @@
             <dependency>
                 <groupId>com.google.genai</groupId>
                 <artifactId>google-genai</artifactId>
-                <version>1.62.0</version>
+                <version>1.69.0</version>
             </dependency>
             <!-- Testing -->
             <dependency>
