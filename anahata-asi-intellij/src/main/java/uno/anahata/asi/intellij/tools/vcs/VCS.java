@@ -55,12 +55,12 @@ import uno.anahata.asi.intellij.internal.JavaPsi;
  */
 @Slf4j
 @AgiToolkit("A toolkit for inspecting version-control status (changed and unversioned files).")
-public class Vcs extends AnahataToolkit {
+public class VCS extends AnahataToolkit {
 
     /**
      * Constructs the Vcs toolkit (instantiated reflectively via its public no-arg constructor).
      */
-    public Vcs() {
+    public VCS() {
     }
 
     /**

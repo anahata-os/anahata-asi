@@ -34,7 +34,7 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
 import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
 import uno.anahata.asi.agi.resource.vcs.VcsDiff;
-import uno.anahata.asi.intellij.tools.vcs.Vcs;
+import uno.anahata.asi.intellij.tools.vcs.VCS;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.persistence.Rebindable;
@@ -457,7 +457,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Queries the session's active {@link Vcs} toolkit to generate
+     * Implementation details: Queries the session's active {@link VCS} toolkit to generate
      * a unified diff against the repository pristine base. Returns null if clean, untracked,
      * newly added, or unsupported.
      * </p>
@@ -467,7 +467,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         if (owner == null || owner.getAgi() == null || path == null) {
             return null;
         }
-        Optional<Vcs> vcsOpt = owner.getAgi().getToolkit(Vcs.class);
+        Optional<VCS> vcsOpt = owner.getAgi().getToolkit(VCS.class);
         if (vcsOpt.isPresent()) {
             try {
                 return vcsOpt.get().getDiff(path, null);
@@ -481,7 +481,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Queries the session's active {@link Vcs} toolkit to retrieve
+     * Implementation details: Queries the session's active {@link VCS} toolkit to retrieve
      * recent VCS and Local History revisions.
      * </p>
      */
@@ -490,7 +490,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         if (owner == null || owner.getAgi() == null || path == null) {
             return Collections.emptyList();
         }
-        Optional<Vcs> vcsOpt = owner.getAgi().getToolkit(Vcs.class);
+        Optional<VCS> vcsOpt = owner.getAgi().getToolkit(VCS.class);
         if (vcsOpt.isPresent()) {
             try {
                 return vcsOpt.get().getHistory(path, maxEntries);

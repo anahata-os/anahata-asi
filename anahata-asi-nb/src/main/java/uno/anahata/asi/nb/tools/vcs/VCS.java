@@ -460,12 +460,7 @@ public class VCS extends AnahataToolkit {
             client.release();
         }
 
-        for (File f : files) {
-            FileObject fo = FileUtil.toFileObject(f);
-            if (fo != null) {
-                fo.refresh();
-            }
-        }
+        refreshVfs(repoRoot);
 
         log("Staged " + files.size() + " files into Git index.");
         return "Successfully staged " + files.size() + " file(s) into Git index.";
@@ -677,6 +672,7 @@ public class VCS extends AnahataToolkit {
                 sb.append("- **Local Tracking Updates**: ").append(pushResult.getLocalRepositoryUpdates().keySet()).append("\n");
             }
 
+            refreshVfs(repoRoot);
             log("Push to " + remoteName + " completed successfully in " + repoRoot.getName());
             return sb.toString().trim();
         } finally {
@@ -1191,6 +1187,7 @@ public class VCS extends AnahataToolkit {
         ToolProgressMonitor monitor = new ToolProgressMonitor();
         try {
             GitBranch branch = client.createBranch(name, start, monitor);
+            refreshVfs(repoRoot);
             log("Created branch '" + name + "' at " + start + " in " + repoRoot.getName());
             return "Successfully created branch `" + name + "` at revision `" + (branch.getId() != null ? branch.getId().substring(0, Math.min(7, branch.getId().length())) : start) + "` in " + repoRoot.getName();
         } finally {
@@ -1225,6 +1222,7 @@ public class VCS extends AnahataToolkit {
         ToolProgressMonitor monitor = new ToolProgressMonitor();
         try {
             client.deleteBranch(name, forceDelete, monitor);
+            refreshVfs(repoRoot);
             log("Deleted branch '" + name + "' in " + repoRoot.getName());
             return "Successfully deleted branch `" + name + "` from " + repoRoot.getName();
         } finally {
@@ -1638,6 +1636,7 @@ public class VCS extends AnahataToolkit {
         if (fo != null) {
             fo.refresh();
         }
+        Git.getInstance().getFileStatusCache().refreshAllRoots(file);
     }
 
     /**
