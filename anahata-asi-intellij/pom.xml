@@ -249,6 +249,26 @@
             </exclusions>
         </dependency>
 
+        <!-- Platform Local VCS (Local History API and implementation). -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>lvcs</artifactId>
+            <version>${intellij.platform.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>lvcs-impl</artifactId>
+            <version>${intellij.platform.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Unit tests (JUnit 5; versions managed by the parent). -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
