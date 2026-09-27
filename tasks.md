@@ -3,6 +3,7 @@
 This file tracks the actionable tasks and tactical goals for the Anahata ASI (V2) project.
 
 ## 2. 1.3.0 tasks
+- [ ] **[CORE/SWING] Removing the message that is the agi.activeTurnMessage doesn't clear up the run all pending buttons or the agi status**: If you do this, run all pending, still runs the tool call on the deleted message. Implement something in message.remove to check if the message bein removed is the activeTurnMessage
 
 - [ ] **[CORE] Generic "TOO LARGE" Response Handling**: Implement a mechanism to detect when a `JavaMethodToolResponse` (including logs, errors, and result) exceeds a safe token/size threshold. If too large, the status should be set to `TOO_LARGE` and it should dump the json represntation of the JavaMethodToolResponse to a text file and registered as a resource with the default viewport so the model can paginate on it if its worth it. Large responses even crash the ToolCallPanel's result text area exhausting the EDT thread in line wrapping calculations. So bad.
 
