@@ -10,12 +10,13 @@
 
     <depends>com.intellij.modules.platform</depends>
     <depends>com.intellij.modules.java</depends>
-    <!-- Bundled plugins whose classes the Maven and Terminal toolkits use. Declared so their
+    <!-- Bundled plugins whose classes the Maven, Terminal, Gradle, and VCS toolkits use. Declared so their
          classloaders are on Anahata's classpath at runtime. -->
     <depends>org.jetbrains.idea.maven</depends>
     <depends>org.jetbrains.plugins.terminal</depends>
     <depends>org.jetbrains.plugins.gradle</depends>
     <depends>com.intellij.modules.jcef</depends>
+    <depends>Git4Idea</depends>
     <!--
     <depends>com.intellij.modules.ui.jcef</depends>
 -->
