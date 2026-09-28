@@ -58,76 +58,60 @@
 "   $$H = \\frac{T_{curr} - T_{base}}{\\text{3600 seconds}}$$\n" +
 "4. **Calculate Velocity** ($V$):\n" +
 "   $$V = \\frac{C_{curr} - C_{base}}{H} \\text{ downloads per hour}$$\n" +
-"5. **Update `ledger.md`**: Record the new counts in `## 📈 Distribution Funnel` and append a fresh log row in `## 🛠️ Milestone Log`.
-
-## 📊 Scarf Analytics (Deep Strike Intelligence)
-
-### V1 Ecosystem
-- **Plugin Package ID:** `f315fd98-2ea2-42de-ad8e-f3702396d3ac`
-- **SDK Package ID:** `ac594bd8-fd22-49b3-9626-88a888502a3c`
-- **Status:** Sonatype integration enabled. Scarf is receiving logs from Maven Central.
-
-### V2 Ecosystem (Singularity)
-- **Entity / Org Name:** `Anahata`
-- **NetBeans Module Package ID (`anahata-asi-nb`):** `38628ccf-4686-4402-a7d9-3c7194eeff36`
-- **Downloads Badge:** `[![Scarf Downloads](https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/downloads-badge)](https://scarf.sh)`
-- **Commercial Users Badge:** `[![Scarf Commercial Users](https://api.scarf.sh/v2/packages/Anahata/38628ccf-4686-4402-a7d9-3c7194eeff36/commercial-users-badge)](https://scarf.sh)`
-- **Status:** Scarf V2 Badges active (Downloads & Commercial Users).
-
-## 🛠️ Milestone Log
-| Date | Milestone | Token ROI | Impact |
-| :--- | :--- | :--- | :--- |
-| 2026-09-28 08:25 | Portal Scrape: V1=4,938, V2=1,152, UC=178 | High | V1: +3 (0.13 DLs/hr), V2: +8 (0.35 DLs/hr), UC: +11 (0.47 DLs/hr) in 23.2 hours (Combined V1+V2: 0.47 DLs/hr, Total: 6,268, Total Velocity: 0.95 DLs/hr) |
-| 2026-09-27 09:15 | Portal Scrape: V1=4,935, V2=1,144, UC=167 | High | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +16 (1.05 DLs/hr) in 15.2 hours (Combined V1+V2: 0.00 DLs/hr, Total: 6,246, Total Velocity: 1.05 DLs/hr) |
-| 2026-09-26 18:03 | Portal Scrape: V1=4,935, V2=1,144, UC=151 | High | V1: +38 (0.69 DLs/hr), V2: +7 (0.13 DLs/hr), UC: +107 (1.95 DLs/hr) in 55.0 hours (Combined V1+V2: 0.82 DLs/hr, Total: 6,230, Total Velocity: 2.77 DLs/hr) |
-| 2026-09-24 11:06 | Portal Scrape: V1=4,897, V2=1,137, UC=44 | High | V1: +237 (0.31 DLs/hr), V2: +112 (0.15 DLs/hr), UC: 44 DLs (id=141) in 753.7 hours (Combined V1+V2: 0.46 DLs/hr, Total: 6,078) |
-| 2026-08-24 01:23 | Portal Scrape: V1=4,660, V2=1,025 | High | V1: +10 (0.19 DLs/hr), V2: +4 (0.07 DLs/hr) in 53.8 hours (Combined: 0.26 DLs/hr) |
-| 2026-08-21 19:37 | Portal Scrape: V1=4,650, V2=1,021 | High | V1: +9 (0.28 DLs/hr), V2: +8 (0.25 DLs/hr) in 32.6 hours (Combined: 0.52 DLs/hr) |
-| 2026-08-20 11:01 | Portal Scrape: V1=4,641, V2=1,013 | High | V1: +7 (0.43 DLs/hr), V2: +9 (0.55 DLs/hr) in 16.3 hours (Combined: 0.98 DLs/hr) |
-| 2026-08-19 18:43 | Portal Scrape: V1=4,634, V2=1,004 | High | V1: +145 (0.83 DLs/hr), V2: +49 (0.28 DLs/hr) in 175.7 hours (Combined: 1.10 DLs/hr) - V2 crossed 1,000! |
-| 2026-08-12 11:01 | Portal Scrape: V1=4,489, V2=955 | High | V1: +48 (0.51 DLs/hr), V2: +64 (0.68 DLs/hr) in 94.5 hours (Combined: 1.18 DLs/hr) |
-| 2026-08-08 12:30 | Portal Scrape: V1=4,441, V2=891 | High | V1: +3 (0.19 DLs/hr), V2: +6 (0.39 DLs/hr) in 15.5 hours (Combined: 0.58 DLs/hr) |
-| 2026-08-07 20:59 | Portal Scrape: V1=4,438, V2=885 | High | V1: +9 (0.25 DLs/hr), V2: +15 (0.42 DLs/hr) in 35.4 hours (Combined: 0.68 DLs/hr) |
-| 2026-08-06 09:38 | Portal Scrape: V1=4,429, V2=870 | High | V1: +7 (0.29 DLs/hr), V2: +1 (0.04 DLs/hr) in 23.9 hours (Combined: 0.33 DLs/hr) |
-| 2026-08-05 09:43 | Portal Scrape: V1=4,422, V2=869 | High | V1: +1 (0.09 DLs/hr), V2: +1 (0.09 DLs/hr) in 11.7 hours (Combined: 0.17 DLs/hr) |
-| 2026-08-04 22:01 | Portal Scrape: V1=4,421, V2=868 | High | V1: +7 (0.54 DLs/hr), V2: +9 (0.69 DLs/hr) in 13.0 hours (Combined: 1.23 DLs/hr) |
-| 2026-08-04 09:03 | Portal Scrape: V1=4,414, V2=859 | High | V1: +13 (0.57 DLs/hr), V2: +8 (0.35 DLs/hr) in 22.7 hours (Combined: 0.93 DLs/hr) |
-| 2026-08-03 10:21 | Portal Scrape: V1=4,401, V2=851 | High | V1: +5 (0.41 DLs/hr), V2: +3 (0.25 DLs/hr) in 12.2 hours (Combined: 0.66 DLs/hr) |
-| 2026-08-02 22:10 | Portal Scrape: V1=4,396, V2=848 | High | V1: +10 (0.40 DLs/hr), V2: +12 (0.47 DLs/hr) in 25.3 hours (Combined: 0.87 DLs/hr) |
-| 2026-08-01 20:52 | Portal Scrape: V1=4,386, V2=836 | High | V1: +44 (0.73 DLs/hr), V2: +31 (0.52 DLs/hr) in 60.1 hours (Combined: 1.25 DLs/hr) |
-| 2026-07-30 08:44 | Portal Scrape: V1=4,342, V2=805 | High | V1: +4 (0.40 DLs/hr), V2: +9 (0.90 DLs/hr) in 10.0 hours (Combined: 1.31 DLs/hr) |
-| 2026-07-29 22:47 | Portal Scrape: V1=4,338, V2=796 | High | V1: +10 (0.72 DLs/hr), V2: +9 (0.65 DLs/hr) in 13.9 hours (Combined: 1.36 DLs/hr) |
-| 2026-07-29 08:52 | Portal Scrape: V1=4,328, V2=787 | High | V1: +10 (0.41 DLs/hr), V2: +10 (0.41 DLs/hr) in 24.2 hours (Combined: 0.83 DLs/hr) |
-| 2026-07-28 08:41 | Portal Scrape: V1=4,318, V2=777 | High | V1: +23 (2.25 DLs/hr), V2: +5 (0.49 DLs/hr) in 10.2 hours (Combined: 2.73 DLs/hr!) |
-| 2026-07-27 22:27 | Portal Scrape: V1=4,295, V2=772 | High | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr) in 0.1 hours (Combined: 0.00 DLs/hr!) |
-| 2026-07-27 22:23 | Portal Scrape: V1=4,295, V2=772 | High | V1: +7 (0.60 DLs/hr), V2: +8 (0.69 DLs/hr) in 11.7 hours (Combined: 1.29 DLs/hr!) |
-| 2026-07-27 10:44 | Portal Scrape: V1=4,288, V2=764 | High | V1: +8 (0.35 DLs/hr), V2: +9 (0.39 DLs/hr) in 23.0 hours (Combined: 0.74 DLs/hr!) |
-| 2026-07-26 11:42 | Portal Scrape: V1=4,280, V2=755 | High | V1: +11 (0.25 DLs/hr), V2: +11 (0.25 DLs/hr) in 43.5 hours (Combined: 0.51 DLs/hr!) |
-| 2026-07-24 16:15 | Portal Scrape: V1=4,269, V2=744 | High | V1: +28 (1.13 DLs/hr), V2: +19 (0.77 DLs/hr) in 24.8 hours (Combined: 1.90 DLs/hr!) |
-| 2026-07-23 15:30 | Portal Scrape: V1=4,241, V2=725 | High | V1: +15 (0.66 DLs/hr), V2: +9 (0.40 DLs/hr) in 22.7 hours (Combined: 1.06 DLs/hr!) |
-| 2026-07-22 16:51 | Portal Scrape: V1=4,226, V2=716 | High | V1: +19 (0.70 DLs/hr), V2: +22 (0.81 DLs/hr) in 27.2 hours (Combined: 1.51 DLs/hr!) |
-| 2026-07-21 13:38 | Portal Scrape: V1=4,207, V2=694 | High | V1: +63 (0.67 DLs/hr), V2: +52 (0.55 DLs/hr) in 94.4 hours (Combined: 1.22 DLs/hr!) |
-| 2026-07-17 15:16 | Portal Scrape: V1=4,144, V2=642 | High | V1: +13 (0.62 DLs/hr), V2: +8 (0.38 DLs/hr) in 21.1 hours (Combined: 1.00 DLs/hr!) |
-| 2026-07-16 18:12 | Portal Scrape: V1=4,131, V2=634 | High | V1: +62 (0.69 DLs/hr), V2: +58 (0.64 DLs/hr) in 90.3 hours (Combined: 1.33 DLs/hr!) |
-| 2026-07-12 23:57 | Portal Scrape: V1=4,069, V2=576 | High | V1: +2 (0.26 DLs/hr), V2: +3 (0.40 DLs/hr) in 7.6 hours (Combined: 0.66 DLs/hr!) |
-| 2026-07-12 16:24 | Portal Scrape: V1=4,067, V2=573 | High | V1: +16 (0.52 DLs/hr), V2: +15 (0.49 DLs/hr) in 30.6 hours (Combined: 1.01 DLs/hr!) |
-| 2026-07-11 09:51 | Portal Scrape: V1=4,051, V2=558 | High | V1: +124 (0.77 DLs/hr), V2: +84 (0.52 DLs/hr) in 161.4 hours (Combined: 1.29 DLs/hr!) |
-| 2026-07-04 16:26 | Portal Scrape: V1=3,927, V2=474 | High | V1: +28 (0.59 DLs/hr), V2: +22 (0.46 DLs/hr) in 47.6 hours (Combined: 1.05 DLs/hr!) |
-| 2026-07-02 16:49 | Portal Scrape: V1=3,899, V2=452 | High | V1: +11 (0.55 DLs/hr), V2: +13 (0.65 DLs/hr) in 20.1 hours (Combined: 1.20 DLs/hr!) |
-| 2026-07-01 20:44 | Portal Scrape: V1=3,888, V2=439 | High | V1: +28 (0.95 DLs/hr), V2: +28 (0.95 DLs/hr) in 29.5 hours (Combined: 1.90 DLs/hr!) |
-| 2026-06-30 15:17 | Portal Scrape: V1=3,860, V2=411 | High | V1: +35 (0.72 DLs/hr), V2: +51 (1.05 DLs/hr) in 48.8 hours (Combined: 1.76 DLs/hr!) |
-| 2026-06-28 14:32 | Portal Scrape: V1=3,825, V2=360 | High | V1: +69 (2.44 DLs/hr), V2: +14 (0.49 DLs/hr) in 28.3 hours (Combined: 2.93 DLs/hr!) |
-| 2026-06-27 10:14 | Portal Scrape: V1=3,756, V2=346 | High | V1: +42 (3.77 DLs/hr), V2: +10 (0.90 DLs/hr) in 11.1 hours (Combined: 4.67 DLs/hr!) |
-| 2026-06-26 23:06 | Portal Scrape: V1=3,714, V2=336 | High | V1: +23 (0.67 DLs/hr), V2: +23 (0.67 DLs/hr) in 34.3 hours (Combined: 1.34 DLs/hr!) |
-| 2026-06-25 12:51 | Portal Scrape: V1=3,691, V2=313 | High | V1: +20 (0.73 DLs/hr), V2: +16 (0.59 DLs/hr) in 27.2 hours (Combined: 1.32 DLs/hr!) |
-| 2026-06-24 09:37 | Portal Scrape: V1=3,671, V2=297 | High | V1: +13 (0.95 DLs/hr), V2: +9 (0.66 DLs/hr) in 13.7 hours (Combined: 1.61 DLs/hr!) |
-| 2026-06-23 19:57 | Portal Scrape: V1=3,658, V2=288 | High | V1: +32 (1.19 DLs/hr), V2: +32 (1.19 DLs/hr) in 27.0 hours (Combined: 2.37 DLs/hr!) |
-| 2026-06-22 16:58 | Portal Scrape: V1=3,626, V2=256 | High | V1: +3 (0.54 DLs/hr), V2: +15 (2.68 DLs/hr) in 5.6 hours (Combined: 3.21 DLs/hr!) |
-| 2026-06-22 11:22 | Portal Scrape: V1=3,623, V2=241 | High | V1: +23 (0.52 DLs/hr), V2: +28 (0.63 DLs/hr) in 44.5 hours (Combined: 1.15 DLs/hr!) |
-| 2026-06-20 14:52 | Portal Scrape: V1=3,600, V2=213 | High | V1: +111 (0.98 DLs/hr), V2: +71 (0.62 DLs/hr) in 113.8 hours (Combined: 1.60 DLs/hr!) |
-| 2026-06-15 21:05 | Portal Scrape: V1=3,489, V2=142 | High | V1: +10 (0.99 DLs/hr), V2: +9 (0.89 DLs/hr) in 10.1 hours (Combined: 1.87 DLs/hr!) |
-| 2026-06-15 10:56 | Portal Scrape: V1=3,479, V2=133 | High | V1: +30 (0.63 DLs/hr), V2: +28 (0.58 DLs/hr) in 48 hours |
-| 2026-06-13 | Portal Scrape: V1=3,449, V2=105 | High | Daily ledger tracking initiated |
+"5. **Update `ledger.md`**: Record the new counts in `## 📈 Distribution Funnel` and append a fresh log row in `## 🛠️ Milestone Log
+| Date | V1 (125) | V2 (135) | UC (141) | Total | Δ Total | Velocity (DL/h) | Notes |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2026-09-28 08:25 | 4,938 | 1,152 | 178 | 6,268 | +22 | 0.95 | V1: +3 (0.13 DLs/hr), V2: +8 (0.35 DLs/hr), UC: +11 (0.47 DLs/hr) in 23.2 hours (Combined V1+V2: 0.47 DLs/hr, Total: 6,268, Total Velocity: 0.95 DLs/hr) |
+| 2026-09-27 09:15 | 4,935 | 1,144 | 167 | 6,246 | +16 | 1.05 | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +16 (1.05 DLs/hr) in 15.2 hours (Combined V1+V2: 0.00 DLs/hr, Total: 6,246, Total Velocity: 1.05 DLs/hr) |
+| 2026-09-26 18:03 | 4,935 | 1,144 | 151 | 6,230 | +152 | 2.77 | V1: +38 (0.69 DLs/hr), V2: +7 (0.13 DLs/hr), UC: +107 (1.95 DLs/hr) in 55.0 hours (Combined V1+V2: 0.82 DLs/hr, Total: 6,230, Total Velocity: 2.77 DLs/hr) |
+| 2026-09-24 11:06 | 4,897 | 1,137 | 44 | 6,078 | +393 |  | V1: +237 (0.31 DLs/hr), V2: +112 (0.15 DLs/hr), UC: 44 DLs (id=141) in 753.7 hours (Combined V1+V2: 0.46 DLs/hr, Total: 6,078) |
+| 2026-08-24 01:23 | 4,660 | 1,025 | 0 | 5,685 | +14 | 0.26 | V1: +10 (0.19 DLs/hr), V2: +4 (0.07 DLs/hr) in 53.8 hours (Combined: 0.26 DLs/hr) |
+| 2026-08-21 19:37 | 4,650 | 1,021 | 0 | 5,671 | +17 | 0.52 | V1: +9 (0.28 DLs/hr), V2: +8 (0.25 DLs/hr) in 32.6 hours (Combined: 0.52 DLs/hr) |
+| 2026-08-20 11:01 | 4,641 | 1,013 | 0 | 5,654 | +16 | 0.98 | V1: +7 (0.43 DLs/hr), V2: +9 (0.55 DLs/hr) in 16.3 hours (Combined: 0.98 DLs/hr) |
+| 2026-08-19 18:43 | 4,634 | 1,004 | 0 | 5,638 | +194 | 1.10 | V1: +145 (0.83 DLs/hr), V2: +49 (0.28 DLs/hr) in 175.7 hours (Combined: 1.10 DLs/hr) - V2 crossed 1,000! |
+| 2026-08-12 11:01 | 4,489 | 955 | 0 | 5,444 | +112 | 1.18 | V1: +48 (0.51 DLs/hr), V2: +64 (0.68 DLs/hr) in 94.5 hours (Combined: 1.18 DLs/hr) |
+| 2026-08-08 12:30 | 4,441 | 891 | 0 | 5,332 | +9 | 0.58 | V1: +3 (0.19 DLs/hr), V2: +6 (0.39 DLs/hr) in 15.5 hours (Combined: 0.58 DLs/hr) |
+| 2026-08-07 20:59 | 4,438 | 885 | 0 | 5,323 | +24 | 0.68 | V1: +9 (0.25 DLs/hr), V2: +15 (0.42 DLs/hr) in 35.4 hours (Combined: 0.68 DLs/hr) |
+| 2026-08-06 09:38 | 4,429 | 870 | 0 | 5,299 | +8 | 0.33 | V1: +7 (0.29 DLs/hr), V2: +1 (0.04 DLs/hr) in 23.9 hours (Combined: 0.33 DLs/hr) |
+| 2026-08-05 09:43 | 4,422 | 869 | 0 | 5,291 | +2 | 0.17 | V1: +1 (0.09 DLs/hr), V2: +1 (0.09 DLs/hr) in 11.7 hours (Combined: 0.17 DLs/hr) |
+| 2026-08-04 22:01 | 4,421 | 868 | 0 | 5,289 | +16 | 1.23 | V1: +7 (0.54 DLs/hr), V2: +9 (0.69 DLs/hr) in 13.0 hours (Combined: 1.23 DLs/hr) |
+| 2026-08-04 09:03 | 4,414 | 859 | 0 | 5,273 | +21 | 0.93 | V1: +13 (0.57 DLs/hr), V2: +8 (0.35 DLs/hr) in 22.7 hours (Combined: 0.93 DLs/hr) |
+| 2026-08-03 10:21 | 4,401 | 851 | 0 | 5,252 | +8 | 0.66 | V1: +5 (0.41 DLs/hr), V2: +3 (0.25 DLs/hr) in 12.2 hours (Combined: 0.66 DLs/hr) |
+| 2026-08-02 22:10 | 4,396 | 848 | 0 | 5,244 | +22 | 0.87 | V1: +10 (0.40 DLs/hr), V2: +12 (0.47 DLs/hr) in 25.3 hours (Combined: 0.87 DLs/hr) |
+| 2026-08-01 20:52 | 4,386 | 836 | 0 | 5,222 | +75 | 1.25 | V1: +44 (0.73 DLs/hr), V2: +31 (0.52 DLs/hr) in 60.1 hours (Combined: 1.25 DLs/hr) |
+| 2026-07-30 08:44 | 4,342 | 805 | 0 | 5,147 | +13 | 1.31 | V1: +4 (0.40 DLs/hr), V2: +9 (0.90 DLs/hr) in 10.0 hours (Combined: 1.31 DLs/hr) |
+| 2026-07-29 22:47 | 4,338 | 796 | 0 | 5,134 | +19 | 1.36 | V1: +10 (0.72 DLs/hr), V2: +9 (0.65 DLs/hr) in 13.9 hours (Combined: 1.36 DLs/hr) |
+| 2026-07-29 08:52 | 4,328 | 787 | 0 | 5,115 | +20 | 0.83 | V1: +10 (0.41 DLs/hr), V2: +10 (0.41 DLs/hr) in 24.2 hours (Combined: 0.83 DLs/hr) |
+| 2026-07-28 08:41 | 4,318 | 777 | 0 | 5,095 | +28 | 2.73 | V1: +23 (2.25 DLs/hr), V2: +5 (0.49 DLs/hr) in 10.2 hours (Combined: 2.73 DLs/hr!) |
+| 2026-07-27 22:27 | 4,295 | 772 | 0 | 5,067 | +0 | 0.00 | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr) in 0.1 hours (Combined: 0.00 DLs/hr!) |
+| 2026-07-27 22:23 | 4,295 | 772 | 0 | 5,067 | +15 | 1.29 | V1: +7 (0.60 DLs/hr), V2: +8 (0.69 DLs/hr) in 11.7 hours (Combined: 1.29 DLs/hr!) |
+| 2026-07-27 10:44 | 4,288 | 764 | 0 | 5,052 | +17 | 0.74 | V1: +8 (0.35 DLs/hr), V2: +9 (0.39 DLs/hr) in 23.0 hours (Combined: 0.74 DLs/hr!) |
+| 2026-07-26 11:42 | 4,280 | 755 | 0 | 5,035 | +22 | 0.51 | V1: +11 (0.25 DLs/hr), V2: +11 (0.25 DLs/hr) in 43.5 hours (Combined: 0.51 DLs/hr!) |
+| 2026-07-24 16:15 | 4,269 | 744 | 0 | 5,013 | +47 | 1.90 | V1: +28 (1.13 DLs/hr), V2: +19 (0.77 DLs/hr) in 24.8 hours (Combined: 1.90 DLs/hr!) |
+| 2026-07-23 15:30 | 4,241 | 725 | 0 | 4,966 | +24 | 1.06 | V1: +15 (0.66 DLs/hr), V2: +9 (0.40 DLs/hr) in 22.7 hours (Combined: 1.06 DLs/hr!) |
+| 2026-07-22 16:51 | 4,226 | 716 | 0 | 4,942 | +41 | 1.51 | V1: +19 (0.70 DLs/hr), V2: +22 (0.81 DLs/hr) in 27.2 hours (Combined: 1.51 DLs/hr!) |
+| 2026-07-21 13:38 | 4,207 | 694 | 0 | 4,901 | +115 | 1.22 | V1: +63 (0.67 DLs/hr), V2: +52 (0.55 DLs/hr) in 94.4 hours (Combined: 1.22 DLs/hr!) |
+| 2026-07-17 15:16 | 4,144 | 642 | 0 | 4,786 | +21 | 1.00 | V1: +13 (0.62 DLs/hr), V2: +8 (0.38 DLs/hr) in 21.1 hours (Combined: 1.00 DLs/hr!) |
+| 2026-07-16 18:12 | 4,131 | 634 | 0 | 4,765 | +120 | 1.33 | V1: +62 (0.69 DLs/hr), V2: +58 (0.64 DLs/hr) in 90.3 hours (Combined: 1.33 DLs/hr!) |
+| 2026-07-12 23:57 | 4,069 | 576 | 0 | 4,645 | +5 | 0.66 | V1: +2 (0.26 DLs/hr), V2: +3 (0.40 DLs/hr) in 7.6 hours (Combined: 0.66 DLs/hr!) |
+| 2026-07-12 16:24 | 4,067 | 573 | 0 | 4,640 | +31 | 1.01 | V1: +16 (0.52 DLs/hr), V2: +15 (0.49 DLs/hr) in 30.6 hours (Combined: 1.01 DLs/hr!) |
+| 2026-07-11 09:51 | 4,051 | 558 | 0 | 4,609 | +208 | 1.29 | V1: +124 (0.77 DLs/hr), V2: +84 (0.52 DLs/hr) in 161.4 hours (Combined: 1.29 DLs/hr!) |
+| 2026-07-04 16:26 | 3,927 | 474 | 0 | 4,401 | +50 | 1.05 | V1: +28 (0.59 DLs/hr), V2: +22 (0.46 DLs/hr) in 47.6 hours (Combined: 1.05 DLs/hr!) |
+| 2026-07-02 16:49 | 3,899 | 452 | 0 | 4,351 | +24 | 1.20 | V1: +11 (0.55 DLs/hr), V2: +13 (0.65 DLs/hr) in 20.1 hours (Combined: 1.20 DLs/hr!) |
+| 2026-07-01 20:44 | 3,888 | 439 | 0 | 4,327 | +56 | 1.90 | V1: +28 (0.95 DLs/hr), V2: +28 (0.95 DLs/hr) in 29.5 hours (Combined: 1.90 DLs/hr!) |
+| 2026-06-30 15:17 | 3,860 | 411 | 0 | 4,271 | +86 | 1.76 | V1: +35 (0.72 DLs/hr), V2: +51 (1.05 DLs/hr) in 48.8 hours (Combined: 1.76 DLs/hr!) |
+| 2026-06-28 14:32 | 3,825 | 360 | 0 | 4,185 | +83 | 2.93 | V1: +69 (2.44 DLs/hr), V2: +14 (0.49 DLs/hr) in 28.3 hours (Combined: 2.93 DLs/hr!) |
+| 2026-06-27 10:14 | 3,756 | 346 | 0 | 4,102 | +52 | 4.67 | V1: +42 (3.77 DLs/hr), V2: +10 (0.90 DLs/hr) in 11.1 hours (Combined: 4.67 DLs/hr!) |
+| 2026-06-26 23:06 | 3,714 | 336 | 0 | 4,050 | +46 | 1.34 | V1: +23 (0.67 DLs/hr), V2: +23 (0.67 DLs/hr) in 34.3 hours (Combined: 1.34 DLs/hr!) |
+| 2026-06-25 12:51 | 3,691 | 313 | 0 | 4,004 | +36 | 1.32 | V1: +20 (0.73 DLs/hr), V2: +16 (0.59 DLs/hr) in 27.2 hours (Combined: 1.32 DLs/hr!) |
+| 2026-06-24 09:37 | 3,671 | 297 | 0 | 3,968 | +22 | 1.61 | V1: +13 (0.95 DLs/hr), V2: +9 (0.66 DLs/hr) in 13.7 hours (Combined: 1.61 DLs/hr!) |
+| 2026-06-23 19:57 | 3,658 | 288 | 0 | 3,946 | +64 | 2.37 | V1: +32 (1.19 DLs/hr), V2: +32 (1.19 DLs/hr) in 27.0 hours (Combined: 2.37 DLs/hr!) |
+| 2026-06-22 16:58 | 3,626 | 256 | 0 | 3,882 | +18 | 3.21 | V1: +3 (0.54 DLs/hr), V2: +15 (2.68 DLs/hr) in 5.6 hours (Combined: 3.21 DLs/hr!) |
+| 2026-06-22 11:22 | 3,623 | 241 | 0 | 3,864 | +51 | 1.15 | V1: +23 (0.52 DLs/hr), V2: +28 (0.63 DLs/hr) in 44.5 hours (Combined: 1.15 DLs/hr!) |
+| 2026-06-20 14:52 | 3,600 | 213 | 0 | 3,813 | +182 | 1.60 | V1: +111 (0.98 DLs/hr), V2: +71 (0.62 DLs/hr) in 113.8 hours (Combined: 1.60 DLs/hr!) |
+| 2026-06-15 21:05 | 3,489 | 142 | 0 | 3,631 | +19 | 1.87 | V1: +10 (0.99 DLs/hr), V2: +9 (0.89 DLs/hr) in 10.1 hours (Combined: 1.87 DLs/hr!) |
+| 2026-06-15 10:56 | 3,479 | 133 | 0 | 3,612 | +58 |  | V1: +30 (0.63 DLs/hr), V2: +28 (0.58 DLs/hr) in 48 hours |
+| 2026-06-13 | 3,449 | 105 | 0 | 3,554 | - |  | Daily ledger tracking initiated |
 | 2026-02-07 | Portal Scrape: 603 DLs | High | Verified growth on Plugin Portal |
 | 2026-02-06 | **Stable Release: v28.1.0** | **MAX** | First stable version of the ecosystem. |
 | 2026-02-06 | CI/CD Optimization | High | Resolved duplicate deployment IDs. |
