@@ -27,7 +27,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.view.AbstractTextResourceViewer;
 
@@ -216,7 +216,7 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         if (resource.getHandle() instanceof IntellijHandle ih) {
             vf = ih.getVirtualFile();
         } else if (resource.getHandle() instanceof PathHandle ph) {
-            vf = JavaPsi.findVirtualFile(ph.getPath());
+            vf = ProjectUtils.findVirtualFile(ph.getPath());
         }
 
         if (vf != null) {
@@ -291,10 +291,10 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         if (resource.getHandle() instanceof IntellijHandle ih) {
             vf = ih.getVirtualFile();
         } else if (resource.getHandle() instanceof PathHandle ph) {
-            vf = JavaPsi.findVirtualFile(ph.getPath());
+            vf = ProjectUtils.findVirtualFile(ph.getPath());
         }
         if (vf != null) {
-            Project p = JavaPsi.findHostProject(vf);
+            Project p = ProjectUtils.findHostProject(vf);
             if (p != null) {
                 return p;
             }

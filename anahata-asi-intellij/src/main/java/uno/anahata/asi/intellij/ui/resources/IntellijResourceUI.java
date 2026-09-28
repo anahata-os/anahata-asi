@@ -10,7 +10,7 @@ import uno.anahata.asi.AbstractAsiContainer;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.tools.ide.IDE;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;
@@ -116,9 +116,9 @@ public class IntellijResourceUI extends DefaultResourceUI {
     public void open(Resource resource, AgiPanel agiPanel) {
         String path = getPath(resource);
         if (path != null) {
-            VirtualFile vf = JavaPsi.findVirtualFile(path);
+            VirtualFile vf = ProjectUtils.findVirtualFile(path);
             if (vf != null) {
-                Project project = JavaPsi.findHostProject(vf);
+                Project project = ProjectUtils.findHostProject(vf);
                 if (project != null) {
                     new OpenFileDescriptor(project, vf).navigate(true);
                     return;

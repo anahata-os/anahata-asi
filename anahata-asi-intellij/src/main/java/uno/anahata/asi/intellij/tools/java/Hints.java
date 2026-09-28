@@ -27,6 +27,7 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -79,11 +80,11 @@ public class Hints extends AnahataToolkit {
         if (!Files.exists(path)) {
             throw new AgiToolException("File does not exist: " + filePath);
         }
-        VirtualFile vf = JavaPsi.findVirtualFile(filePath);
+        VirtualFile vf = ProjectUtils.findVirtualFile(filePath);
         if (vf == null) {
             throw new AgiToolException("Could not resolve a VirtualFile for: " + filePath);
         }
-        Project project = JavaPsi.findHostProject(vf);
+        Project project = ProjectUtils.findHostProject(vf);
         if (project == null) {
             throw new AgiToolException("No open project can host file: " + filePath);
         }
@@ -146,11 +147,11 @@ public class Hints extends AnahataToolkit {
             @AgiToolParam("The 1-based line number of the highlight to fix.") int line,
             @AgiToolParam(value = "A case-insensitive substring of the fix name, or null for the first fix.", required = false) String fixName) throws AgiToolException {
 
-        VirtualFile vf = JavaPsi.findVirtualFile(filePath);
+        VirtualFile vf = ProjectUtils.findVirtualFile(filePath);
         if (vf == null) {
             throw new AgiToolException("Could not resolve a VirtualFile for: " + filePath);
         }
-        Project project = JavaPsi.findHostProject(vf);
+        Project project = ProjectUtils.findHostProject(vf);
         if (project == null) {
             throw new AgiToolException("No open project can host file: " + filePath);
         }

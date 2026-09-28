@@ -19,6 +19,7 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.intellij.IntellijAsiContainer;
 import uno.anahata.asi.intellij.internal.IntellijPluginUtils;
 import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.tools.project.Projects;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
 import uno.anahata.asi.intellij.ui.resources.IntellijResourceUI;
@@ -348,9 +349,9 @@ public class IntellijJava extends DesktopJava {
                 return project;
             }
         }
-        VirtualFile vf = JavaPsi.findVirtualFile(projectPath);
+        VirtualFile vf = ProjectUtils.findVirtualFile(projectPath);
         if (vf != null) {
-            Project project = JavaPsi.findHostProject(vf);
+            Project project = ProjectUtils.findHostProject(vf);
             if (project != null) {
                 return project;
             }

@@ -13,7 +13,7 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
 import uno.anahata.asi.intellij.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
@@ -56,7 +56,7 @@ public class IntellijIconProvider implements IconProvider {
             if (res.getHandle() instanceof IntellijHandle ih) {
                 vf = ih.getVirtualFile();
             } else if (res.getHandle() instanceof PathHandle ph) {
-                vf = JavaPsi.findVirtualFile(ph.getPath());
+                vf = ProjectUtils.findVirtualFile(ph.getPath());
             }
 
             if (vf != null) {
@@ -65,7 +65,7 @@ public class IntellijIconProvider implements IconProvider {
                 }
                 try {
                     final VirtualFile targetVf = vf;
-                    Project project = JavaPsi.findHostProject(targetVf);
+                    Project project = ProjectUtils.findHostProject(targetVf);
                     Icon richIcon = ReadAction.computeBlocking(() -> IconUtil.getIcon(targetVf, 0, project));
                     if (richIcon != null) {
                         return richIcon;

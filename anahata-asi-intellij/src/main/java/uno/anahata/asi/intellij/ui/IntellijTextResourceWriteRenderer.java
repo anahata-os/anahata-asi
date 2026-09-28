@@ -28,7 +28,7 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.tool.ToolExecutionStatus;
 import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRenderer;
@@ -204,9 +204,9 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
      */
     private Project resolveProject() {
         if (update != null && update.getOriginalResourceName() != null) {
-            VirtualFile vf = JavaPsi.findVirtualFile(update.getOriginalResourceName());
+            VirtualFile vf = ProjectUtils.findVirtualFile(update.getOriginalResourceName());
             if (vf != null) {
-                Project p = JavaPsi.findHostProject(vf);
+                Project p = ProjectUtils.findHostProject(vf);
                 if (p != null) {
                     return p;
                 }

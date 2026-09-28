@@ -22,7 +22,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -321,11 +321,11 @@ public class Maven extends AnahataToolkit {
     private Object[] resolveMavenContext(String projectPath) throws AgiToolException {
         Path path = Path.of(projectPath);
         Path pom = Files.isDirectory(path) ? path.resolve("pom.xml") : path;
-        VirtualFile pomVf = JavaPsi.findVirtualFile(pom.toString());
+        VirtualFile pomVf = ProjectUtils.findVirtualFile(pom.toString());
         if (pomVf == null) {
             throw new AgiToolException("pom.xml not found for: " + projectPath);
         }
-        Project ideProject = JavaPsi.findHostProject(pomVf);
+        Project ideProject = ProjectUtils.findHostProject(pomVf);
         if (ideProject == null) {
             throw new AgiToolException("No open IntelliJ project hosts: " + projectPath);
         }

@@ -9,7 +9,7 @@ import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
 import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
 
@@ -69,7 +69,7 @@ public class IntellijHandlePanel extends AbstractHandlePanel<IntellijHandle> {
             validityLabel.setForeground(Color.RED);
         }
 
-        Project project = JavaPsi.findHostProject(vf);
+        Project project = ProjectUtils.findHostProject(vf);
         if (project != null && vf != null) {
             FileStatus status = FileStatusManager.getInstance(project).getStatus(vf);
             vcsStatusLabel.setText(status.getText());

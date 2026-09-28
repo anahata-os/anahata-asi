@@ -21,6 +21,7 @@ import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 
@@ -172,9 +173,9 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
      */
     private Project resolveProject(Agi agi) {
         if (filePath != null) {
-            VirtualFile vf = JavaPsi.findVirtualFile(filePath);
+            VirtualFile vf = ProjectUtils.findVirtualFile(filePath);
             if (vf != null) {
-                Project p = JavaPsi.findHostProject(vf);
+                Project p = ProjectUtils.findHostProject(vf);
                 if (p != null) {
                     return p;
                 }
@@ -183,9 +184,9 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         if (resourceUuid != null) {
             Resource r = agi.getResourceManager().get(resourceUuid);
             if (r != null && r.getHandle() instanceof uno.anahata.asi.agi.resource.handle.PathHandle ph) {
-                VirtualFile vf = JavaPsi.findVirtualFile(ph.getPath());
+                VirtualFile vf = ProjectUtils.findVirtualFile(ph.getPath());
                 if (vf != null) {
-                    Project p = JavaPsi.findHostProject(vf);
+                    Project p = ProjectUtils.findHostProject(vf);
                     if (p != null) {
                         return p;
                     }

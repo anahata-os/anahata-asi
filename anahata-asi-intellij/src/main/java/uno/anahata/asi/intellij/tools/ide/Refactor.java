@@ -53,6 +53,7 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolPermission;
 import uno.anahata.asi.intellij.internal.JavaPsi;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -579,7 +580,7 @@ public class Refactor extends AnahataToolkit {
      */
     private Object[] resolvePrimaryClass(String filePath) throws AgiToolException {
         Project project = resolveHostProject(filePath);
-        VirtualFile vf = JavaPsi.findVirtualFile(filePath);
+        VirtualFile vf = ProjectUtils.findVirtualFile(filePath);
         PsiClass primary = ReadAction.computeBlocking(() -> JavaPsi.primaryClass(project, vf));
         if (primary == null) {
             throw new AgiToolException("No primary Java class in: " + filePath);
@@ -595,11 +596,11 @@ public class Refactor extends AnahataToolkit {
      * @throws AgiToolException if the path cannot be resolved or hosted.
      */
     private Project resolveHostProject(String filePath) throws AgiToolException {
-        VirtualFile vf = JavaPsi.findVirtualFile(filePath);
+        VirtualFile vf = ProjectUtils.findVirtualFile(filePath);
         if (vf == null) {
             throw new AgiToolException("Could not resolve a VirtualFile for: " + filePath);
         }
-        Project project = JavaPsi.findHostProject(vf);
+        Project project = ProjectUtils.findHostProject(vf);
         if (project == null) {
             throw new AgiToolException("No open project can host: " + filePath);
         }
