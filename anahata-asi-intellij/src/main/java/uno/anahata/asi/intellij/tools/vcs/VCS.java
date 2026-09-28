@@ -14,6 +14,8 @@ import com.intellij.openapi.vcs.changes.Change;
 import com.intellij.openapi.vcs.changes.ChangeListManager;
 import com.intellij.openapi.vcs.changes.ContentRevision;
 import com.intellij.openapi.vcs.changes.LocalChangeList;
+import com.intellij.openapi.vcs.changes.LocalChangesListView;
+import com.intellij.openapi.vcs.changes.ui.ChangesBrowserNode;
 import com.intellij.openapi.vcs.history.VcsCachingHistory;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
 import com.intellij.openapi.vfs.LocalFileSystem;
@@ -36,10 +38,13 @@ import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
-import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolPermission;
+import com.intellij.openapi.vcs.ui.CommitMessage;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
+import com.intellij.ui.content.Content;
+import java.awt.Component;
+import java.awt.Container;
 import git4idea.commands.Git;
 import git4idea.commands.GitCommand;
 import git4idea.commands.GitCommandResult;
@@ -47,7 +52,6 @@ import git4idea.commands.GitLineHandler;
 import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryManager;
-import java.util.Map;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.vcs.FastForwardPolicy;
 import uno.anahata.asi.internal.AnahataDiffUtils;
@@ -678,6 +682,18 @@ public class VCS extends AbstractVCS {
     }
 
     /**
+     * Resolves a file path against a repository root, handling both relative and absolute paths.
+     *
+     * @param repoRoot The repository root VirtualFile.
+     * @param filePath The file path string.
+     * @return Normalized File instance.
+     */
+    private static File resolveRepoFile(VirtualFile repoRoot, String filePath) {
+        File file = new File(filePath);
+        return file.isAbsolute() ? file.toPath().normalize().toFile() : new File(repoRoot.getPath(), filePath).toPath().normalize().toFile();
+    }
+
+    /**
      * Resolves a validated directory from a path string.
      *
      * @param path The path string to resolve.
@@ -914,14 +930,14 @@ public class VCS extends AbstractVCS {
             throw new AgiToolException("No files specified to stage.");
         }
 
-        GitRepository repo = null;
+        GitRepository repo = requireRepo(null);
         List<String> relativePaths = new ArrayList<>();
         for (String p : filePaths) {
-            File f = resolveFile(p);
-            if (repo == null) {
-                repo = requireRepo(f.getAbsolutePath());
+            File f = resolveRepoFile(repo.getRoot(), p);
+            if (!f.exists()) {
+                throw new AgiToolException("File does not exist: " + f.getAbsolutePath());
             }
-            String rel = repo.getRoot().toNioPath().relativize(f.toPath()).toString();
+            String rel = repo.getRoot().toNioPath().relativize(f.toPath()).toString().replace('\\', '/');
             relativePaths.add(rel);
         }
 
@@ -1029,13 +1045,88 @@ public class VCS extends AbstractVCS {
         SwingUtils.runInEDT(() -> {
             ToolWindow commitTw = ToolWindowManager.getInstance(project).getToolWindow("Commit");
             if (commitTw != null) {
-                commitTw.activate(null, true);
+                Runnable prefill = () -> {
+                    for (Content content : commitTw.getContentManager().getContents()) {
+                        if (message != null && !message.isBlank()) {
+                            CommitMessage cm = findCommitMessage(content.getComponent());
+                            if (cm != null) {
+                                cm.setCommitMessage(message.trim());
+                                cm.requestFocusInMessage();
+                            }
+                        }
+                        if (filePaths != null && !filePaths.isEmpty()) {
+                            LocalChangesListView tree = findChangesTree(content.getComponent());
+                            if (tree != null) {
+                                List<Change> toInclude = new ArrayList<>();
+                                for (Object nodeObj : tree.getChangesNodes()) {
+                                    if (nodeObj instanceof ChangesBrowserNode<?> node && node.getUserObject() instanceof Change change) {
+                                        String changePath = (change.getVirtualFile() != null)
+                                                ? change.getVirtualFile().getPath()
+                                                : (change.getAfterRevision() != null ? change.getAfterRevision().getFile().getPath() : "");
+                                        for (String p : filePaths) {
+                                            File f = resolveRepoFile(repo.getRoot(), p);
+                                            if (changePath.equalsIgnoreCase(f.getAbsolutePath())) {
+                                                toInclude.add(change);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                tree.setIncludedChanges(toInclude);
+                            }
+                        }
+                    }
+                };
+                commitTw.activate(prefill, true);
+                prefill.run();
             }
         });
 
         log("Activated IntelliJ Commit tool window for: " + repo.getRoot().getName());
         return "Successfully opened IntelliJ Commit tool window for repository `" + repo.getRoot().getName() + "`"
                 + (message != null && !message.isBlank() ? " with suggested message: \"" + message.trim() + "\"" : "") + ".";
+    }
+
+    /**
+     * Recursively traverses a Swing container hierarchy to locate the IntelliJ CommitMessage component.
+     *
+     * @param c The root component to inspect.
+     * @return The found {@link CommitMessage} component, or null.
+     */
+    private static CommitMessage findCommitMessage(Component c) {
+        if (c instanceof CommitMessage cm) {
+            return cm;
+        }
+        if (c instanceof Container cont) {
+            for (Component child : cont.getComponents()) {
+                CommitMessage res = findCommitMessage(child);
+                if (res != null) {
+                    return res;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Recursively traverses a Swing container hierarchy to locate the IntelliJ LocalChangesListView component.
+     *
+     * @param c The root component to inspect.
+     * @return The found {@link LocalChangesListView} component, or null.
+     */
+    private static LocalChangesListView findChangesTree(Component c) {
+        if (c instanceof LocalChangesListView lclv) {
+            return lclv;
+        }
+        if (c instanceof Container cont) {
+            for (Component child : cont.getComponents()) {
+                LocalChangesListView res = findChangesTree(child);
+                if (res != null) {
+                    return res;
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -1419,8 +1510,8 @@ public class VCS extends AbstractVCS {
         }
 
         if (filePath != null && !filePath.isBlank()) {
-            File f = resolveFile(filePath);
-            String rel = root.toNioPath().relativize(f.toPath()).toString();
+            File f = resolveRepoFile(root, filePath);
+            String rel = root.toNioPath().relativize(f.toPath()).toString().replace('\\', '/');
             handler.addParameters("--", rel);
         }
 
@@ -1483,8 +1574,8 @@ public class VCS extends AbstractVCS {
         handler.addParameters(baseRevision.trim(), targetRevision.trim());
 
         if (filePath != null && !filePath.isBlank()) {
-            File f = resolveFile(filePath);
-            String rel = root.toNioPath().relativize(f.toPath()).toString();
+            File f = resolveRepoFile(root, filePath);
+            String rel = root.toNioPath().relativize(f.toPath()).toString().replace('\\', '/');
             handler.addParameters("--", rel);
         }
 
@@ -1534,7 +1625,7 @@ public class VCS extends AbstractVCS {
         Project project = repo.getProject();
         VirtualFile root = repo.getRoot();
 
-        File f = resolveFileOrDirectory(filePath);
+        File f = resolveRepoFile(root, filePath);
         String rel = root.toNioPath().relativize(f.toPath()).toString().replace('\\', '/');
 
         GitLineHandler handler = new GitLineHandler(project, root, GitCommand.SHOW);
@@ -1610,8 +1701,11 @@ public class VCS extends AbstractVCS {
             @AgiToolParam(value = "Optional 1-based ending line number. If omitted, blames to end of file.", required = false) Integer endLine,
             @AgiToolParam(value = "Optional revision to blame against. Defaults to HEAD.", required = false) String revision) throws Exception {
 
-        File file = resolveFile(filePath);
-        GitRepository repo = requireRepo(file.getAbsolutePath());
+        GitRepository repo = requireRepo(null);
+        File file = resolveRepoFile(repo.getRoot(), filePath);
+        if (!file.exists()) {
+            throw new AgiToolException("File does not exist: " + filePath);
+        }
         Project project = repo.getProject();
         VirtualFile root = repo.getRoot();
 

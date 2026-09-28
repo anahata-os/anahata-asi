@@ -53,6 +53,7 @@ import org.netbeans.modules.versioning.util.common.VCSCommitOptions;
 import org.openide.util.HelpCtx;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.resource.vcs.FastForwardPolicy;
 import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
 import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.agi.resource.vcs.VcsFileStatus;
@@ -1059,18 +1060,15 @@ public class VCS extends AbstractVCS {
     }
 
     /**
-     * Merges a branch or revision into the current active branch.
-     *
-     * @param repoPath Path of the repository or project directory.
-     * @param branchOrRevision The branch name or revision hash to merge into the active branch.
-     * @return Markdown summary of the merge outcome, including merge status, new HEAD, and any conflicts.
-     * @throws Exception if merge fails.
+     * {@inheritDoc}
+     * <p>Merges a branch or revision into the current active branch using NetBeans GitClient.</p>
      */
+    @Override
     @AgiTool("Merges a branch or revision into the current active branch.")
     public String gitMerge(
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
             @AgiToolParam(value = "The branch name or revision hash to merge into the active branch.") String branchOrRevision,
-            @AgiToolParam(value = "Fast-forward merge policy. Defaults to FAST_FORWARD.", required = false) FastForwardOption fastForwardOption) throws Exception {
+            @AgiToolParam(value = "Fast-forward merge policy. Defaults to FAST_FORWARD.", required = false) FastForwardPolicy fastForwardPolicy) throws Exception {
 
         if (branchOrRevision == null || branchOrRevision.isBlank()) {
             throw new AgiToolException("Branch name or revision cannot be empty.");
@@ -1084,7 +1082,16 @@ public class VCS extends AbstractVCS {
             GitBranch activeBranch = getActiveBranch(client, monitor);
             String target = branchOrRevision.trim();
             String activeName = activeBranch != null ? activeBranch.getName() : "HEAD";
-            FastForwardOption ff = fastForwardOption != null ? fastForwardOption : FastForwardOption.FAST_FORWARD;
+            FastForwardOption ff;
+            if (fastForwardPolicy == null) {
+                ff = FastForwardOption.FAST_FORWARD;
+            } else {
+                ff = switch (fastForwardPolicy) {
+                    case FAST_FORWARD_ONLY -> FastForwardOption.FAST_FORWARD_ONLY;
+                    case NO_FAST_FORWARD -> FastForwardOption.NO_FAST_FORWARD;
+                    default -> FastForwardOption.FAST_FORWARD;
+                };
+            }
 
             log("Merging '" + target + "' (" + ff + ") into " + activeName + " in " + repoRoot.getName());
             GitMergeResult mergeResult = client.merge(target, ff, monitor);

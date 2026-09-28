@@ -269,11 +269,48 @@
             </exclusions>
         </dependency>
 
-        <!-- Bundled Git4Idea plugin API (GitRepositoryManager, GitRepository, Git, GitBrancher, ...).
+        <!-- Bundled Git4Idea plugin API (GitRepositoryManager, GitRepository, Git, GitLineHandler, ...).
         Transitives excluded as standard for JetBrains provided plugins. -->
         <dependency>
             <groupId>com.jetbrains.intellij.vcs</groupId>
-            <artifactId>git</artifactId>
+            <artifactId>git-backend</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.vcs</groupId>
+            <artifactId>git-shared</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- Platform DVCS abstraction (Repository, AbstractRepositoryManager) for GitRepository. -->
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>vcs-dvcs</artifactId>
+            <version>${intellij.plugins.version}</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.jetbrains.intellij.platform</groupId>
+            <artifactId>vcs-dvcs-impl</artifactId>
             <version>${intellij.plugins.version}</version>
             <scope>provided</scope>
             <exclusions>
