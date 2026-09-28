@@ -5,7 +5,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import uno.anahata.asi.nb.tools.maven.DependencyScope;
+import uno.anahata.asi.toolkit.maven.DependencyScope;
+
 
 /**
  * Represents a high-level, structured overview of a NetBeans project.

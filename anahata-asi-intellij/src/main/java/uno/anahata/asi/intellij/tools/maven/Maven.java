@@ -23,6 +23,9 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
+import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
+import uno.anahata.asi.toolkit.maven.DependencyGroup;
+import uno.anahata.asi.toolkit.maven.DependencyScope;
 
 import java.io.InputStream;
 import java.nio.file.Files;

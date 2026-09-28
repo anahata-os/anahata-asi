@@ -44,7 +44,6 @@ import org.openide.util.Lookup;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.Maven;
-import uno.anahata.asi.nb.tools.maven.DependencyScope;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
@@ -54,6 +53,7 @@ import uno.anahata.asi.nb.tools.vcs.VCS;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.toolkit.maven.DependencyScope;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.

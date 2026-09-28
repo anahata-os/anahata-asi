@@ -58,6 +58,9 @@ import uno.anahata.asi.nb.util.TeeInputOutput;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
+import uno.anahata.asi.toolkit.maven.DependencyGroup;
+import uno.anahata.asi.toolkit.maven.DependencyScope;
 
 /**
  * Consolidated "super-tool" class for all Maven-related AI operations.

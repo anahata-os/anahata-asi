@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.intellij.tools.maven;
+package uno.anahata.asi.toolkit.maven;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Represents a declared artifact in a compact format, designed for token efficiency.
- * 
+ *
  * @author anahata
  */
 @Data
@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Represents a declared artifact in a compact format.")
 public class DeclaredArtifact {
 
-    /** The compact artifact identity string (e.g., 'groupId:artifactId:version'). */
+    /** The compact artifact identity string (e.g., 'artifactId:version[:classifier][:type]'). */
     @Schema(
         description = "A compact string representing the artifact's coordinates in the format 'artifactId:version[:classifier][:type]'. Classifier and type are omitted if not present.", 
         example = "guava:33.4.8-jre"
