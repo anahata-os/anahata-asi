@@ -1546,10 +1546,14 @@ public class VCS extends AbstractVCS {
 
     /**
      * Generates a Git diff between two branches or revisions, optionally filtered to a specific file or folder.
+     * <p>
+     * If {@code targetRevision} is omitted, null, or set to an uncommitted working tree alias
+     * (e.g. {@code "WORKING_COPY"}, {@code "WORKING_TREE"}, {@code "WORKDIR"}), diffs against the local working copy.
+     * </p>
      *
      * @param repoPath Path of the repository or project directory. If omitted, uses active project repository.
      * @param baseRevision The base branch or revision hash (e.g. 'main', 'HEAD~1').
-     * @param targetRevision The target branch or revision hash (e.g. 'helder/main', 'HEAD').
+     * @param targetRevision Optional target branch, revision hash (e.g. 'helder/main', 'HEAD'), or null/'WORKING_COPY' to compare against the local working copy.
      * @param filePath Optional file or folder path to limit the diff to.
      * @param summaryOnly If true, returns only the list of modified/added/deleted file paths instead of the full patch text. Defaults to false.
      * @return Unified diff output as text or summary.
@@ -1559,7 +1563,7 @@ public class VCS extends AbstractVCS {
     public String gitDiff(
             @AgiToolParam(value = "Path of the repository or project directory. If omitted, uses active project repository.", required = false, rendererId = "path") String repoPath,
             @AgiToolParam(value = "The base branch or revision hash (e.g. 'main', 'HEAD~1').") String baseRevision,
-            @AgiToolParam(value = "The target branch or revision hash (e.g. 'helder/main', 'HEAD').") String targetRevision,
+            @AgiToolParam(value = "Optional target branch or revision hash (e.g. 'feat/my-branch', 'HEAD'). Omit to compare against the local working copy.", required = false) String targetRevision,
             @AgiToolParam(value = "Optional specific file or folder path to limit the diff to.", required = false, rendererId = "path") String filePath,
             @AgiToolParam(value = "If true, returns only the list of modified/added/deleted file paths instead of the full patch text. Defaults to false.", required = false) Boolean summaryOnly) throws Exception {
 
@@ -1571,7 +1575,19 @@ public class VCS extends AbstractVCS {
         if (summaryOnly != null && summaryOnly) {
             handler.addParameters("--name-status");
         }
-        handler.addParameters(baseRevision.trim(), targetRevision.trim());
+
+        boolean isTargetWorkingCopy = isWorkingCopyAlias(targetRevision);
+        boolean isBaseWorkingCopy = isWorkingCopyAlias(baseRevision);
+
+        if (isTargetWorkingCopy && isBaseWorkingCopy) {
+            // Diff working tree directly (e.g. unstaged changes)
+        } else if (isTargetWorkingCopy) {
+            handler.addParameters(baseRevision.trim());
+        } else if (isBaseWorkingCopy) {
+            handler.addParameters("-R", targetRevision.trim());
+        } else {
+            handler.addParameters(baseRevision.trim(), targetRevision.trim());
+        }
 
         if (filePath != null && !filePath.isBlank()) {
             File f = resolveRepoFile(root, filePath);
@@ -1586,12 +1602,12 @@ public class VCS extends AbstractVCS {
 
         String output = result.getOutputAsJoinedString().trim();
         if (output.isBlank()) {
-            return "No differences found between " + baseRevision + " and " + targetRevision + (filePath != null ? " for " + filePath : "");
+            return "No differences found between " + baseRevision + " and " + (targetRevision != null ? targetRevision : "WORKING_COPY") + (filePath != null ? " for " + filePath : "");
         }
 
         if (summaryOnly != null && summaryOnly) {
             StringBuilder sb = new StringBuilder();
-            sb.append("### Git Diff Summary: ").append(root.getName()).append(" [").append(baseRevision).append("...").append(targetRevision).append("]\n\n");
+            sb.append("### Git Diff Summary: ").append(root.getName()).append(" [").append(baseRevision).append("...").append(targetRevision != null ? targetRevision : "WORKING_COPY").append("]\n\n");
             sb.append("| Status | File |\n");
             sb.append("| :--- | :--- |\n");
             for (String line : result.getOutput()) {

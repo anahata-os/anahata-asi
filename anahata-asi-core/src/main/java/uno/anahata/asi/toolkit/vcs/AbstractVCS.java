@@ -269,4 +269,25 @@ public abstract class AbstractVCS extends AnahataToolkit {
      */
     public abstract String gitBlame(String filePath, Integer startLine, Integer endLine, String revision) throws Exception;
 
+    /**
+     * Checks whether a revision string represents the local uncommitted working tree or index.
+     * Treats {@code null}, blank, and aliases such as {@code "WORKING_COPY"} as referring to the active working copy.
+     *
+     * @param revision The revision string to inspect.
+     * @return {@code true} if the revision refers to the active working copy or index.
+     */
+    public static boolean isWorkingCopyAlias(String revision) {
+        if (revision == null || revision.isBlank()) {
+            return true;
+        }
+        String rev = revision.trim();
+        return rev.equalsIgnoreCase("WORKING_COPY")
+                || rev.equalsIgnoreCase("WORKING_TREE")
+                || rev.equalsIgnoreCase("WORKDIR")
+                || rev.equalsIgnoreCase("WORK_DIR")
+                || rev.equalsIgnoreCase("UNCOMMITTED")
+                || rev.equalsIgnoreCase("LOCAL")
+                || rev.equalsIgnoreCase("CURRENT");
+    }
+
 }

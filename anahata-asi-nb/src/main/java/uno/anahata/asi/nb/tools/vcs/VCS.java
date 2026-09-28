@@ -883,7 +883,7 @@ public class VCS extends AbstractVCS {
     public String gitDiff(
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
             @AgiToolParam(value = "The base branch or revision hash (e.g. 'main', 'HEAD~1').") String baseRevision,
-            @AgiToolParam(value = "The target branch or revision hash (e.g. 'helder/feat.service-database-tool', 'HEAD').") String targetRevision,
+            @AgiToolParam(value = "Optional target branch or revision hash (e.g. 'feat/my-branch', 'HEAD'). Omit to compare against the local working copy.", required = false) String targetRevision,
             @AgiToolParam(value = "Optional specific file or folder path to limit the diff to.", required = false, rendererId = "path") String filePath,
             @AgiToolParam(value = "If true, returns only the list of modified/added/deleted file paths instead of the full patch text. Defaults to false.", required = false) Boolean summaryOnly) throws Exception {
 
