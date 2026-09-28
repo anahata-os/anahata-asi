@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.ide;
 
+import java.awt.Container;
 import java.awt.Rectangle;
 import java.awt.geom.Point2D;
 import java.io.File;
@@ -8,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import javax.swing.JEditorPane;
 import javax.swing.text.Document;
 import javax.swing.text.Element;
 import javax.swing.text.JTextComponent;
@@ -21,6 +23,7 @@ import org.openide.cookies.LineCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.loaders.DataObject;
+import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.text.Line;
 import org.openide.text.Line.ShowOpenType;
 import org.openide.text.Line.ShowVisibilityType;
@@ -305,5 +308,59 @@ public class Editor extends AnahataToolkit {
         // Architectural rule: It's an editor if it has a DataObject AND
         // either is a multiview component OR is explicitly in the 'editor' mode.
         return dobj != null && (isMultiview || "editor".equals(modeName));
+    }
+
+    /**
+     * Resolves the {@link EditorCookie} for a given NetBeans {@link FileObject}.
+     *
+     * @param fo The NetBeans FileObject to inspect.
+     * @return The EditorCookie instance, or null if not found or unresolvable.
+     */
+    public static EditorCookie getEditorCookie(FileObject fo) {
+        if (fo == null || !fo.isValid()) {
+            return null;
+        }
+        try {
+            DataObject dobj = DataObject.find(fo);
+            return (dobj != null) ? dobj.getLookup().lookup(EditorCookie.class) : null;
+        } catch (DataObjectNotFoundException e) {
+            log.warn("DataObject not found for {}: {}", fo.getNameExt(), e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Checks if a file is currently open in an active, visible NetBeans UI editor tab.
+     *
+     * @param fo The NetBeans FileObject to check.
+     * @return true if the file is open in a visible/opened TopComponent in the UI editor.
+     */
+    public static boolean isFileOpenInEditorTab(FileObject fo) {
+        return isFileOpenInEditorTab(getEditorCookie(fo));
+    }
+
+    /**
+     * Checks if an EditorCookie is currently open in an active, visible NetBeans UI editor tab.
+     *
+     * @param ec The EditorCookie to inspect.
+     * @return true if the cookie has an open pane in a visible/opened TopComponent in the UI editor.
+     */
+    public static boolean isFileOpenInEditorTab(EditorCookie ec) {
+        if (ec == null || ec.getOpenedPanes() == null) {
+            return false;
+        }
+        for (JEditorPane pane : ec.getOpenedPanes()) {
+            if (pane.isShowing()) {
+                return true;
+            }
+            Container parent = pane.getParent();
+            while (parent != null) {
+                if (parent instanceof TopComponent tc && tc.isOpened()) {
+                    return true;
+                }
+                parent = parent.getParent();
+            }
+        }
+        return false;
     }
 }

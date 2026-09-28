@@ -31,6 +31,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import org.openide.loaders.DataObject;
 import org.openide.cookies.EditorCookie;
 import org.openide.cookies.SaveCookie;
+import uno.anahata.asi.nb.tools.ide.Editor;
 import javax.swing.text.StyledDocument;
 import javax.swing.text.DefaultStyledDocument;
 import org.netbeans.modules.editor.indent.api.Reformat;
@@ -438,32 +439,6 @@ public class JavaSourceUtils {
     }
 
     /**
-     * Checks if a file is currently open in an active, visible NetBeans UI editor tab.
-     * Differentiates between active tabs and cached/closed editor components.
-     *
-     * @param ec The EditorCookie associated with the file's DataObject.
-     * @return true if the file is open in a visible/opened TopComponent in the UI editor.
-     */
-    public static boolean isFileOpenInEditorTab(EditorCookie ec) {
-        if (ec == null || ec.getOpenedPanes() == null) {
-            return false;
-        }
-        for (javax.swing.JEditorPane pane : ec.getOpenedPanes()) {
-            if (pane.isShowing()) {
-                return true;
-            }
-            java.awt.Container parent = pane.getParent();
-            while (parent != null) {
-                if (parent instanceof org.openide.windows.TopComponent tc && tc.isOpened()) {
-                    return true;
-                }
-                parent = parent.getParent();
-            }
-        }
-        return false;
-    }
-
-    /**
      * Reformats Java source text in memory using an isolated virtual file in NetBeans MemoryFileSystem,
      * NetBeans Reformat engine, and project CodeStyle preferences.
      *
@@ -543,10 +518,9 @@ public class JavaSourceUtils {
      * @throws IOException If writing, saving, or location updates fail.
      */
     public static void writeContent(FileObject fo, String content, boolean save) throws IOException {
-        DataObject dobj = DataObject.find(fo);
-        EditorCookie ec = (dobj != null) ? dobj.getLookup().lookup(EditorCookie.class) : null;
+        EditorCookie ec = Editor.getEditorCookie(fo);
 
-        if (isFileOpenInEditorTab(ec)) {
+        if (Editor.isFileOpenInEditorTab(ec)) {
             try {
                 StyledDocument doc = ec.openDocument();
                 if (!doc.getText(0, doc.getLength()).equals(content)) {

@@ -132,6 +132,11 @@ public class Resources extends AnahataToolkit {
 
             URI uri = URI.create(uriString);
             ResourceHandle handle = getAgi().getConfig().createResourceHandle(uri);
+            if (!handle.exists()) {
+                log.warn("Resource does not exist: {}", uriString);
+                error("Resource does not exist: " + uriString);
+                continue;
+            }
             log("Created handle " + handle);
             Resource resource = new Resource(handle);
             if (initialSettings != null) {

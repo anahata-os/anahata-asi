@@ -14,6 +14,10 @@ import java.util.List;
 import java.util.Optional;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
+import javax.swing.text.StyledDocument;
+import org.openide.filesystems.FileAlreadyLockedException;
+import org.openide.filesystems.FileLock;
+import uno.anahata.asi.nb.tools.ide.Editor;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -470,9 +474,12 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Writes content via the NetBeans FileObject output
-     * stream, using the handle's detected charset, and labels the NetBeans Local
-     * History snapshot with the provided reason.</p>
+     * Implementation details: If the file is open in an active NetBeans editor tab,
+     * updates the live {@link StyledDocument} and saves it through the editor infrastructure
+     * to eliminate reload dialogs and lock contention. If not open in an editor, writes
+     * via NetBeans FileObject output stream with a retry-guarded lock against background
+     * filesystem events, and labels the NetBeans Local History snapshot with the provided reason.
+     * </p>
      */
     @Override
     public void write(String content, String reason) throws IOException {
@@ -481,9 +488,48 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         }
 
         FileObject fo = getFileObject();
-        Charset charset = getCharset();
-        try (OutputStream os = fo.getOutputStream()) {
-            os.write(content.getBytes(charset));
+        EditorCookie ec = Editor.getEditorCookie(fo);
+
+        // 1. If open in an active editor tab, update the live document buffer to prevent lock conflicts
+        if (Editor.isFileOpenInEditorTab(ec)) {
+            try {
+                StyledDocument doc = ec.openDocument();
+                if (!doc.getText(0, doc.getLength()).equals(content)) {
+                    doc.remove(0, doc.getLength());
+                    doc.insertString(0, content, null);
+                }
+                ec.saveDocument();
+            } catch (BadLocationException e) {
+                throw new IOException("Failed to update open editor document for " + getName(), e);
+            }
+        } else {
+            // 2. If not open in editor, acquire file lock with retry guard against background events
+            Charset charset = getCharset();
+            FileLock lock = null;
+            for (int i = 0; i < 5; i++) {
+                try {
+                    lock = fo.lock();
+                    break;
+                } catch (FileAlreadyLockedException ex) {
+                    if (i == 4) {
+                        throw ex;
+                    }
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new IOException("Interrupted while waiting for file lock on " + getName(), ie);
+                    }
+                }
+            }
+
+            try (OutputStream os = fo.getOutputStream(lock)) {
+                os.write(content.getBytes(charset));
+            } finally {
+                if (lock != null) {
+                    lock.releaseLock();
+                }
+            }
         }
 
         if (reason != null && !reason.isBlank()) {
