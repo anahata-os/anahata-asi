@@ -3,9 +3,9 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,935 | Brand Awareness / Discovery (id=125) |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,144 | The Singularity / ASI Container (id=135) |
-| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 167 | Autonomous Update Channel (id=141) |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,938 | Brand Awareness / Discovery (id=125) |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,152 | The Singularity / ASI Container (id=135) |
+| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 178 | Autonomous Update Channel (id=141) |
 
  > [!TIP]
  > **One-Shot Portal Scraper & Velocity Guide:**
@@ -77,6 +77,7 @@
 ## 🛠️ Milestone Log
 | Date | Milestone | Token ROI | Impact |
 | :--- | :--- | :--- | :--- |
+| 2026-09-28 08:25 | Portal Scrape: V1=4,938, V2=1,152, UC=178 | High | V1: +3 (0.13 DLs/hr), V2: +8 (0.35 DLs/hr), UC: +11 (0.47 DLs/hr) in 23.2 hours (Combined V1+V2: 0.47 DLs/hr, Total: 6,268, Total Velocity: 0.95 DLs/hr) |
 | 2026-09-27 09:15 | Portal Scrape: V1=4,935, V2=1,144, UC=167 | High | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +16 (1.05 DLs/hr) in 15.2 hours (Combined V1+V2: 0.00 DLs/hr, Total: 6,246, Total Velocity: 1.05 DLs/hr) |
 | 2026-09-26 18:03 | Portal Scrape: V1=4,935, V2=1,144, UC=151 | High | V1: +38 (0.69 DLs/hr), V2: +7 (0.13 DLs/hr), UC: +107 (1.95 DLs/hr) in 55.0 hours (Combined V1+V2: 0.82 DLs/hr, Total: 6,230, Total Velocity: 2.77 DLs/hr) |
 | 2026-09-24 11:06 | Portal Scrape: V1=4,897, V2=1,137, UC=44 | High | V1: +237 (0.31 DLs/hr), V2: +112 (0.15 DLs/hr), UC: 44 DLs (id=141) in 753.7 hours (Combined V1+V2: 0.46 DLs/hr, Total: 6,078) |
