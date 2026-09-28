@@ -1,20 +1,23 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.tools.project.context;
 
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ProjectRootManager;
-import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.agi.context.ContextPosition;
-import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.intellij.tools.project.Projects;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.intellij.tools.maven.Maven;
+import uno.anahata.asi.intellij.tools.project.Projects;
+import uno.anahata.asi.intellij.tools.vcs.VCS;
+import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.toolkit.project.ProjectOverview;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * A hierarchical context provider for a specific IntelliJ project.
@@ -26,7 +29,7 @@ import java.util.Optional;
 public class ProjectContextProvider extends AbstractProjectContextProvider {
 
     /**
-     * Constructs a new project context provider.
+     * Constructs a new root project context provider.
      * 
      * @param projectsToolkit The parent Projects toolkit.
      * @param project The IntelliJ project instance.
@@ -42,17 +45,69 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
         // Register with parent
         this.setParentProvider(projectsToolkit);
         
-        // Initialize structural children
-        ProjectStructureContextProvider structure = new ProjectStructureContextProvider(projectsToolkit, projectPath);
+        // Root structural children (for root pom, root files, root alerts)
+        ProjectStructureContextProvider structure = new ProjectStructureContextProvider(
+                projectsToolkit, projectPath, null, new ProjectStructureScope());
         structure.setParentProvider(this);
         children.add(structure);
 
-        ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(projectsToolkit, projectPath);
+        ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(
+                projectsToolkit, projectPath, null);
         alerts.setParentProvider(this);
         children.add(alerts);
 
+        // Populate module children
+        syncModules();
+
         // Sync anahata.md on creation
         syncMdResource();
+    }
+
+    /**
+     * Synchronizes child ModuleContextProviders with the current active modules in the project.
+     */
+    public synchronized void syncModules() {
+        Project p = getProject();
+        if (p == null) return;
+
+        Module[] modules = ModuleManager.getInstance(p).getModules();
+        if (modules.length <= 1) {
+            return;
+        }
+
+        List<String> currentModuleNames = new ArrayList<>();
+        for (Module m : modules) {
+            String modPath = ModuleContextProvider.resolveModulePath(p, m);
+            if (modPath.equals(projectPath) || m.getName().equals(p.getName())) {
+                continue;
+            }
+            currentModuleNames.add(m.getName());
+            boolean exists = children.stream()
+                    .anyMatch(c -> c instanceof ModuleContextProvider mcp && mcp.getModuleName().equals(m.getName()));
+            if (!exists) {
+                ModuleContextProvider mcp = new ModuleContextProvider(projectsToolkit, p, m);
+                mcp.setParentProvider(this);
+                children.add(mcp);
+                log.info("Registered ModuleContextProvider for module: {}", m.getName());
+            }
+        }
+
+        children.removeIf(c -> {
+            if (c instanceof ModuleContextProvider mcp) {
+                if (!currentModuleNames.contains(mcp.getModuleName())) {
+                    log.info("Removing ModuleContextProvider for unloaded module: {}", mcp.getModuleName());
+                    mcp.setProviding(false);
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    @Override
+    public List<ContextProvider> getChildren() {
+        syncModules();
+        return super.getChildren();
     }
 
     @Override
@@ -62,87 +117,45 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
     }
 
     @Override
-    public void setProviding(boolean enabled) {
-        super.setProviding(enabled);
-        syncMdResource();
-    }
-
-    @Override
     public void populateMessage(RagMessage ragMessage) throws Exception {
-        StringBuilder sb = new StringBuilder();
-        sb.append("\n# Project: ").append(getName()).append("\n");
-        sb.append("  - Path: `").append(projectPath).append("`\n");
-        
-        Path pomPath = Path.of(projectPath).resolve("pom.xml");
-        if (Files.exists(pomPath)) {
-            sb.append("  - Build System: `Maven`\n");
-            try {
-                String pomContent = Files.readString(pomPath);
-                if (pomContent.contains("<packaging>pom</packaging>")) {
-                    sb.append("  - Packaging: `pom`\n");
-                } else {
-                    sb.append("  - Packaging: `jar`\n");
+        Project p = getProject();
+        String vcsOverview = null;
+        if (projectsToolkit.getAgi() != null) {
+            Optional<VCS> vcsOpt = projectsToolkit.getAgi().getToolkit(VCS.class);
+            if (vcsOpt.isPresent() && vcsOpt.get().isRepoRoot(projectPath)) {
+                try {
+                    vcsOverview = vcsOpt.get().getRepositoryOverview(projectPath);
+                } catch (Exception e) {
+                    log.debug("Could not resolve VCS overview for root {}: {}", projectPath, e.getMessage());
                 }
-            } catch (Exception e) {
-                // Ignore
             }
         }
-        Project p = getProject();
+
+        List<DependencyScope> declaredDeps = null;
+        try {
+            declaredDeps = Maven.getDeclaredDependencies(projectPath);
+        } catch (Exception e) {
+            log.debug("No root declared dependencies for: {}", projectPath);
+        }
+
+        String sdkInfo = null;
         if (p != null) {
             Sdk sdk = ProjectRootManager.getInstance(p).getProjectSdk();
             if (sdk != null) {
-                sb.append("  - Project SDK: `").append(sdk.getName()).append("` (")
-                  .append(sdk.getVersionString() != null ? sdk.getVersionString() : "unknown").append(")\n");
-                sb.append("    * Home Path: `").append(sdk.getHomePath()).append("`\n");
-            } else {
-                sb.append("  - Project SDK: ⚠️ **Not Configured** (use `Projects.autoConfigureProjectSdk` or `Projects.setProjectSdk`)\n");
+                sdkInfo = sdk.getName() + " (" + (sdk.getVersionString() != null ? sdk.getVersionString() : "unknown") + ")";
             }
         }
-        ragMessage.addTextPart(sb.toString());
-    }
 
-    /**
-     * Synchronizes the project's {@code anahata.md} instructions file with the session's resource
-     * manager to reflect this provider's active state.
-     * <p>
-     * When providing, ensures {@code anahata.md} exists (creating a stub if needed) and registers it
-     * at the {@code SYSTEM_INSTRUCTIONS} context position; when not providing, unregisters it.
-     * </p>
-     */
-    private void syncMdResource() {
-        if (projectPath == null) return;
-        String mdPath = Path.of(projectPath).resolve("anahata.md").toAbsolutePath().toString();
-        Optional<Resource> existing = projectsToolkit.getAgi().getResourceManager().findByPath(mdPath);
+        ProjectOverview overview = ProjectOverview.builder()
+                .id(p != null ? p.getName() : getName())
+                .displayName(p != null ? p.getName() : getName())
+                .projectDirectory(projectPath)
+                .packaging("pom")
+                .javaSourceLevel(sdkInfo)
+                .mavenDeclaredDependencies(declaredDeps)
+                .vcsOverview(vcsOverview)
+                .build();
 
-        if (isProviding()) {
-            if (existing.isEmpty()) {
-                try {
-                    Path path = Path.of(mdPath);
-                    if (!Files.exists(path)) {
-                        Files.writeString(path, "# Project Instructions: " + getName() + "\n\nThis file contains project-specific system instructions.\n");
-                    }
-                    
-                    List<Resource> registered = projectsToolkit.getAgi().getResourceManager().registerPaths(
-                        List.of(path), 
-                        "added to context by user via project instructions sync"
-                    );
-                    
-                    if (!registered.isEmpty()) {
-                        Resource resource = registered.get(0);
-                        resource.setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
-                        log.info("Registered anahata.md as SYSTEM_INSTRUCTIONS for project: {}", projectPath);
-                    }
-                } catch (Exception e) {
-                    log.error("Failed to sync anahata.md for project: " + projectPath, e);
-                }
-            } else {
-                existing.get().setContextPosition(ContextPosition.SYSTEM_INSTRUCTIONS);
-            }
-        } else {
-            existing.ifPresent(resource -> {
-                projectsToolkit.getAgi().getResourceManager().unregister(resource.getId());
-                log.info("Unregistered anahata.md for project: {}", projectPath);
-            });
-        }
+        ragMessage.addTextPart(overview.toMarkdown());
     }
 }

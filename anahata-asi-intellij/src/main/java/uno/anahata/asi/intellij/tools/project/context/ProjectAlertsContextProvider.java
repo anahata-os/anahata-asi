@@ -3,6 +3,8 @@ package uno.anahata.asi.intellij.tools.project.context;
 
 import com.intellij.ide.highlighter.JavaFileType;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.module.Module;
+import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Conditions;
@@ -23,6 +25,9 @@ import uno.anahata.asi.intellij.tools.project.Projects;
 @Slf4j
 public class ProjectAlertsContextProvider extends AbstractProjectContextProvider {
 
+    private transient Module module;
+    private final String moduleName;
+
     /**
      * Constructs a new project alerts context provider.
      * 
@@ -30,7 +35,44 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
      * @param projectPath The absolute path to the project directory.
      */
     public ProjectAlertsContextProvider(Projects projectsToolkit, String projectPath) {
-        super("alerts", "Alerts", "Compiler errors and project problems", projectsToolkit, projectPath);
+        this(projectsToolkit, projectPath, null);
+    }
+
+    /**
+     * Constructs a new alerts context provider scoped to a specific module or project.
+     *
+     * @param projectsToolkit The parent Projects toolkit.
+     * @param projectPath The absolute path to the project or module directory.
+     * @param module The optional module to scope alerts to, or null for project-wide.
+     */
+    public ProjectAlertsContextProvider(Projects projectsToolkit, String projectPath, Module module) {
+        super("alerts", "Alerts",
+              module != null ? "Compiler errors and problems for module: " + module.getName()
+                             : "Compiler errors and project problems",
+              projectsToolkit, projectPath);
+        this.module = module;
+        this.moduleName = module != null ? module.getName() : null;
+        if (module != null && !module.isDisposed()) {
+            this.project = module.getProject();
+        }
+    }
+
+    /**
+     * Resolves the active IntelliJ Module instance, restoring it from name if needed.
+     * 
+     * @return The active Module, or null if unconfigured or unloaded.
+     */
+    public Module getModule() {
+        if (module != null && !module.isDisposed()) {
+            return module;
+        }
+        if (moduleName != null) {
+            Project p = getProject();
+            if (p != null && !p.isDisposed()) {
+                module = ModuleManager.getInstance(p).findModuleByName(moduleName);
+            }
+        }
+        return module;
     }
 
     @Override
@@ -41,30 +83,37 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
             return;
         }
 
+        Module m = getModule();
         if (DumbService.isDumb(p)) {
-            ragMessage.addTextPart("  ## Project Alerts: " + p.getName() + " (indexing in progress — alerts unavailable)\n");
+            ragMessage.addTextPart("  ## " + (m != null ? "Module" : "Project") + " Alerts: "
+                    + (m != null ? m.getName() : p.getName()) + " (indexing in progress — alerts unavailable)\n");
             return;
         }
 
         String markdown = ReadAction.computeBlocking(() -> {
             StringBuilder sb = new StringBuilder();
-            sb.append("  ## Project Alerts: ").append(p.getName()).append("\n\n");
+            if (m != null) {
+                sb.append("  ## Module Alerts: ").append(m.getName()).append("\n\n");
+            } else {
+                sb.append("  ## Project Alerts: ").append(p.getName()).append("\n\n");
+            }
 
             WolfTheProblemSolver solver = WolfTheProblemSolver.getInstance(p);
             if (solver != null && solver.hasProblemFilesBeneath(Conditions.alwaysTrue())) {
                 sb.append("  ### Files With Problems\n");
-                // The public API exposes only isProblemFile(vf); enumerate Java sources
-                // (bounded via the file-type index) and filter — gated by the cheap
-                // hasProblemFilesBeneath check above so this only runs when problems exist.
+                GlobalSearchScope scope = (m != null)
+                        ? GlobalSearchScope.moduleScope(m)
+                        : GlobalSearchScope.projectScope(p);
                 int count = 0;
-                for (VirtualFile file : FileTypeIndex.getFiles(JavaFileType.INSTANCE, GlobalSearchScope.projectScope(p))) {
+                for (VirtualFile file : FileTypeIndex.getFiles(JavaFileType.INSTANCE, scope)) {
                     if (solver.isProblemFile(file)) {
                         sb.append("    - [ERROR] `").append(file.getPath()).append("` has compilation or unresolved-reference problems.\n");
                         count++;
                     }
                 }
                 if (count == 0) {
-                    sb.append("    - [WARNING] The project contains problems outside the indexed Java sources.\n");
+                    sb.append("    - [WARNING] The ").append(m != null ? "module" : "project")
+                      .append(" contains problems outside the indexed Java sources.\n");
                 }
             } else {
                 sb.append("  - No compiler alerts or project problems found.\n");

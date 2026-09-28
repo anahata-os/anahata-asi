@@ -132,9 +132,9 @@ public class Projects extends AnahataToolkit {
     /**
      * {@inheritDoc}
      * <p>
-     * Scans all open projects in the IntelliJ Platform, extracts their base paths,
-     * and appends their physical file-system trees to the RAG message to provide
-     * full workspace observability.
+     * Populates the RAG message with a high-level summary of currently open IntelliJ projects.
+     * Specific structural trees and file metadata are delegated to the dedicated project
+     * and module context providers.
      * </p>
      */
     @Override
@@ -151,64 +151,9 @@ public class Projects extends AnahataToolkit {
                 String name = project.getName();
                 String basePath = project.getBasePath();
                 sb.append("  * **").append(name).append("**: `").append(basePath).append("`\n");
-                
-                if (basePath != null) {
-                    sb.append("    * **Structure**:\n");
-                    try {
-                        appendDirectoryStructure(Path.of(basePath), sb, "      ");
-                    } catch (Exception e) {
-                        sb.append("      * [Error loading structure: ").append(e.getMessage()).append("]\n");
-                    }
-                }
             }
         }
         ragMessage.addTextPart(sb.toString());
-    }
-
-    /**
-     * Recursively appends a clean, machine-readable directory structure to the builder.
-     * <p>
-     * Implements smart filtering to skip heavy target, out, and hidden folders, and 
-     * utilizes a depth control threshold to prevent context-window token blowup.
-     * </p>
-     * 
-     * @param dir The active directory path.
-     * @param sb The string builder workspace.
-     * @param indent The prefix indent spacer.
-     * @throws IOException if directory reading fails.
-     */
-    private void appendDirectoryStructure(Path dir, StringBuilder sb, String indent) throws IOException {
-        try (Stream<Path> stream = Files.list(dir)) {
-            List<Path> paths = stream
-                .filter(p -> {
-                    String name = p.getFileName().toString();
-                    return !name.startsWith(".") && !name.equals("target") && !name.equals("out");
-                })
-                .sorted((p1, p2) -> {
-                    boolean d1 = Files.isDirectory(p1);
-                    boolean d2 = Files.isDirectory(p2);
-                    if (d1 != d2) {
-                        return d1 ? -1 : 1;
-                    }
-                    return p1.compareTo(p2);
-                })
-                .toList();
-
-            for (Path path : paths) {
-                String name = path.getFileName().toString();
-                if (Files.isDirectory(path)) {
-                    sb.append(indent).append("- 📂 `").append(name).append("/`\n");
-                    // Restrict deep recursion to prevent token waste
-                    if (indent.length() < 12) {
-                        appendDirectoryStructure(path, sb, indent + "  ");
-                    }
-                } else {
-                    long size = Files.size(path);
-                    sb.append(indent).append("- 📄 `").append(name).append("` [")
-                      .append(String.format("%.1f KB", size / 1024.0)).append("]\n");
-                }
-            }
-        }
     }
 
     /**
