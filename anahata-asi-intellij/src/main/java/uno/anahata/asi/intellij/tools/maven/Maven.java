@@ -77,27 +77,8 @@ public class Maven extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         return Collections.singletonList(
                 "The Maven toolkit inspects and builds Maven projects that are imported in IntelliJ. "
-                + "Use getMavenProjects to discover them, getDependencies to inspect a project's resolved classpath, "
+                + "Use getDependencies to inspect a project's resolved classpath, "
                 + "and runGoals to execute Maven goals (output streams to the IDE Maven Run console).");
-    }
-
-    /**
-     * Lists every imported Maven project across all open IntelliJ projects.
-     *
-     * @return a Markdown listing of Maven coordinates, packaging and directory.
-     */
-    @AgiTool("Lists all imported Maven projects (coordinates, packaging, directory) across open IntelliJ projects.")
-    public String getMavenProjects() {
-        StringBuilder sb = new StringBuilder("## Imported Maven Projects\n");
-        boolean any = false;
-        for (Project ideProject : ProjectManager.getInstance().getOpenProjects()) {
-            for (MavenProject mp : MavenProjectsManager.getInstance(ideProject).getProjects()) {
-                any = true;
-                sb.append("- **").append(mp.getMavenId()).append("** [").append(mp.getPackaging()).append("] `")
-                  .append(mp.getDirectory()).append("`\n");
-            }
-        }
-        return any ? sb.toString() : "No imported Maven projects found in any open IntelliJ project.";
     }
 
     /**
