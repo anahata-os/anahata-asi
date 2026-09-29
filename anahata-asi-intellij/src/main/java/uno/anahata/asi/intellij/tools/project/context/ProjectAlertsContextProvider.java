@@ -58,6 +58,17 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Alerts providers do not manage local structure scopes; returns null to inherit.
+     * </p>
+     */
+    @Override
+    public uno.anahata.asi.toolkit.project.ProjectStructureScope getScope() {
+        return null;
+    }
+
+    /**
      * Resolves the active IntelliJ Module instance, restoring it from name if needed.
      * 
      * @return The active Module, or null if unconfigured or unloaded.

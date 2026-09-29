@@ -45,7 +45,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
     private transient Module module;
     private final String moduleName;
 
-    @Getter @Setter
+    @Setter
     private ProjectStructureScope scope;
 
     /**
@@ -55,7 +55,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
      * @param projectPath     The absolute path to the project.
      */
     public ProjectStructureContextProvider(Projects projectsToolkit, String projectPath) {
-        this(projectsToolkit, projectPath, null, new ProjectStructureScope());
+        this(projectsToolkit, projectPath, null);
     }
 
     /**
@@ -64,16 +64,41 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
      * @param projectsToolkit The parent Projects toolkit.
      * @param projectPath     The absolute path to the project or module directory.
      * @param module          The module to scope to, or null for project-wide.
-     * @param scope           The granularity scope settings.
      */
-    public ProjectStructureContextProvider(Projects projectsToolkit, String projectPath, Module module, ProjectStructureScope scope) {
+    public ProjectStructureContextProvider(Projects projectsToolkit, String projectPath, Module module) {
         super("structure", "Structure", "Source-root-aware project type map", projectsToolkit, projectPath);
         this.module = module;
         this.moduleName = module != null ? module.getName() : null;
         if (module != null && !module.isDisposed()) {
             this.project = module.getProject();
         }
-        this.scope = scope != null ? scope : new ProjectStructureScope();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the local scope override if explicitly configured on this provider, or null.
+     * </p>
+     */
+    @Override
+    public ProjectStructureScope getScope() {
+        return scope;
+    }
+
+    /**
+     * Resolves the active effective scope by consulting the parent context provider if local scope is null.
+     *
+     * @return The effective, non-null {@link ProjectStructureScope}.
+     */
+    @Override
+    public ProjectStructureScope getEffectiveScope() {
+        if (scope != null) {
+            return scope;
+        }
+        if (getParentProvider() instanceof AbstractProjectContextProvider parent) {
+            return parent.getEffectiveScope();
+        }
+        return new ProjectStructureScope();
     }
 
     /**
@@ -110,6 +135,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
         }
 
         Module m = getModule();
+        ProjectStructureScope effectiveScope = getEffectiveScope();
         String markdown = ReadAction.computeBlocking(() -> {
             StringBuilder sb = new StringBuilder();
             if (m != null) {
@@ -134,8 +160,8 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
                 rootDir = (cr.length > 0) ? cr[0] : null;
             }
 
-            if (scope.isShowRootFiles() && rootDir != null && rootDir.exists()) {
-                appendRootFiles(rootDir, p, sb, "  ");
+            if (effectiveScope.isShowRootFiles() && rootDir != null && rootDir.exists()) {
+                appendRootFiles(rootDir, p, sb, "  ", effectiveScope);
             }
 
             boolean hasSubmodules = ModuleManager.getInstance(p).getModules().length > 1;
@@ -185,14 +211,14 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
                     continue;
                 }
                 boolean isResource = path.contains("resources") || path.endsWith(".github");
-                if (isResource && !scope.isShowResources()) {
+                if (isResource && !effectiveScope.isShowResources()) {
                     continue;
                 }
                 boolean test = fileIndex.isInTestSourceContent(root);
                 sb.append("  ### Source Root (").append(test ? "test" : "main")
                   .append(isResource ? " resources" : "")
                   .append("): `").append(path).append("`\n");
-                appendTree(root, p, sb, "    ", 0);
+                appendTree(root, p, sb, "    ", 0, effectiveScope);
             }
             return sb.toString();
         });
@@ -200,7 +226,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
         ragMessage.addTextPart(markdown);
     }
 
-    private void appendRootFiles(VirtualFile rootDir, Project p, StringBuilder sb, String indent) {
+    private void appendRootFiles(VirtualFile rootDir, Project p, StringBuilder sb, String indent, ProjectStructureScope effectiveScope) {
         VirtualFile[] children = rootDir.getChildren();
         List<VirtualFile> files = new ArrayList<>();
         List<String> folders = new ArrayList<>();
@@ -234,29 +260,29 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
             files.sort(Comparator.comparing(VirtualFile::getName, String.CASE_INSENSITIVE_ORDER));
             for (VirtualFile file : files) {
                 sb.append(indent).append("  - 📄 `").append(file.getName()).append("`");
-                if (scope.isShowVcsStatus()) {
+                if (effectiveScope.isShowVcsStatus()) {
                     FileStatus st = fsm.getStatus(file);
                     if (st != FileStatus.NOT_CHANGED && st != null) {
                         sb.append(" [").append(st.getText()).append("]");
                     }
                 }
-                if (scope.isShowFileSizes()) {
+                if (effectiveScope.isShowFileSizes()) {
                     sb.append(String.format(" [%.1f KB]", file.getLength() / 1024.0));
                 }
                 sb.append("\n");
             }
-            if (githubDir != null && scope.isShowResources()) {
+            if (githubDir != null && effectiveScope.isShowResources()) {
                 sb.append(indent).append("  - 📦 `.github`\n");
-                appendTree(githubDir, p, sb, indent + "    ", 0);
+                appendTree(githubDir, p, sb, indent + "    ", 0, effectiveScope);
             }
-            if (ideaDir != null && scope.isShowResources()) {
+            if (ideaDir != null && effectiveScope.isShowResources()) {
                 sb.append(indent).append("  - 📦 `.idea`\n");
-                appendTree(ideaDir, p, sb, indent + "    ", 0);
+                appendTree(ideaDir, p, sb, indent + "    ", 0, effectiveScope);
             }
         }
     }
 
-    private void appendTree(VirtualFile dir, Project p, StringBuilder sb, String indent, int depth) {
+    private void appendTree(VirtualFile dir, Project p, StringBuilder sb, String indent, int depth, ProjectStructureScope effectiveScope) {
         if (depth > 12) {
             return;
         }
@@ -275,31 +301,31 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
             }
             if (child.isDirectory()) {
                 sb.append(indent).append("- 📦 `").append(name).append("`\n");
-                appendTree(child, p, sb, indent + "  ", depth + 1);
+                appendTree(child, p, sb, indent + "  ", depth + 1, effectiveScope);
             } else if ("java".equals(child.getExtension())) {
                 sb.append(indent).append("- 🄹 `").append(name).append("`");
                 PsiFile psi = PsiManager.getInstance(p).findFile(child);
                 if (psi instanceof PsiJavaFile javaFile) {
                     for (PsiClass cls : javaFile.getClasses()) {
-                        if (scope.isShowElementKind()) {
+                        if (effectiveScope.isShowElementKind()) {
                             String k = cls.isInterface() ? (cls.isAnnotationType() ? "ANNOTATION_TYPE" : "INTERFACE")
                                      : cls.isEnum() ? "ENUM"
                                      : cls.isRecord() ? "RECORD" : "CLASS";
                             sb.append(" (").append(k).append(")");
                         }
-                        if (scope.isShowVcsStatus()) {
+                        if (effectiveScope.isShowVcsStatus()) {
                             FileStatus st = FileStatusManager.getInstance(p).getStatus(child);
                             if (st != FileStatus.NOT_CHANGED && st != null) {
                                 sb.append(" [").append(st.getText()).append("]");
                             }
                         }
-                        if (scope.isShowFileSizes()) {
+                        if (effectiveScope.isShowFileSizes()) {
                             sb.append(String.format(" [%.1f KB]", child.getLength() / 1024.0));
                         }
-                        if (scope.isShowInnerClasses()) {
+                        if (effectiveScope.isShowInnerClasses()) {
                             for (PsiClass inner : cls.getInnerClasses()) {
                                 sb.append("\n").append(indent).append("  - `").append(inner.getName()).append("`");
-                                if (scope.isShowElementKind()) {
+                                if (effectiveScope.isShowElementKind()) {
                                     String ik = inner.isInterface() ? (inner.isAnnotationType() ? "ANNOTATION_TYPE" : "INTERFACE")
                                              : inner.isEnum() ? "ENUM"
                                              : inner.isRecord() ? "RECORD" : "CLASS";
@@ -309,20 +335,20 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
                         }
                     }
                 } else {
-                    if (scope.isShowVcsStatus()) {
+                    if (effectiveScope.isShowVcsStatus()) {
                         FileStatus st = FileStatusManager.getInstance(p).getStatus(child);
                         if (st != FileStatus.NOT_CHANGED && st != null) {
                             sb.append(" [").append(st.getText()).append("]");
                         }
                     }
-                    if (scope.isShowFileSizes()) {
+                    if (effectiveScope.isShowFileSizes()) {
                         sb.append(String.format(" [%.1f KB]", child.getLength() / 1024.0));
                     }
                 }
                 sb.append("\n");
             } else {
                 sb.append(indent).append("- 📄 `").append(child.getName()).append("`");
-                if (scope.isShowFileSizes()) {
+                if (effectiveScope.isShowFileSizes()) {
                     sb.append(String.format(" [%.1f KB]", child.getLength() / 1024.0));
                 }
                 sb.append("\n");

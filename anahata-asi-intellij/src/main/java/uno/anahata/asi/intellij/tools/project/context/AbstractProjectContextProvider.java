@@ -1,21 +1,32 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.tools.project.context;
 
+import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.projectRoots.Sdk;
+import com.intellij.openapi.roots.ModuleRootManager;
+import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.idea.maven.model.MavenId;
+import org.jetbrains.idea.maven.project.MavenProject;
+import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import uno.anahata.asi.agi.context.BasicContextProvider;
 import uno.anahata.asi.agi.context.ContextPosition;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
+import uno.anahata.asi.intellij.tools.maven.Maven;
 import uno.anahata.asi.intellij.tools.project.Projects;
+import uno.anahata.asi.intellij.tools.vcs.VCS;
+import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.toolkit.project.ProjectOverview;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * Common base class for context providers that are bound to a specific IntelliJ project.
@@ -144,5 +155,132 @@ public abstract class AbstractProjectContextProvider extends BasicContextProvide
                 log.info("Unregistered anahata.md for path: {}", projectPath);
             });
         }
+    }
+
+    /**
+     * Returns the local structure scope override for this project or module node,
+     * or {@code null} if this node inherits its scope from its parent.
+     *
+     * @return The local {@link ProjectStructureScope}, or null to inherit.
+     */
+    public abstract ProjectStructureScope getScope();
+
+    /**
+     * Resolves the effective {@link ProjectStructureScope} hierarchically.
+     * If the local scope is {@code null}, walks up the context provider parent chain
+     * until a configured scope is found, or defaults to a standard scope.
+     *
+     * @return The non-null effective {@link ProjectStructureScope}.
+     */
+    public ProjectStructureScope getEffectiveScope() {
+        ProjectStructureScope local = getScope();
+        if (local != null) {
+            return local;
+        }
+        if (getParentProvider() instanceof AbstractProjectContextProvider parent) {
+            return parent.getEffectiveScope();
+        }
+        return new ProjectStructureScope();
+    }
+
+    /**
+     * Initializes and registers the standard structural children: {@link ProjectStructureContextProvider}
+     * and {@link ProjectAlertsContextProvider}.
+     *
+     * @param targetModule The target module instance, or null for root project.
+     */
+    protected void initStandardChildren(Module targetModule) {
+        ProjectStructureContextProvider structure = new ProjectStructureContextProvider(
+                projectsToolkit, projectPath, targetModule);
+        structure.setParentProvider(this);
+        children.add(structure);
+
+        ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(
+                projectsToolkit, projectPath, targetModule);
+        alerts.setParentProvider(this);
+        children.add(alerts);
+    }
+    /**
+     * Builds a structured {@link ProjectOverview} model for this project or module.
+     * Extracts Maven coordinates, packaging, declared dependencies, and SDK info.
+     *
+     * @param targetModule Optional module instance if building an overview for a module, or null for root project.
+     * @return The populated {@link ProjectOverview}.
+     */
+    protected ProjectOverview buildOverview(Module targetModule) {
+        Project p = getProject();
+        String targetName = targetModule != null ? targetModule.getName() : (p != null ? p.getName() : getName());
+        String packaging = targetModule != null ? "jar" : "pom";
+        String mavenGroupId = null;
+        String mavenArtifactId = null;
+        String mavenVersion = null;
+
+        if (p != null) {
+            MavenProjectsManager mavenMgr = MavenProjectsManager.getInstance(p);
+            MavenProject mp = null;
+            if (targetModule != null) {
+                mp = mavenMgr.findProject(targetModule);
+            }
+            if (mp == null) {
+                VirtualFile pomVf = ProjectUtils.findVirtualFile(Path.of(projectPath).resolve("pom.xml").toString());
+                if (pomVf != null) {
+                    mp = mavenMgr.findProject(pomVf);
+                }
+            }
+            if (mp != null) {
+                packaging = mp.getPackaging();
+                MavenId mid = mp.getMavenId();
+                if (mid != null) {
+                    mavenGroupId = mid.getGroupId();
+                    mavenArtifactId = mid.getArtifactId();
+                    mavenVersion = mid.getVersion();
+                }
+            }
+        }
+
+        String sdkInfo = null;
+        if (targetModule != null) {
+            Sdk sdk = ModuleRootManager.getInstance(targetModule).getSdk();
+            if (sdk != null) {
+                sdkInfo = sdk.getName() + " (" + (sdk.getVersionString() != null ? sdk.getVersionString() : "unknown") + ")";
+            }
+        } else if (p != null) {
+            Sdk sdk = ProjectRootManager.getInstance(p).getProjectSdk();
+            if (sdk != null) {
+                sdkInfo = sdk.getName() + " (" + (sdk.getVersionString() != null ? sdk.getVersionString() : "unknown") + ")";
+            }
+        }
+
+        List<DependencyScope> declaredDeps = null;
+        try {
+            declaredDeps = Maven.getDeclaredDependencies(projectPath);
+        } catch (Exception e) {
+            log.debug("No declared dependencies resolved for: {}", projectPath);
+        }
+
+        String vcsOverview = null;
+        if (projectsToolkit.getAgi() != null) {
+            Optional<VCS> vcsOpt = projectsToolkit.getAgi().getToolkit(VCS.class);
+            if (vcsOpt.isPresent() && vcsOpt.get().isRepoRoot(projectPath)) {
+                try {
+                    vcsOverview = vcsOpt.get().getRepositoryOverview(projectPath);
+                } catch (Exception e) {
+                    log.debug("VCS overview not applicable for: {}", projectPath);
+                }
+            }
+        }
+
+        return ProjectOverview.builder()
+                .id(targetName)
+                .displayName(targetName)
+                .projectDirectory(projectPath)
+                .packaging(packaging)
+                .mavenGroupId(mavenGroupId)
+                .mavenArtifactId(mavenArtifactId)
+                .mavenVersion(mavenVersion)
+                .javaSourceLevel(sdkInfo)
+                .mavenDeclaredDependencies(declaredDeps)
+                .vcsOverview(vcsOverview)
+                .build();
     }
 }

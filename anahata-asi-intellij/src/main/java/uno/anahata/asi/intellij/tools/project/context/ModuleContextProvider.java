@@ -13,6 +13,9 @@ import java.util.Optional;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.idea.maven.model.MavenId;
+import org.jetbrains.idea.maven.project.MavenProject;
+import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.intellij.tools.maven.Maven;
 import uno.anahata.asi.intellij.tools.project.Projects;
@@ -40,7 +43,7 @@ public class ModuleContextProvider extends AbstractProjectContextProvider {
     private transient Module module;
 
     @Getter @Setter
-    private ProjectStructureScope scope;
+    private ProjectStructureScope scope = null;
 
     /**
      * Constructs a new module context provider.
@@ -58,17 +61,8 @@ public class ModuleContextProvider extends AbstractProjectContextProvider {
         this.project = project;
         this.module = module;
         this.moduleName = module.getName();
-        this.scope = new ProjectStructureScope();
 
-        ProjectStructureContextProvider structure = new ProjectStructureContextProvider(
-                projectsToolkit, projectPath, module, scope);
-        structure.setParentProvider(this);
-        children.add(structure);
-
-        ProjectAlertsContextProvider alerts = new ProjectAlertsContextProvider(
-                projectsToolkit, projectPath, module);
-        alerts.setParentProvider(this);
-        children.add(alerts);
+        initStandardChildren(module);
 
         syncMdResource();
     }
@@ -112,48 +106,7 @@ public class ModuleContextProvider extends AbstractProjectContextProvider {
      * @return The populated ProjectOverview DTO.
      */
     public ProjectOverview getOverview() {
-        String packaging = "jar";
-        Path pomPath = Path.of(projectPath).resolve("pom.xml");
-        if (Files.exists(pomPath)) {
-            try {
-                String content = Files.readString(pomPath);
-                if (content.contains("<packaging>pom</packaging>")) {
-                    packaging = "pom";
-                } else if (content.contains("<packaging>nbm</packaging>")) {
-                    packaging = "nbm";
-                }
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-
-        List<DependencyScope> declaredDeps = null;
-        try {
-            declaredDeps = Maven.getDeclaredDependencies(projectPath);
-        } catch (Exception e) {
-            log.debug("No declared dependencies resolved for module: {}", moduleName);
-        }
-
-        String vcsOverview = null;
-        if (projectsToolkit.getAgi() != null) {
-            Optional<VCS> vcsOpt = projectsToolkit.getAgi().getToolkit(VCS.class);
-            if (vcsOpt.isPresent() && vcsOpt.get().isRepoRoot(projectPath)) {
-                try {
-                    vcsOverview = vcsOpt.get().getRepositoryOverview(projectPath);
-                } catch (Exception e) {
-                    log.debug("VCS overview not applicable for module: {}", moduleName);
-                }
-            }
-        }
-
-        return ProjectOverview.builder()
-                .id(moduleName)
-                .displayName(moduleName)
-                .projectDirectory(projectPath)
-                .packaging(packaging)
-                .mavenDeclaredDependencies(declaredDeps)
-                .vcsOverview(vcsOverview)
-                .build();
+        return buildOverview(getModule());
     }
 
     @Override
