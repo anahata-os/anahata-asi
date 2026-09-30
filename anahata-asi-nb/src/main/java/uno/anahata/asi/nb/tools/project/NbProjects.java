@@ -37,23 +37,23 @@ import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.SubprojectProvider;
 import org.netbeans.spi.project.ui.ProjectProblemsProvider;
 import org.openide.filesystems.FileObject;
-import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.URLMapper;
 import org.openide.util.Lookup;
 import uno.anahata.asi.agi.context.ContextProvider;
-import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
+import uno.anahata.asi.nb.tools.project.context.NbProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.Maven;
-import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.toolkit.project.AbstractProjects;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
-import uno.anahata.asi.nb.tools.vcs.VCS;
+import uno.anahata.asi.nb.tools.vcs.NbVCS;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.toolkit.project.ProjectOverview;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.
@@ -68,7 +68,7 @@ import uno.anahata.asi.toolkit.maven.DependencyScope;
  */
 @Slf4j
 @AgiToolkit("A toolkit for using netbeans project apis.")
-public class Projects extends AnahataToolkit implements PropertyChangeListener {
+public class NbProjects extends AbstractProjects implements PropertyChangeListener {
 
     /**
      * Flag indicating if the toolkit is currently listening for global IDE
@@ -331,6 +331,17 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Opens a project in the IDE, delegating to {@link #openProject(String, boolean)} with subprojects disabled.
+     * </p>
+     */
+    @Override
+    public String openProject(String projectPath) throws Exception {
+        return openProject(projectPath, false);
+    }
+
+    /**
      * Opens a NetBeans project and optionally its subprojects.
      * <p>
      * Handles both absolute and relative paths. It uses a CountDownLatch and an
@@ -451,6 +462,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @return A {@link ProjectOverview} DTO.
      * @throws Exception if the project is not found or is closed.
      */
+    @Override
     public ProjectOverview getOverview(@AgiToolParam("The absolute path of the project.") String projectPath) throws Exception {
         Project target = findOpenProject(projectPath);
 
@@ -502,7 +514,7 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
 
         String vcsOverview = null;
         if (getAgi() != null) {
-            Optional<VCS> vcsOpt = getAgi().getToolkit(VCS.class);
+            Optional<NbVCS> vcsOpt = getAgi().getToolkit(NbVCS.class);
             if (vcsOpt.isPresent() && vcsOpt.get().isRepoRoot(projectPath)) {
                 try {
                     vcsOverview = vcsOpt.get().getRepositoryOverview(projectPath);
@@ -512,20 +524,20 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             }
         }
 
-        return new ProjectOverview(
-                root.getNameExt(),
-                info.getDisplayName(),
-                htmlDisplayName,
-                getCanonicalPath(root),
-                packaging,
-                actions,
-                mavenDeclaredDependencies,
-                javaSourceLevel,
-                javaTargetLevel,
-                sourceEncoding,
-                compileOnSave,
-                vcsOverview
-        );
+        return ProjectOverview.builder()
+                .id(root.getNameExt())
+                .displayName(info.getDisplayName())
+                .htmlDisplayName(htmlDisplayName)
+                .projectDirectory(getCanonicalPath(root))
+                .packaging(packaging)
+                .actions(actions)
+                .mavenDeclaredDependencies(mavenDeclaredDependencies)
+                .javaSourceLevel(javaSourceLevel)
+                .javaTargetLevel(javaTargetLevel)
+                .sourceEncoding(sourceEncoding)
+                .compileOnSave(compileOnSave)
+                .vcsOverview(vcsOverview)
+                .build();
     }
 
     /**
@@ -608,46 +620,6 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         log.info("Compile on Save override for {} set to: {} (in nb-configuration.xml)", projectPath, value);
     }
 
-    /**
-     * Generates a structural overview of all files and source folders in a
-     * project.
-     * <p>
-     * Scans the project root for files and traverses all registered Java and
-     * Resource source groups to build a detailed DTO tree.
-     * </p>
-     *
-     * @param projectPath The absolute path of the project.
-     * @return A {@link ProjectFiles} DTO.
-     * @throws Exception if project not open.
-     */
-    public ProjectFiles getProjectFiles(@AgiToolParam("The absolute path of the project.") String projectPath) throws Exception {
-        Project target = findOpenProject(projectPath);
-        FileObject root = target.getProjectDirectory();
-
-        List<ProjectFile> rootFiles = new ArrayList<>();
-        List<String> rootFolderNames = new ArrayList<>();
-        List<SourceFolder> sourceFolders = new ArrayList<>();
-
-        for (FileObject child : root.getChildren()) {
-            if (child.isFolder()) {
-                rootFolderNames.add(child.getNameExt());
-            } else {
-                rootFiles.add(createProjectFile(child));
-            }
-        }
-
-        Sources sources = ProjectUtils.getSources(target);
-        List<SourceGroup> allSourceGroups = new ArrayList<>();
-        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)));
-        allSourceGroups.addAll(Arrays.asList(sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)));
-
-        for (SourceGroup group : allSourceGroups) {
-            FileObject srcRoot = group.getRootFolder();
-            sourceFolders.add(buildSourceFolderTree(srcRoot, group.getDisplayName()));
-        }
-
-        return new ProjectFiles(rootFiles, rootFolderNames, sourceFolders);
-    }
 
     /**
      * Performs a comprehensive diagnostic scan of a project.
@@ -758,20 +730,18 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @param projectPath The absolute path of the project.
      * @param enabled Whether to enable the context provider.
      */
+    @Override
     @AgiTool("Enables or disables the top level project context provider (overview and anahata.md) for a specific project.")
     public void setProjectProviderEnabled(
             @AgiToolParam(value = "The absolute path of the project.", rendererId = "path") String projectPath,
             @AgiToolParam("Whether to enable the context provider.") boolean enabled) {
-        getProjectProvider(projectPath).ifPresent(pcp -> {
-            pcp.setProviding(enabled);
-            log.info("Project context for {} set to: {}", projectPath, enabled);
-            try {
-                Project p = findOpenProject(projectPath);
-                FilesContextActionLogic.fireRefreshRecursive(p.getProjectDirectory());
-            } catch (Exception ex) {
-                log.debug("Failed to refresh project icons after toggle: {}", projectPath);
-            }
-        });
+        super.setProjectProviderEnabled(projectPath, enabled);
+        try {
+            Project p = findOpenProject(projectPath);
+            FilesContextActionLogic.fireRefreshRecursive(p.getProjectDirectory());
+        } catch (Exception ex) {
+            log.debug("Failed to refresh project icons after toggle: {}", projectPath);
+        }
     }
 
     /**
@@ -840,16 +810,16 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
             String path = getCanonicalPath(p.getProjectDirectory());
             currentPaths.add(path);
             if (getProjectProvider(path).isEmpty()) {
-                ProjectContextProvider pcp = new ProjectContextProvider(this, p);
-                childrenProviders.add(pcp);
-                log.info("Added ProjectContextProvider for: {}", pcp.getName());
+                NbProjectContextProvider gpcp = new NbProjectContextProvider(this, p);
+                childrenProviders.add(gpcp);
+                log.info("Added GrandProjectContextProvider for: {}", gpcp.getName());
             }
         }
         childrenProviders.removeIf(cp -> {
-            if (cp instanceof ProjectContextProvider pcp) {
-                if (!currentPaths.contains(pcp.getProjectPath())) {
-                    log.info("Removing ProjectContextProvider for closed project at: {}", pcp.getProjectPath());
-                    pcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
+            if (cp instanceof NbProjectContextProvider gpcp) {
+                if (!currentPaths.contains(gpcp.getProjectPath())) {
+                    log.info("Removing GrandProjectContextProvider for closed project at: {}", gpcp.getProjectPath());
+                    gpcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
                     return true;
                 }
             }
@@ -867,11 +837,12 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
      * @param projectPath The canonical path.
      * @return An Optional containing the provider.
      */
-    public Optional<ProjectContextProvider> getProjectProvider(String projectPath) {
+    @Override
+    public Optional<NbProjectContextProvider> getProjectProvider(String projectPath) {
         return childrenProviders.stream()
-                .filter(cp -> cp instanceof ProjectContextProvider)
-                .map(cp -> (ProjectContextProvider) cp)
-                .filter(pcp -> pcp.getProjectPath().equals(projectPath))
+                .filter(cp -> cp instanceof NbProjectContextProvider)
+                .map(cp -> (NbProjectContextProvider) cp)
+                .filter(gcp -> gcp.getProjectPath().equals(projectPath))
                 .findFirst();
     }
 
@@ -917,62 +888,6 @@ public class Projects extends AnahataToolkit implements PropertyChangeListener {
         }
     }
 
-    /**
-     * Recursively builds a structural tree for a source folder.
-     * <p>
-     * Traverses children, classifying subfolders as SourceFolders and files as
-     * ProjectFiles, while calculating the recursive directory size.
-     * </p>
-     *
-     * @param folder The target folder.
-     * @param displayName The display name (from SourceGroup).
-     * @return A {@link SourceFolder} DTO.
-     * @throws FileStateInvalidException if the filesystem is invalid.
-     */
-    private SourceFolder buildSourceFolderTree(FileObject folder, String displayName) throws FileStateInvalidException {
-        if (!folder.isFolder()) {
-            throw new IllegalArgumentException("FileObject must be a folder: " + folder.getPath());
-        }
-        List<ProjectFile> files = new ArrayList<>();
-        List<SourceFolder> subfolders = new ArrayList<>();
-        for (FileObject child : folder.getChildren()) {
-            if (child.isFolder()) {
-                subfolders.add(buildSourceFolderTree(child, child.getNameExt()));
-            } else {
-                files.add(createProjectFile(child));
-            }
-        }
-        long recursiveSize = files.stream().mapToLong(ProjectFile::getSize).sum() + subfolders.stream().mapToLong(SourceFolder::getRecursiveSize).sum();
-        String folderName = folder.getNameExt();
-        String finalDisplayName = folderName.equals(displayName) ? null : displayName;
-        return new SourceFolder(finalDisplayName, folder.getPath(), recursiveSize, files.isEmpty() ? null : files, subfolders.isEmpty() ? null : subfolders);
-    }
-
-    /**
-     * Creates a {@link ProjectFile} DTO with IDE-specific name annotations.
-     * <p>
-     * Captures file metadata and attempts to extract HTML display names from
-     * the IDE's node delegate, stripping HTML tags to provide a clean annotated
-     * name.
-     * </p>
-     *
-     * @param fo The target file.
-     * @return A {@link ProjectFile} DTO.
-     * @throws FileStateInvalidException if the filesystem is invalid.
-     */
-    private ProjectFile createProjectFile(FileObject fo) throws FileStateInvalidException {
-        String annotatedName = null;
-        try {
-            org.openide.nodes.Node node = org.openide.loaders.DataObject.find(fo).getNodeDelegate();
-            String html = node.getHtmlDisplayName();
-            if (html != null) {
-                annotatedName = html.replaceAll("<[^>]*>", "").trim();
-            }
-        } catch (Exception e) {
-            log.debug("Failed to extract HTML display name for file: {}", fo.getPath());
-        }
-        return new ProjectFile(fo.getNameExt(), annotatedName, fo.getSize(), fo.lastModified().getTime(), fo.getPath());
-    }
 
     /**
      * Returns the root NetBeansProjects directory.

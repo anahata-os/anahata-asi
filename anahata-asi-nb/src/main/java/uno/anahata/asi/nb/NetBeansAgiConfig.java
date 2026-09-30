@@ -13,13 +13,13 @@ import uno.anahata.asi.nb.tools.java.CodeModel;
 import uno.anahata.asi.nb.tools.java.Hints;
 import uno.anahata.asi.nb.tools.java.NbJava;
 import uno.anahata.asi.nb.tools.maven.Maven;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
 import uno.anahata.asi.nb.tools.java.BatchCodeRefiner;
 import uno.anahata.asi.nb.tools.java.CodeRefiner;
 import uno.anahata.asi.nb.tools.terminal.NbTerminal;
-import uno.anahata.asi.nb.tools.vcs.VCS;
+import uno.anahata.asi.nb.tools.vcs.NbVCS;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.toolkit.Host;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
@@ -27,7 +27,7 @@ import uno.anahata.asi.swing.toolkit.DesktopJava;
 /**
  * NetBeans-specific agi configuration.
  * It replaces the core {@link Files} toolkit with the IDE-integrated {@code NbFiles}
- * and adds NetBeans-specific toolkits like {@link Maven}, {@link Projects}, and {@link CodeModel}.
+ * and adds NetBeans-specific toolkits like {@link Maven}, {@link NbProjects}, and {@link CodeModel}.
  * <p>
  * It also configures the {@link NetBeansIconProvider} to display authentic IDE icons 
  * in the context hierarchy.
@@ -43,7 +43,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         getToolClasses().add(NbJava.class);
                 
         getToolClasses().add(Maven.class);
-        getToolClasses().add(Projects.class);
+        getToolClasses().add(NbProjects.class);
         getToolClasses().add(CodeModel.class);
         getToolClasses().add(CodeRefiner.class);
         getToolClasses().add(BatchCodeRefiner.class);
@@ -53,7 +53,7 @@ public class NetBeansAgiConfig extends SwingAgiConfig {
         getToolClasses().add(Hints.class);
         getToolClasses().add(Refactor.class);
         getToolClasses().add(NbTerminal.class);
-        getToolClasses().add(VCS.class);
+        getToolClasses().add(NbVCS.class);
         
         setIconProvider(new NetBeansIconProvider());
         

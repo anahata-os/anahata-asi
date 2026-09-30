@@ -39,7 +39,7 @@ import org.openide.loaders.OperationAdapter;
 import org.openide.loaders.OperationEvent;
 import org.openide.loaders.OperationListener;
 import uno.anahata.asi.internal.TikaUtils;
-import uno.anahata.asi.nb.tools.vcs.VCS;
+import uno.anahata.asi.nb.tools.vcs.NbVCS;
 import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
 import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.persistence.Rebindable;
@@ -374,7 +374,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Queries the session's active {@link VCS} toolkit to generate
+     * Implementation details: Queries the session's active {@link NbVCS} toolkit to generate
      * a unified diff against the repository pristine base. Returns null if clean, untracked,
      * newly added, or unsupported.
      * </p>
@@ -384,7 +384,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         if (owner == null || owner.getAgi() == null || path == null) {
             return null;
         }
-        Optional<VCS> vcsOpt = owner.getAgi().getToolkit(VCS.class);
+        Optional<NbVCS> vcsOpt = owner.getAgi().getToolkit(NbVCS.class);
         if (vcsOpt.isPresent()) {
             try {
                 return vcsOpt.get().getDiff(path, null);
@@ -398,7 +398,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Queries the session's active {@link VCS} toolkit to retrieve
+     * Implementation details: Queries the session's active {@link NbVCS} toolkit to retrieve
      * recent VCS and Local History revisions.
      * </p>
      */
@@ -407,7 +407,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         if (owner == null || owner.getAgi() == null || path == null) {
             return Collections.emptyList();
         }
-        Optional<VCS> vcsOpt = owner.getAgi().getToolkit(VCS.class);
+        Optional<NbVCS> vcsOpt = owner.getAgi().getToolkit(NbVCS.class);
         if (vcsOpt.isPresent()) {
             try {
                 return vcsOpt.get().getHistory(path, maxEntries);

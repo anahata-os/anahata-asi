@@ -77,7 +77,7 @@ import uno.anahata.asi.agi.tool.ToolPermission;
  */
 @Slf4j
 @AgiToolkit("Universal toolkit for NetBeans Versioning Systems and Local History.")
-public class VCS extends AbstractVCS {
+public class NbVCS extends AbstractVCS {
 
     /**
      * {@inheritDoc}
