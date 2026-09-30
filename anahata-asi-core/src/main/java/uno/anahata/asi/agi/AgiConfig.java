@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.agi.context.RagExecutionMode;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.provider.AbstractAiProvider;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
@@ -85,45 +86,6 @@ public class AgiConfig extends BasicPropertyChangeSource {
      */
     private final List<Class<?>> toolClasses = new ArrayList<>();
 
-    {
-        // Pre-populate with core, essential tools.
-        toolClasses.add(AsiContainer.class);
-        toolClasses.add(Session.class);
-        toolClasses.add(History.class);
-        toolClasses.add(Resources.class);
-        toolClasses.add(Java.class);
-        toolClasses.add(Shell.class);
-        toolClasses.add(Audio.class);
-        toolClasses.add(Host.class);
-    }
-
-    /**
-     * Constructs a new AgiConfig with a randomly generated session ID.
-     *
-     * @param asiConfig The global AI configuration.
-     */
-    public AgiConfig(@NonNull AbstractAsiContainer asiConfig) {
-        this(asiConfig, UUID.randomUUID().toString());
-    }
-
-    /**
-     * Constructs a new AgiConfig with a specific session ID.
-     *
-     * @param asiConfig The global AI configuration.
-     * @param sessionId The unique session ID.
-     */
-    public AgiConfig(@NonNull AbstractAsiContainer asiConfig, @NonNull String sessionId) {
-        this.asiContainer = asiConfig;
-        this.sessionId = sessionId;
-
-        // Populate available providers from the container's registry
-        for (AbstractAiProvider provider : asiConfig.getAllProviders()) {
-            if (provider.isEnabled()) {
-                providerUuids.add(provider.getUuid());
-            }
-        }
-    }
-
     //<editor-fold defaultstate="collapsed" desc="Session Loop">
     /**
      * If true, local Java tools are enabled.
@@ -181,6 +143,11 @@ public class AgiConfig extends BasicPropertyChangeSource {
 
     //<editor-fold defaultstate="collapsed" desc="Context Management">
     /**
+     * The execution strategy for assembling the RAG message (PARALLEL or SEQUENTIAL).
+     */
+    private RagExecutionMode ragExecutionMode = RagExecutionMode.PARALLEL;
+
+    /**
      * The maximum number of tokens allowed in the context window.
      */
     private int tokenThreshold = 1000000; //1M
@@ -217,6 +184,45 @@ public class AgiConfig extends BasicPropertyChangeSource {
 
     //</editor-fold>
 
+        {
+        // Pre-populate with core, essential tools.
+        toolClasses.add(AsiContainer.class);
+        toolClasses.add(Session.class);
+        toolClasses.add(History.class);
+        toolClasses.add(Resources.class);
+        toolClasses.add(Java.class);
+        toolClasses.add(Shell.class);
+        toolClasses.add(Audio.class);
+        toolClasses.add(Host.class);
+    }
+
+    /**
+     * Constructs a new AgiConfig with a randomly generated session ID.
+     *
+     * @param asiConfig The global AI configuration.
+     */
+    public AgiConfig(@NonNull AbstractAsiContainer asiConfig) {
+        this(asiConfig, UUID.randomUUID().toString());
+    }
+
+    /**
+     * Constructs a new AgiConfig with a specific session ID.
+     *
+     * @param asiConfig The global AI configuration.
+     * @param sessionId The unique session ID.
+     */
+    public AgiConfig(@NonNull AbstractAsiContainer asiConfig, @NonNull String sessionId) {
+        this.asiContainer = asiConfig;
+        this.sessionId = sessionId;
+
+        // Populate available providers from the container's registry
+        for (AbstractAiProvider provider : asiConfig.getAllProviders()) {
+            if (provider.isEnabled()) {
+                providerUuids.add(provider.getUuid());
+            }
+        }
+    }
+    
     /**
      * Sets the selected provider UUID and fires a property change event.
      * @param selectedProviderUuid The UUID of the selected provider.
@@ -346,6 +352,19 @@ public class AgiConfig extends BasicPropertyChangeSource {
         if (old != tokenThreshold) {
             this.tokenThreshold = tokenThreshold;
             propertyChangeSupport.firePropertyChange("tokenThreshold", old, tokenThreshold);
+        }
+    }
+
+    /**
+     * Sets the RAG execution mode and fires a property change event.
+     *
+     * @param ragExecutionMode The new execution mode (PARALLEL or SEQUENTIAL).
+     */
+    public void setRagExecutionMode(RagExecutionMode ragExecutionMode) {
+        RagExecutionMode old = this.ragExecutionMode;
+        if (old != ragExecutionMode) {
+            this.ragExecutionMode = ragExecutionMode;
+            propertyChangeSupport.firePropertyChange("ragExecutionMode", old, ragExecutionMode);
         }
     }
 

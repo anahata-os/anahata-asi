@@ -6,6 +6,7 @@ package uno.anahata.asi.agi.context;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -176,6 +177,13 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
     /**
      * Constructs the RAG (Retrieval-Augmented Generation) message by
      * aggregating content from all enabled context providers.
+     * <p>
+     * Supports both {@link RagExecutionMode#PARALLEL} (concurrent evaluation across
+     * available background threads) and {@link RagExecutionMode#SEQUENTIAL} modes.
+     * In parallel mode, providers populate isolated thread-confined sub-messages
+     * and their parts are merged in strict canonical document order to ensure
+     * prompt cache (KV cache) stability.
+     * </p>
      *
      * @return A fully populated RagMessage.
      */
@@ -196,38 +204,54 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
         List<String> systemInstructionHeaders = new ArrayList<>();
 
+        List<ContextProvider> activeProviders = new ArrayList<>();
         for (ContextProvider rootProvider : providers) {
             for (ContextProvider provider : rootProvider.getFlattenedHierarchy(true)) {
                 if (provider.isProviding()) {
+                    activeProviders.add(provider);
+                }
+            }
+        }
 
-                    long start = System.currentTimeMillis();
-                    int beforeParts = augmentedMessage.getParts().size();
-                    try {
-                        if (provider instanceof Resource r) {
-                            if (r.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
-                                systemInstructionHeaders.add(r.getHeader());
-                                continue;
-                            } else if (r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
-                                continue;
-                            }
-                            r.reloadIfNeeded();
-                        }
-                        augmentedMessage.addTextPart(provider.getHeader());
-                        provider.populateMessage(augmentedMessage);
-                        long duration = System.currentTimeMillis() - start;
+        RagExecutionMode mode = agi.getConfig().getRagExecutionMode();
+        AbstractModel model = agi.getSelectedModel();
 
-                        int tokens = 0;
-                        AbstractModel model = (agi != null) ? agi.getSelectedModel() : null;
-                        if (model != null) {
-                            for (int i = beforeParts; i < augmentedMessage.getParts().size(); i++) {
-                                tokens += augmentedMessage.getParts().get(i).getTokenCount();
-                            }
-                        }
-                        augmentedMessage.addTextPart(String.format(Locale.US, "\n(Provider %s took: %dms, Tokens: %,d)", provider.getName(), duration, tokens));
-                    } catch (Exception e) {
-                        log.error("Error populating rag message for provider: {}", provider.getName(), e);
-                        augmentedMessage.addTextPart("\nError populating rag message for provider: " + provider.getName()
-                                + "\n" + ExceptionUtils.getStackTrace(e));
+        if (mode == RagExecutionMode.PARALLEL && !activeProviders.isEmpty()) {
+            List<CompletableFuture<ProviderRagResult>> futures = activeProviders.stream()
+                    .map(p -> CompletableFuture.supplyAsync(() -> executeProvider(p, model), agi.getExecutor()))
+                    .collect(Collectors.toList());
+
+            try {
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+            } catch (Throwable t) {
+                futures.forEach(f -> f.cancel(true));
+                if (t.getCause() instanceof InterruptedException || t instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("RAG message generation interrupted", t);
+                }
+                log.warn("Exception during concurrent RAG generation: {}", t.getMessage());
+            }
+
+            for (CompletableFuture<ProviderRagResult> future : futures) {
+                ProviderRagResult res = future.join();
+                if (res.systemInstructionHeader() != null) {
+                    systemInstructionHeaders.add(res.systemInstructionHeader());
+                } else {
+                    for (AbstractPart part : res.parts()) {
+                        part.setMessage(null);
+                        augmentedMessage.addPart(part);
+                    }
+                }
+            }
+        } else {
+            for (ContextProvider provider : activeProviders) {
+                ProviderRagResult res = executeProvider(provider, model);
+                if (res.systemInstructionHeader() != null) {
+                    systemInstructionHeaders.add(res.systemInstructionHeader());
+                } else {
+                    for (AbstractPart part : res.parts()) {
+                        part.setMessage(null);
+                        augmentedMessage.addPart(part);
                     }
                 }
             }
@@ -247,6 +271,57 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
         log.info("buildRagMessage took " + (System.currentTimeMillis() - ts) + " ms.");
         return augmentedMessage;
     }
+
+    /**
+     * Executes an individual context provider in complete isolation, populating a thread-confined
+     * sub-message, measuring duration and token counts safely without concurrency hazards.
+     *
+     * @param provider The context provider to execute.
+     * @param model The active model for token counting, or null.
+     * @return The populated result descriptor.
+     */
+    private ProviderRagResult executeProvider(ContextProvider provider, AbstractModel model) {
+        RagMessage subMessage = new RagMessage(agi);
+        long start = System.currentTimeMillis();
+        try {
+            if (provider instanceof Resource r) {
+                if (r.getContextPosition() == ContextPosition.SYSTEM_INSTRUCTIONS) {
+                    return new ProviderRagResult(provider, Collections.emptyList(), r.getHeader());
+                } else if (r.getContextPosition() != ContextPosition.PROMPT_AUGMENTATION) {
+                    return new ProviderRagResult(provider, Collections.emptyList(), null);
+                }
+                r.reloadIfNeeded();
+            }
+
+            subMessage.addTextPart(provider.getHeader());
+            provider.populateMessage(subMessage);
+            long duration = System.currentTimeMillis() - start;
+
+            int tokens = 0;
+            if (model != null) {
+                for (AbstractPart part : subMessage.getParts()) {
+                    tokens += part.getTokenCount();
+                }
+            }
+            subMessage.addTextPart(String.format(Locale.US, "\n(Provider %s took: %dms, Tokens: %,d)", provider.getName(), duration, tokens));
+            return new ProviderRagResult(provider, subMessage.getParts(), null);
+        } catch (Throwable e) {
+            log.error("Error populating rag message for provider: {}", provider.getName(), e);
+            subMessage.addTextPart("\nError populating rag message for provider: " + provider.getName()
+                    + "\n" + ExceptionUtils.getStackTrace(e));
+            return new ProviderRagResult(provider, subMessage.getParts(), null);
+        }
+    }
+
+    /**
+     * Immutable result descriptor capturing the output parts or system instruction header
+     * populated by an individual {@link ContextProvider} during RAG assembly.
+     */
+    private record ProviderRagResult(
+            ContextProvider provider,
+            List<AbstractPart> parts,
+            String systemInstructionHeader
+    ) {}
 
     /**
      * The definitive method for adding any message to the agi history.
@@ -299,12 +374,21 @@ public class ContextManager extends BasicPropertyChangeSource implements Rebinda
 
     /**
      * Removes a message from the history.
+     * <p>
+     * If the message being removed is currently the active turn message, this
+     * clears the active turn message reference and re-checks tool prompt completion.
+     * </p>
      *
      * @param message The message to remove.
      */
     public void removeMessage(AbstractMessage message) {
         if (history.remove(message)) {
             log.info("Removed message {} from history.", message.getSequentialId());
+            if (agi.getActiveTurnMessage() == message) {
+                log.info("Removed message {} was the activeTurnMessage. Clearing activeTurnMessage.", message.getSequentialId());
+                agi.setActiveTurnMessage(null);
+                agi.checkToolPromptCompletion();
+            }
             propertyChangeSupport.firePropertyChange("history", null, history);
         }
     }

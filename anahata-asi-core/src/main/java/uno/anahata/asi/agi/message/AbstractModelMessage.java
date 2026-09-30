@@ -275,10 +275,14 @@ public abstract class AbstractModelMessage<R extends Response> extends AbstractM
 
     /**
      * {@inheritDoc}
-     * <p>Checks tool prompt completion after message removal.</p>
+     * <p>
+     * Halts any active batch execution of pending tools before removing the
+     * message from history and re-evaluating tool prompt completion.
+     * </p>
      */
     @Override
     public void remove() {
+        stopRunningAllPending();
         super.remove();
         if (getAgi() != null) {
             getAgi().checkToolPromptCompletion();

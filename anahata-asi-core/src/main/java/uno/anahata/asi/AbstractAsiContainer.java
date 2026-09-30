@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -1218,8 +1219,9 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     }
 
     /**
-     * Scans a directory for .kryo files in parallel, deserializes each via {@link #loadAgi(Path)},
-     * and invokes the registration callback as each finishes loading.
+     * Scans a directory for .kryo files in parallel using the container's executor,
+     * deserializes each via {@link #loadAgi(Path)}, and invokes the registration
+     * callback as each finishes loading.
      *
      * @param dir The directory to load from.
      * @param registrationCallback The callback to invoke for each successfully loaded AGI.
@@ -1228,16 +1230,24 @@ public abstract class AbstractAsiContainer extends BasicPropertyChangeSource {
     public int loadAgis(Path dir, Consumer<Agi> registrationCallback) {
         AtomicInteger count = new AtomicInteger(0);
         try (Stream<Path> stream = Files.list(dir)) {
-            stream.filter(p -> !Files.isDirectory(p))
+            List<Path> files = stream.filter(p -> !Files.isDirectory(p))
                     .filter(p -> p.toString().endsWith(".kryo"))
-                    .parallel()
-                    .forEach(p -> {
+                    .toList();
+            if (files.isEmpty()) {
+                return 0;
+            }
+
+            List<CompletableFuture<Void>> futures = files.stream()
+                    .map(p -> CompletableFuture.runAsync(() -> {
                         Agi agi = loadAgi(p);
                         if (agi != null) {
                             registrationCallback.accept(agi);
                             count.incrementAndGet();
                         }
-                    });
+                    }, getExecutor()))
+                    .toList();
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         } catch (IOException e) {
             log.error("Failed to list directory: {}", dir, e);
         }
