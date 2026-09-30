@@ -5,15 +5,20 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.util.List;
+import java.util.Optional;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import uno.anahata.asi.agi.event.PropertyChangeSource;
 import uno.anahata.asi.swing.components.AdjustingTabPane;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import javax.swing.SwingConstants;
@@ -22,8 +27,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.swing.agi.context.ContextPanel;
 import uno.anahata.asi.swing.agi.message.RagMessagePanel;
+import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 
 /**
@@ -59,6 +64,11 @@ public class ContextProviderPanel extends ScrollablePanel {
      * Label indicating if the provider is effectively providing context.
      */
     private final JLabel effectivelyProvidingLabel;
+
+    /**
+     * Wrapper container for specialized context provider UI components.
+     */
+    private final JPanel rendererContainer;
     
     /**
      * Tabbed pane containing previews.
@@ -85,6 +95,11 @@ public class ContextProviderPanel extends ScrollablePanel {
      * The context provider currently being inspected.
      */
     private ContextProvider currentProvider;
+
+    /**
+     * Listener for reactive projectStructureScope changes on the active provider.
+     */
+    private EdtPropertyChangeListener scopeListener;
 
     /**
      * Constructs a new ContextProviderPanel.
@@ -128,7 +143,18 @@ public class ContextProviderPanel extends ScrollablePanel {
         effectivelyProvidingLabel.setFont(effectivelyProvidingLabel.getFont().deriveFont(java.awt.Font.ITALIC));
         headerPanel.add(effectivelyProvidingLabel, gbc);
 
-        add(headerPanel, BorderLayout.NORTH);
+        rendererContainer = new JPanel(new BorderLayout());
+        rendererContainer.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        rendererContainer.setVisible(false);
+
+        JPanel topBox = new JPanel();
+        topBox.setLayout(new BoxLayout(topBox, BoxLayout.Y_AXIS));
+        headerPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        rendererContainer.setAlignmentX(Component.LEFT_ALIGNMENT);
+        topBox.add(headerPanel);
+        topBox.add(rendererContainer);
+
+        add(topBox, BorderLayout.NORTH);
 
         tabbedPane = new AdjustingTabPane(100);
         thisSysTab = new JPanel(new BorderLayout());
@@ -147,6 +173,14 @@ public class ContextProviderPanel extends ScrollablePanel {
         this.currentProvider = cp;
         nameLabel.setText("Provider: " + cp.getName());
         descLabel.setText("<html>" + cp.getDescription().replace("\n", "<br>") + "</html>");
+
+        if (scopeListener != null) {
+            scopeListener.unbind();
+            scopeListener = null;
+        }
+        if (cp instanceof PropertyChangeSource pcs) {
+            scopeListener = new EdtPropertyChangeListener(this, pcs, "projectStructureScope", evt -> refreshCurrentPreviews());
+        }
         
         for (java.awt.event.ActionListener al : providingCheckbox.getActionListeners()) {
             providingCheckbox.removeActionListener(al);
@@ -162,9 +196,30 @@ public class ContextProviderPanel extends ScrollablePanel {
         });
 
         updateEffectivelyProviding(cp);
+
+        // Specialized Context Provider UI Injection
+        rendererContainer.removeAll();
+        Optional<JPanel> rendererOpt = ContextProviderUiRegistry.getInstance().createRenderer(cp, parentPanel);
+        if (rendererOpt.isPresent()) {
+            rendererContainer.add(rendererOpt.get(), BorderLayout.CENTER);
+            rendererContainer.setVisible(true);
+        } else {
+            rendererContainer.setVisible(false);
+        }
+
         updatePreviews(cp);
+
         revalidate();
         repaint();
+    }
+
+    /**
+     * Re-triggers the asynchronous preview generation for the currently displayed context provider.
+     */
+    public void refreshCurrentPreviews() {
+        if (currentProvider != null) {
+            updatePreviews(currentProvider);
+        }
     }
     
     /**
@@ -188,8 +243,9 @@ public class ContextProviderPanel extends ScrollablePanel {
      */
     private void updatePreviews(ContextProvider cp) {
         Agi agi = parentPanel.getAgi();
+        String prevTitle = (tabbedPane.getSelectedIndex() != -1) ? tabbedPane.getTitleAt(tabbedPane.getSelectedIndex()) : null;
         tabbedPane.removeAll();
-        
+
         JPanel loadingPanel = new JPanel(new BorderLayout());
         loadingPanel.add(new JLabel("Sensing Provider Content...", SwingConstants.CENTER), BorderLayout.CENTER);
         tabbedPane.addTab("Loading...", loadingPanel);
@@ -279,11 +335,26 @@ public class ContextProviderPanel extends ScrollablePanel {
                 renderPreview(childrenRagMsg, childrenRagTab, "");
                 tabbedPane.addTab("RAG: Children (Aggregated)", childrenRagTab);
             }
-            
+
             if (tabbedPane.getTabCount() == 0) {
                 JPanel emptyPanel = new JPanel(new BorderLayout());
                 emptyPanel.add(new JLabel("No context content contributed by this provider.", SwingConstants.CENTER));
                 tabbedPane.addTab("No Content", emptyPanel);
+            }
+
+            int targetIndex = -1;
+            if (prevTitle != null) {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    if (tabbedPane.getTitleAt(i).equals(prevTitle)) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+            }
+            if (targetIndex != -1) {
+                tabbedPane.setSelectedIndex(targetIndex);
+            } else {
+                tabbedPane.setSelectedIndex(0);
             }
             tabbedPane.refresh();
         }).start();
