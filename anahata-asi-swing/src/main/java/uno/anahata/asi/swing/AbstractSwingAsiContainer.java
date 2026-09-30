@@ -40,6 +40,11 @@ import uno.anahata.asi.openrouter.OpenRouterAiProvider;
 import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.context.ContextProviderUiRegistry;
+import uno.anahata.asi.swing.agi.project.ProjectContextProviderPanel;
+import uno.anahata.asi.swing.agi.project.ProjectsPanel;
+import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
+import uno.anahata.asi.toolkit.project.AbstractProjects;
 import uno.anahata.asi.swing.agi.message.part.tool.param.AgiClassSourceParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
@@ -85,6 +90,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
     static {
         //Legengary Radio toolkit
         ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
+        ToolkitUiRegistry.getInstance().register(AbstractProjects.class, ProjectsPanel.class);
+        ContextProviderUiRegistry.getInstance().register(AbstractProjectContextProvider.class, ProjectContextProviderPanel.class);
         
         //Default parameter renderers
         ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
