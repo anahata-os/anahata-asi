@@ -6,6 +6,7 @@ package uno.anahata.asi.swing.agi.context;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
+import java.text.NumberFormat;
 import java.util.Locale;
 import javax.swing.JLabel;
 import javax.swing.JTable;
@@ -37,6 +38,9 @@ public class ContextTableCellRenderer extends DefaultTableCellRenderer {
 
     /** The parent AgiPanel used to resolve instance-based SwingAgiConfig. */
     private final AgiPanel agiPanel;
+
+    /** Number formatter for digit grouping (e.g. 1,234). */
+    private final NumberFormat integerFormat = NumberFormat.getIntegerInstance();
 
     /**
      * Constructs a {@code ContextTableCellRenderer} bound to an AgiPanel with default left alignment.
@@ -98,5 +102,19 @@ public class ContextTableCellRenderer extends DefaultTableCellRenderer {
         }
         setToolTipText(null);
         return c;
+    }
+
+    /**
+     * Formats numeric cell values using standard digit grouping (e.g. 1,234).
+     *
+     * @param value The cell value to render.
+     */
+    @Override
+    protected void setValue(Object value) {
+        if (value instanceof Number number) {
+            setText(integerFormat.format(number));
+        } else {
+            super.setValue(value);
+        }
     }
 }

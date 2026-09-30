@@ -9,6 +9,7 @@ import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.agi.tool.ToolManager;
+import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
 
 /**
  * A context tree node representing a {@link ContextProvider}.
@@ -77,6 +78,8 @@ public class ContextProviderNode extends AbstractContextNode<ContextProvider> {
     protected AbstractContextNode<?> createChildNode(Object obj) {
         if (obj instanceof AbstractToolkit<?> tk) {
             return new ToolkitNode(agiPanel, tk);
+        } else if (obj instanceof AbstractProjectContextProvider apcp) {
+            return new ProjectContextProviderNode(agiPanel, apcp);
         } else if (obj instanceof ContextProvider cp) {
             return new ContextProviderNode(agiPanel, cp);
         }

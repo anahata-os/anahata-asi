@@ -202,6 +202,33 @@ public abstract class AbstractContextNode<T> {
     }
 
     /**
+     * Recalculates local tokens for this node, re-aggregates child totals,
+     * and bubbles the updated counts up through its ancestor chain without
+     * triggering a full-tree recalculation pass.
+     */
+    public final void bubbleUpTotals() {
+        this.instructionsTokens = 0;
+        this.declarationsTokens = 0;
+        this.historyTokens = 0;
+        this.ragTokens = 0;
+
+        calculateLocalTokens();
+
+        for (AbstractContextNode<?> child : getChildren()) {
+            this.instructionsTokens += child.getInstructionsTokens();
+            this.declarationsTokens += child.getDeclarationsTokens();
+            this.historyTokens += child.getHistoryTokens();
+            this.ragTokens += child.getRagTokens();
+        }
+
+        updateStatus();
+
+        if (parent != null) {
+            parent.bubbleUpTotals();
+        }
+    }
+
+    /**
      * Fetches the current list of domain objects that should be represented as
      * children of this node.
      *

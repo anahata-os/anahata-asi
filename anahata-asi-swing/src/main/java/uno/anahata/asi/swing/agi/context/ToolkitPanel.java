@@ -8,6 +8,7 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.util.Optional;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
@@ -103,6 +104,7 @@ public class ToolkitPanel extends ScrollablePanel {
                 BorderFactory.createTitledBorder("Toolkit Specialized UI"),
                 BorderFactory.createEmptyBorder(8, 8, 8, 8)
         ));
+        rendererContainer.setVisible(false);
 
         // CUSTOM RENDERER POSITION: Below details as requested
         add(detailsPanel, BorderLayout.NORTH);
@@ -131,9 +133,13 @@ public class ToolkitPanel extends ScrollablePanel {
 
         // Custom Toolkit UI Injection
         rendererContainer.removeAll();
-        ToolkitUiRegistry.getInstance().createRenderer(tk, parentPanel.getAgiPanel()).ifPresent(comp -> {
-            rendererContainer.add(comp, BorderLayout.CENTER);
-        });
+        Optional<JPanel> rendererOpt = ToolkitUiRegistry.getInstance().createRenderer(tk, parentPanel.getAgiPanel());
+        if (rendererOpt.isPresent()) {
+            rendererContainer.add(rendererOpt.get(), BorderLayout.CENTER);
+            rendererContainer.setVisible(true);
+        } else {
+            rendererContainer.setVisible(false);
+        }
 
         revalidate();
         repaint();

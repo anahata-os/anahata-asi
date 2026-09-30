@@ -12,6 +12,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.agi.resource.ResourceManager;
 import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
 
 /**
  * The root node of the context tree, representing the {@link ContextManager}.
@@ -95,6 +96,8 @@ public class ContextManagerNode extends AbstractContextNode<ContextManager> {
             return new ResourcesNode(agiPanel, rm2);
         } else if (obj instanceof ToolManager tm) {
             return new ToolManagerNode(agiPanel, tm);
+        } else if (obj instanceof AbstractProjectContextProvider apcp) {
+            return new ProjectContextProviderNode(agiPanel, apcp);
         } else if (obj instanceof ContextProvider cp) {
             return new ContextProviderNode(agiPanel, cp);
         } else if (obj instanceof ContextManager cm) {
