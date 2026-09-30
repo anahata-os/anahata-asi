@@ -6,7 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import org.openide.filesystems.FileObject;
 import uno.anahata.asi.agi.context.BasicContextProvider;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
 
 /**
@@ -14,12 +14,15 @@ import uno.anahata.asi.nb.annotation.FilesContextActionLogic;
  * Centralizes project resolution, toolkit access, and IDE UI synchronization logic.
  * 
  * @author anahata
+ * @deprecated Superseded by {@link uno.anahata.asi.toolkit.project.AbstractProjectContextProvider} in core
+ *             and {@link NbProjectContextProvider}. Retained for transitional compatibility.
  */
+@Deprecated
 @Slf4j
 public abstract class AbstractProjectContextProvider extends BasicContextProvider {
 
     /** The parent Projects toolkit instance. */
-    protected final Projects projectsToolkit;
+    protected final NbProjects projectsToolkit;
     
     /** The absolute canonical path to the project root. */
     @Getter
@@ -40,7 +43,7 @@ public abstract class AbstractProjectContextProvider extends BasicContextProvide
      * @param projectsToolkit The parent Projects toolkit.
      * @param projectPath The absolute path to the project.
      */
-    public AbstractProjectContextProvider(String id, String name, String description, Projects projectsToolkit, String projectPath) {
+    public AbstractProjectContextProvider(String id, String name, String description, NbProjects projectsToolkit, String projectPath) {
         super(id, name, description);
         this.projectsToolkit = projectsToolkit;
         this.projectPath = projectPath;
@@ -54,7 +57,7 @@ public abstract class AbstractProjectContextProvider extends BasicContextProvide
     public Project getProject() {
         if (project == null) {
             try {
-                project = Projects.findOpenProject(projectPath);
+                project = NbProjects.findOpenProject(projectPath);
             } catch (Exception e) {
                 log.debug("Project no longer open at path: {}", projectPath);
             }

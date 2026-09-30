@@ -4,8 +4,9 @@ package uno.anahata.asi.nb.tools.project.context;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
 import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.nb.tools.project.components.ProjectStructure;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * Provides a unified, architecturally-aware view of a project's structure.
@@ -14,7 +15,10 @@ import uno.anahata.asi.nb.tools.project.components.ProjectStructure;
  * the RAG message.
  * 
  * @author anahata
+ * @deprecated Superseded by {@link NbProjectContextProvider}, which embeds the
+ *             project AST structure directly alongside overview and diagnostics.
  */
+@Deprecated
 @Slf4j
 public class ProjectStructureContextProvider extends AbstractProjectContextProvider {
 
@@ -30,7 +34,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
      * @param projectsToolkit The parent Projects toolkit.
      * @param projectPath The absolute path to the project directory.
      */
-    public ProjectStructureContextProvider(Projects projectsToolkit, String projectPath) {
+    public ProjectStructureContextProvider(NbProjects projectsToolkit, String projectPath) {
         super("structure", "Structure", "Unified logical and physical project map", projectsToolkit, projectPath);
     }
 
@@ -56,7 +60,7 @@ public class ProjectStructureContextProvider extends AbstractProjectContextProvi
         ProjectStructure structure = new ProjectStructure(project);
         
         StringBuilder sb = new StringBuilder();
-        structure.renderMarkdown(sb, "  ", summaryMode);
+        structure.renderMarkdown(sb, "  ", new ProjectStructureScope());
         ragMessage.addTextPart(sb.toString());
     }
 }

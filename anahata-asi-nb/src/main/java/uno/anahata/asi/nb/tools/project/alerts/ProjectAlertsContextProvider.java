@@ -5,7 +5,7 @@ import javax.swing.SwingUtilities;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.java.source.SourceUtils;
 import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.nb.tools.project.context.AbstractProjectContextProvider;
 
 /**
@@ -13,7 +13,10 @@ import uno.anahata.asi.nb.tools.project.context.AbstractProjectContextProvider;
  * and high-level project problems.
  * 
  * @author anahata-ai
+ * @deprecated Superseded by {@link NbProjectContextProvider}, which renders
+ *             compiler alerts and project problems directly within the unified project node.
  */
+@Deprecated
 @Slf4j
 public class ProjectAlertsContextProvider extends AbstractProjectContextProvider {
 
@@ -23,7 +26,7 @@ public class ProjectAlertsContextProvider extends AbstractProjectContextProvider
      * @param projectsToolkit The parent Projects toolkit.
      * @param projectPath The absolute path to the project.
      */
-    public ProjectAlertsContextProvider(Projects projectsToolkit, String projectPath) {
+    public ProjectAlertsContextProvider(NbProjects projectsToolkit, String projectPath) {
         super("alerts", "Alerts", "Compiler errors and project problems", projectsToolkit, projectPath);
         // Enabled by default for better visibility of compile issues
         setProviding(true);

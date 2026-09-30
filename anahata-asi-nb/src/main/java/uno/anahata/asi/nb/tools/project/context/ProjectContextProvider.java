@@ -13,8 +13,8 @@ import org.openide.filesystems.FileObject;
 import uno.anahata.asi.agi.context.ContextPosition;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.nb.tools.project.Projects;
-import uno.anahata.asi.nb.tools.project.ProjectOverview;
+import uno.anahata.asi.nb.tools.project.NbProjects;
+import uno.anahata.asi.toolkit.project.ProjectOverview;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider;
 import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
 import uno.anahata.asi.toolkit.maven.DependencyGroup;
@@ -25,7 +25,10 @@ import uno.anahata.asi.toolkit.maven.DependencyScope;
  * Consolidates metadata, actions, dependencies, and project-specific instructions (anahata.md).
  * 
  * @author anahata
+ * @deprecated Superseded by the unified {@link NbProjectContextProvider}, which integrates
+ *             overview, alerts, and AST structure into a single cohesive provider node.
  */
+@Deprecated
 @Slf4j
 public class ProjectContextProvider extends AbstractProjectContextProvider {
 
@@ -41,12 +44,12 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
      * @param projectsToolkit The parent Projects toolkit.
      * @param project The NetBeans project instance.
      */
-    public ProjectContextProvider(Projects projectsToolkit, Project project) {
-        super(Projects.getCanonicalPath(project.getProjectDirectory()), 
+    public ProjectContextProvider(NbProjects projectsToolkit, Project project) {
+        super(NbProjects.getCanonicalPath(project.getProjectDirectory()), 
               ProjectUtils.getInformation(project).getDisplayName(), 
               "Root Project Context Provider for project: " + ProjectUtils.getInformation(project).getDisplayName(),
               projectsToolkit,
-              Projects.getCanonicalPath(project.getProjectDirectory()));
+              NbProjects.getCanonicalPath(project.getProjectDirectory()));
         this.project = project;
         
         // Register with parent
@@ -117,7 +120,7 @@ public class ProjectContextProvider extends AbstractProjectContextProvider {
                     Project p = getProject();
                     if (p == null) return;
                     
-                    FileObject mdFo = Projects.ensureAnahataMdExists(p);
+                    FileObject mdFo = NbProjects.ensureAnahataMdExists(p);
                     Path path = new File(mdFo.getPath()).toPath();
                     
                     List<Resource> registered = projectsToolkit.getAgi().getResourceManager().registerPaths(
