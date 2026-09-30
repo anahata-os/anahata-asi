@@ -55,8 +55,8 @@ import uno.anahata.asi.swing.agi.message.part.tool.param.UriParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.VBoxListParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.WrapListParameterRenderer;
 import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
-import uno.anahata.asi.swing.components.ExceptionDialog;
 import uno.anahata.asi.swing.internal.JavaFxBridge;
+import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.swing.provider.AiProviderUiRegistry;
 import uno.anahata.asi.swing.provider.AnthropicProviderPanel;
@@ -438,13 +438,13 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
         if (chooser.showOpenDialog(parent) == JFileChooser.APPROVE_OPTION) {
             File selectedFile = chooser.getSelectedFile();
             log.info("User selected file for import: {}", selectedFile);
-            try {
-                Agi imported = importSession(selectedFile.toPath());
+            new SwingTask<Agi>(parent, this, "Importing Session", () -> {
+                return importSession(selectedFile.toPath());
+            }, imported -> {
                 open(imported);
-            } catch (IOException ex) {
+            }, ex -> {
                 log.error("Could not import session with UI for " + selectedFile, ex);
-                ExceptionDialog.show(null, "Import AGI", "Import AGI failed", ex);
-            }
+            }, true).start();
         }
     }
 

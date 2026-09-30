@@ -27,11 +27,29 @@ import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 @Slf4j
 public class ProjectContextProviderPanel extends AbstractContextProviderRenderer<AbstractProjectContextProvider> {
 
+    /**
+     * Display label for the inherited scope mode.
+     */
     private static final String MODE_INHERITED = "Inherit from Default Scope";
+
+    /**
+     * Display label for the custom scope override mode.
+     */
     private static final String MODE_CUSTOM = "Custom Scope Override";
 
+    /**
+     * Combo box for switching between inherited and custom structure scope modes.
+     */
     private final JComboBox<String> modeCombo;
+
+    /**
+     * Embedded panel rendering the checkboxes for configuring individual scope switches.
+     */
     private final ProjectStructureScopePanel scopePanel;
+
+    /**
+     * Reentrancy guard preventing circular event loops during programmatic UI updates.
+     */
     private boolean adjusting = false;
 
     /**
@@ -78,6 +96,12 @@ public class ProjectContextProviderPanel extends AbstractContextProviderRenderer
         });
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Re-synchronizes the scope combo and checkboxes when a new context provider is bound.
+     * </p>
+     */
     @Override
     protected void onBind() {
         updateUiFromProvider();
@@ -101,6 +125,12 @@ public class ProjectContextProviderPanel extends AbstractContextProviderRenderer
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Updates the UI when the underlying project provider's scope configuration changes.
+     * </p>
+     */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         if ("projectStructureScope".equals(evt.getPropertyName())) {
