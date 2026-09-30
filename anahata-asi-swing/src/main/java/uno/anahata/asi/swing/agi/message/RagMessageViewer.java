@@ -4,8 +4,9 @@
 package uno.anahata.asi.swing.agi.message;
 
 import javax.swing.JScrollPane;
+import lombok.Getter;
 import lombok.NonNull;
-import uno.anahata.asi.agi.message.AbstractMessage;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
@@ -20,9 +21,11 @@ public class RagMessageViewer extends JScrollPane {
     /** The parent agi panel. */
     private final AgiPanel agiPanel;
     /** The message to view. */
-    private final AbstractMessage message;
+    @Getter
+    private final RagMessage message;
     /** The panel displaying the message. */
-    private final AbstractMessagePanel<AbstractMessage> messagePanel;
+    @Getter
+    private final RagMessagePanel messagePanel;
 
     /**
      * Constructs a new RagMessageViewer.
@@ -32,7 +35,7 @@ public class RagMessageViewer extends JScrollPane {
      * @param renderPruneButtons Whether to render pruning controls.
      * @param renderRemoveButtons Whether to render remove controls.
      */
-    public RagMessageViewer(@NonNull AgiPanel agiPanel, @NonNull AbstractMessage message, 
+    public RagMessageViewer(@NonNull AgiPanel agiPanel, @NonNull RagMessage message, 
                              boolean renderPruneButtons, boolean renderRemoveButtons) {
         this.agiPanel = agiPanel;
         this.message = message;

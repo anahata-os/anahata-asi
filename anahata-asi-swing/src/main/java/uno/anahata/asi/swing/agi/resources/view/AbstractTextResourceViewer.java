@@ -27,7 +27,12 @@ import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import java.awt.Cursor;
 import javax.swing.UIManager;
+import javax.swing.Icon;
 import uno.anahata.asi.swing.icons.ActionIconKey;
+import uno.anahata.asi.swing.icons.CancelIcon;
+import uno.anahata.asi.swing.icons.CopyIcon;
+import uno.anahata.asi.swing.icons.EditIcon;
+import uno.anahata.asi.swing.icons.SaveIcon;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -181,17 +186,17 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         actionNexus = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
         actionNexus.setOpaque(false);
 
-        copyBtn = new JButton("Copy", agiPanel.getAgiConfig().getActionIcon(ActionIconKey.COPY, 16));
+        copyBtn = new JButton("Copy", getActionIcon(ActionIconKey.COPY, 16));
         copyBtn.setToolTipText("Copy content to clipboard");
         copyBtn.addActionListener(e -> SwingUtils.copyToClipboard(getEditorContent()));
         actionNexus.add(copyBtn);
 
-        cancelBtn = new JButton("Cancel", agiPanel.getAgiConfig().getActionIcon(ActionIconKey.CANCEL, 16));
+        cancelBtn = new JButton("Cancel", getActionIcon(ActionIconKey.CANCEL, 16));
         cancelBtn.addActionListener(e -> setEditing(false));
         cancelBtn.setVisible(false);
         actionNexus.add(cancelBtn);
 
-        editBtn = new JButton("Edit", agiPanel.getAgiConfig().getActionIcon(ActionIconKey.EDIT, 16));
+        editBtn = new JButton("Edit", getActionIcon(ActionIconKey.EDIT, 16));
         editBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         editBtn.addActionListener(e -> toggleEditMode());
         actionNexus.add(editBtn);
@@ -246,6 +251,27 @@ public abstract class AbstractTextResourceViewer extends JPanel {
     }
 
     /**
+     * Resolves the icon for an action key, delegating to the AgiPanel's AgiConfig if available,
+     * or using standard vector icons as fallback when running outside an Agi session.
+     *
+     * @param key the action icon key.
+     * @param size the icon size in pixels.
+     * @return the resolved icon.
+     */
+    protected Icon getActionIcon(ActionIconKey key, int size) {
+        if (agiPanel != null && agiPanel.getAgiConfig() != null) {
+            return agiPanel.getAgiConfig().getActionIcon(key, size);
+        }
+        return switch (key) {
+            case COPY -> new CopyIcon(size);
+            case CANCEL -> new CancelIcon(size);
+            case EDIT -> new EditIcon(size);
+            case SAVE -> new SaveIcon(size);
+            default -> null;
+        };
+    }
+
+    /**
      * Updates the UI to reflect the current editing state. 
      * <p>
      * For snippets, this method ensures we stay on the high-fidelity card 
@@ -258,14 +284,14 @@ public abstract class AbstractTextResourceViewer extends JPanel {
         this.editing = editing;
         if (editing) {
             editBtn.setText("Save");
-            editBtn.setIcon(agiPanel.getAgiConfig().getActionIcon(ActionIconKey.SAVE, 16));
+            editBtn.setIcon(getActionIcon(ActionIconKey.SAVE, 16));
             cancelBtn.setVisible(true);
             cardLayout.show(cardPanel, "editor");
             setComponentEditable(true);
             onEditorActivated();
         } else {
             editBtn.setText("Edit");
-            editBtn.setIcon(agiPanel.getAgiConfig().getActionIcon(ActionIconKey.EDIT, 16));
+            editBtn.setIcon(getActionIcon(ActionIconKey.EDIT, 16));
             cancelBtn.setVisible(false);
             
             if (previewAsEditor) {

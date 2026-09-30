@@ -5,6 +5,7 @@ package uno.anahata.asi.swing.components;
 
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -12,6 +13,7 @@ import javax.swing.JEditorPane;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.Scrollable;
+import javax.swing.UIManager;
 import javax.swing.event.HyperlinkEvent;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +52,12 @@ public class WrappingEditorPane extends JEditorPane implements Scrollable {
      * </p>
      */
     public WrappingEditorPane() {
+        putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        Font labelFont = UIManager.getFont("Label.font");
+        if (labelFont != null) {
+            setFont(labelFont);
+        }
+
         // Redispatch mouse wheel events to the parent scroll pane to ensure
         // vertical scrolling works even when the mouse is over this component.
         addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(this, e));
