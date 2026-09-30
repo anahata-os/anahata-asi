@@ -210,7 +210,7 @@ public class NbVCS extends AbstractVCS {
         // 3. Sort descending (newest first, via HistoryEntry.compareTo)
         Collections.sort(history);
 
-        log("Found " + history.size() + " total history entries for " + file.getName() + ", returning " + Math.min(limit, history.size()));
+        //log("Found " + history.size() + " total history entries for " + file.getName() + ", returning " + Math.min(limit, history.size()));
         return history.size() <= limit ? history : new ArrayList<>(history.subList(0, limit));
     }
 
@@ -276,7 +276,7 @@ public class NbVCS extends AbstractVCS {
         List<String> unifiedDiff = UnifiedDiffUtils.generateUnifiedDiff(file.getName(), file.getName(), originalLines, patch, 3);
 
         if (unifiedDiff.isEmpty()) {
-            log("File is identical to base revision: " + filePath);
+            //log("File is identical to base revision: " + filePath);
             
             return VcsDiff.builder()
                     .filePath(file.getAbsolutePath())
@@ -287,7 +287,7 @@ public class NbVCS extends AbstractVCS {
             
         }
 
-        log("Generated unified diff (" + unifiedDiff.size() + " lines) for: " + file.getName());
+        //log("Generated unified diff (" + unifiedDiff.size() + " lines) for: " + file.getName());
         
         return VcsDiff.builder()
                 .filePath(file.getAbsolutePath())

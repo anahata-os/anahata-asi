@@ -70,17 +70,45 @@ public final class ProjectStructure extends ProjectNode {
     private List<String> scanWarnings = new ArrayList<>();
 
     /**
-     * Builds the complete project structure recursively.
-     * <p>
-     * Implementation details:
-     * 1. Identifies the project's root directory and generic source groups.
-     * 2. Classifies root-level items as files or folders.
-     * 3. Specialized builders are invoked for each Java and Resource source group.
-     * </p>
-     * 
-     * @param project The NetBeans project instance to map.
-     * @throws Exception if construction of any constituent group fails.
+     * The strategy used to scan and resolve structure metadata.
      */
+    private ScanStrategy scanStrategy;
+
+    /**
+     * Enumerates the strategy used to scan and resolve project structure metadata.
+     */
+    public enum ScanStrategy {
+        /**
+         * Fast bytecode signature index scanning via OW2 ASM.
+         */
+        ASM_SIG("Fast Bytecode Signature Index (ASM)"),
+
+        /**
+         * Deep single-pass javac compiler AST scanning via JavaSource.
+         */
+        JAVASOURCE_AST("Full Javac Compilation AST (JavaSource)");
+
+        private final String description;
+
+        /**
+         * Constructs a ScanStrategy.
+         * 
+         * @param description Human-readable description for prompt reporting.
+         */
+        ScanStrategy(String description) {
+            this.description = description;
+        }
+
+        /**
+         * Gets the human-readable description of the strategy.
+         * 
+         * @return The description string.
+         */
+        public String getDescription() {
+            return description;
+        }
+    }
+
     /**
      * Builds the complete project structure recursively using a default granularity scope.
      *
@@ -105,6 +133,7 @@ public final class ProjectStructure extends ProjectNode {
         this.javaSourceGroups = new ArrayList<>();
         this.resourceSourceGroups = new ArrayList<>();
         this.scanWarnings = new ArrayList<>();
+        this.scanStrategy = (scope != null && scope.isShowJavadoc()) ? ScanStrategy.JAVASOURCE_AST : ScanStrategy.ASM_SIG;
 
         FileObject root = project.getProjectDirectory();
         Sources sources = ProjectUtils.getSources(project);
@@ -128,7 +157,7 @@ public final class ProjectStructure extends ProjectNode {
         }
 
         for (SourceGroup sg : sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)) {
-            javaSourceGroups.add(new JavaSourceGroup(project, sg, scope, scanWarnings));
+            javaSourceGroups.add(new JavaSourceGroup(project, sg, scope, scanWarnings, scanStrategy));
         }
 
         if (scope == null || scope.isShowResources()) {
@@ -165,6 +194,9 @@ public final class ProjectStructure extends ProjectNode {
     @Override
     public void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope) {
         sb.append(indent).append("## Project Structure: ").append(projectName).append("\n");
+        if (scanStrategy != null) {
+            sb.append(indent).append("> Scan Strategy: ").append(scanStrategy.getDescription()).append("\n\n");
+        }
 
         if (scope.isShowRootFiles() && (!rootFiles.isEmpty() || !rootFolders.isEmpty())) {
             sb.append("\n").append(indent).append("### Root Directory\n");

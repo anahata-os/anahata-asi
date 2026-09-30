@@ -223,6 +223,12 @@ public final class ProjectComponent extends ProjectNode {
         if (fqn == null) {
             return (fileName != null) ? fileName : "unknown";
         }
+        if (parent != null) {
+            int lastDollar = fqn.lastIndexOf('$');
+            if (lastDollar != -1 && lastDollar < fqn.length() - 1) {
+                return fqn.substring(lastDollar + 1);
+            }
+        }
         int lastDot = fqn.lastIndexOf('.');
         return (lastDot == -1) ? fqn : fqn.substring(lastDot + 1);
     }
