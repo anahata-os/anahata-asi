@@ -70,12 +70,12 @@ import uno.anahata.asi.toolkit.vcs.AbstractVCS;
  */
 @Slf4j
 @AgiToolkit("Universal toolkit for Version Control Systems and Local History.")
-public class VCS extends AbstractVCS {
+public class IntellijVCS extends AbstractVCS {
 
     /**
      * Constructs the Vcs toolkit (instantiated reflectively via its public no-arg constructor).
      */
-    public VCS() {
+    public IntellijVCS() {
     }
 
     /**

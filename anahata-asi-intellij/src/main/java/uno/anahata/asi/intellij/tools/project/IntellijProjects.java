@@ -13,15 +13,15 @@ import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ProjectRootManager;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.context.ContextProvider;
-import uno.anahata.asi.intellij.tools.project.context.ProjectContextProvider;
+import uno.anahata.asi.intellij.tools.project.context.IntellijProjectContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
+import uno.anahata.asi.toolkit.project.AbstractProjects;
+import uno.anahata.asi.toolkit.project.ProjectOverview;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * A toolkit for interacting with the IntelliJ IDEA Project APIs.
@@ -44,12 +43,12 @@ import java.util.stream.Stream;
  */
 @Slf4j
 @AgiToolkit("A toolkit for using IntelliJ project APIs.")
-public class Projects extends AnahataToolkit {
+public class IntellijProjects extends AbstractProjects {
 
     /**
      * Default constructor for the IntelliJ Projects toolkit.
      */
-    public Projects() {
+    public IntellijProjects() {
         super();
     }
 
@@ -80,18 +79,20 @@ public class Projects extends AnahataToolkit {
             if (path != null) {
                 String absPath = Path.of(path).toAbsolutePath().toString();
                 currentPaths.add(absPath);
-                if (getProjectProvider(absPath).isEmpty()) {
-                    ProjectContextProvider pcp = new ProjectContextProvider(this, p);
-                    childrenProviders.add(pcp);
-                    log.info("Added ProjectContextProvider for IntelliJ project: {}", pcp.getName());
+                boolean hasGrand = childrenProviders.stream()
+                        .anyMatch(cp -> cp instanceof IntellijProjectContextProvider gcp && gcp.getProjectPath().equals(absPath));
+                if (!hasGrand) {
+                    IntellijProjectContextProvider gpcp = new IntellijProjectContextProvider(this, p);
+                    childrenProviders.add(gpcp);
+                    log.info("Added GrandProjectContextProvider for IntelliJ project: {}", gpcp.getName());
                 }
             }
         }
         childrenProviders.removeIf(cp -> {
-            if (cp instanceof ProjectContextProvider pcp) {
-                if (!currentPaths.contains(pcp.getProjectPath())) {
-                    log.info("Removing ProjectContextProvider for closed IntelliJ project at: {}", pcp.getProjectPath());
-                    pcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
+            if (cp instanceof IntellijProjectContextProvider gpcp) {
+                if (!currentPaths.contains(gpcp.getProjectPath())) {
+                    log.info("Removing GrandProjectContextProvider for closed IntelliJ project at: {}", gpcp.getProjectPath());
+                    gpcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
                     return true;
                 }
             }
@@ -100,17 +101,37 @@ public class Projects extends AnahataToolkit {
     }
 
     /**
-     * Returns a project context provider by path.
+     * {@inheritDoc}
+     * <p>
+     * Resolves a project or module context provider by traversing the full flattened hierarchy.
+     * </p>
      *
-     * @param projectPath The absolute path of the project.
-     * @return An Optional containing the provider.
+     * @param projectPath The absolute path of the project or module.
+     * @return An Optional containing the matching provider.
      */
-    public java.util.Optional<ProjectContextProvider> getProjectProvider(String projectPath) {
+    @Override
+    public java.util.Optional<IntellijProjectContextProvider> getProjectProvider(String projectPath) {
         return childrenProviders.stream()
-                .filter(cp -> cp instanceof ProjectContextProvider)
-                .map(cp -> (ProjectContextProvider) cp)
-                .filter(pcp -> pcp.getProjectPath().equals(projectPath))
+                .filter(cp -> cp instanceof IntellijProjectContextProvider)
+                .map(cp -> (IntellijProjectContextProvider) cp)
+                .flatMap(gcp -> gcp.getFlattenedHierarchy(true).stream())
+                .filter(cp -> cp instanceof IntellijProjectContextProvider)
+                .map(cp -> (IntellijProjectContextProvider) cp)
+                .filter(gcp -> gcp.getProjectPath().equals(projectPath))
                 .findFirst();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Generates a structured overview for a specific project or module by its path.
+     * </p>
+     */
+    @Override
+    public ProjectOverview getOverview(String projectPath) throws Exception {
+        return getProjectProvider(projectPath)
+                .map(IntellijProjectContextProvider::getOverview)
+                .orElse(null);
     }
 
     /**
@@ -251,25 +272,7 @@ public class Projects extends AnahataToolkit {
         return result.isEmpty() ? "Error: Operation not completed" : result.get(0);
     }
 
-    /**
-     * Toggles the context provider state for a specific project.
-     * <p>
-     * Locates the appropriate provider by its canonical path and updates its
-     * activation state.
-     * </p>
-     *
-     * @param projectPath The absolute path of the project.
-     * @param enabled Whether to enable the context provider.
-     */
-    @AgiTool("Enables or disables the top level project context provider (overview and anahata.md) for a specific project.")
-    public void setProjectProviderEnabled(
-            @AgiToolParam("The absolute path of the project.") String projectPath,
-            @AgiToolParam("Whether to enable the context provider.") boolean enabled) {
-        getProjectProvider(projectPath).ifPresent(pcp -> {
-            pcp.setProviding(enabled);
-            log.info("Project context for {} set to: {}", projectPath, enabled);
-        });
-    }
+
 
     /**
      * Compiles a project and returns a synchronous build result (error/warning counts).

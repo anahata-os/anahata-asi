@@ -15,7 +15,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
-import uno.anahata.asi.intellij.tools.project.context.ProjectContextProvider;
+import uno.anahata.asi.intellij.tools.project.context.IntellijProjectContextProvider;
 import uno.anahata.asi.swing.icons.IconProvider;
 import uno.anahata.asi.swing.icons.IconUtils;
 
@@ -49,8 +49,8 @@ public class IntellijIconProvider implements IconProvider {
      */
     @Override
     public Icon getIconFor(ContextProvider cp) {
-        if (cp instanceof ProjectContextProvider) {
-            return AllIcons.Nodes.Project;
+        if (cp instanceof IntellijProjectContextProvider gcp) {
+            return gcp.getModuleName() != null ? AllIcons.Nodes.Module : AllIcons.Nodes.Project;
         } else if (cp instanceof Resource res) {
             VirtualFile vf = null;
             if (res.getHandle() instanceof IntellijHandle ih) {

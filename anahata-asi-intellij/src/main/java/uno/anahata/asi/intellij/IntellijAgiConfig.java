@@ -27,12 +27,12 @@ import uno.anahata.asi.intellij.tools.java.CodeRefiner;
 import uno.anahata.asi.intellij.tools.java.Hints;
 import uno.anahata.asi.intellij.tools.java.IntellijJava;
 import uno.anahata.asi.intellij.tools.maven.Maven;
-import uno.anahata.asi.intellij.tools.project.Projects;
+import uno.anahata.asi.intellij.tools.project.IntellijProjects;
 import uno.anahata.asi.intellij.tools.gradle.Gradle;
 import uno.anahata.asi.intellij.tools.debugger.Debugger;
 import uno.anahata.asi.intellij.tools.run.RunConfigurations;
 import uno.anahata.asi.intellij.tools.terminal.Terminals;
-import uno.anahata.asi.intellij.tools.vcs.VCS;
+import uno.anahata.asi.intellij.tools.vcs.IntellijVCS;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
@@ -77,7 +77,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         getToolClasses().remove(DesktopJava.class);
         getToolClasses().add(IntellijJava.class);
 
-        getToolClasses().add(Projects.class);
+        getToolClasses().add(IntellijProjects.class);
         getToolClasses().add(Maven.class);
         getToolClasses().add(Gradle.class);
         getToolClasses().add(CodeModel.class);
@@ -85,7 +85,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         getToolClasses().add(IDE.class);
         getToolClasses().add(RunConfigurations.class);
         getToolClasses().add(Debugger.class);
-        getToolClasses().add(VCS.class);
+        getToolClasses().add(IntellijVCS.class);
         getToolClasses().add(CodeRefiner.class);
         getToolClasses().add(BatchCodeRefiner.class);
         getToolClasses().add(Hints.class);

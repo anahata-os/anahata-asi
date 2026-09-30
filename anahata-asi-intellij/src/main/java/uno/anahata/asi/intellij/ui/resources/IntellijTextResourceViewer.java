@@ -260,6 +260,9 @@ public class IntellijTextResourceViewer extends AbstractTextResourceViewer {
         editor.getSettings().setLineNumbersShown(true);
         editor.getSettings().setFoldingOutlineShown(true);
         editor.getSettings().setLineMarkerAreaShown(true);
+        editor.getSettings().setAdditionalLinesCount(0);
+        editor.getSettings().setAdditionalPageAtBottom(false);
+        editor.getSettings().setVirtualSpace(false);
 
         if (listenerDisposable != null) {
             Disposer.dispose(listenerDisposable);

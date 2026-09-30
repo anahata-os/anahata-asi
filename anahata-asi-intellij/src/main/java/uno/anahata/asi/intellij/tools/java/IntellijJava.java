@@ -20,7 +20,7 @@ import uno.anahata.asi.intellij.IntellijAsiContainer;
 import uno.anahata.asi.intellij.internal.IntellijPluginUtils;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
-import uno.anahata.asi.intellij.tools.project.Projects;
+import uno.anahata.asi.intellij.tools.project.IntellijProjects;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
 import uno.anahata.asi.intellij.ui.resources.IntellijResourceUI;
 import uno.anahata.asi.intellij.ui.resources.IntellijTextResourceViewer;
@@ -76,7 +76,7 @@ public class IntellijJava extends DesktopJava {
         registerParentFirstClass(IntellijResourceUI.class);
         registerParentFirstClass(IntellijTextResourceViewer.class);
         registerParentFirstClass(IntellijTextResourceWriteRenderer.class);
-        registerParentFirstClass(Projects.class);
+        registerParentFirstClass(IntellijProjects.class);
         registerParentFirstClass(JavaPsi.class);
         registerParentFirstClass(OrderEnumerator.class);
         setDefaultClasspath(IntellijPluginUtils.getFullAnahataAsiPluginClasspath());
