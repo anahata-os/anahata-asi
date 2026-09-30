@@ -20,10 +20,15 @@ import lombok.NoArgsConstructor;
  */
 @Schema(description = "Controls the granularity and detail level of project and module structure rendering.")
 @Data
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
 public class ProjectStructureScope implements Serializable {
+
+    /** Whether to include compiler errors, project problems, and diagnostic alerts. */
+    @Schema(description = "Whether to include compiler errors, project problems, and diagnostic alerts.", example = "true")
+    @Builder.Default
+    private boolean showAlerts = true;
 
     /** Whether to render Java element kinds (e.g. CLASS, INTERFACE, ENUM, RECORD). */
     @Schema(description = "Whether to render Java element kinds (e.g. CLASS, INTERFACE, ENUM, RECORD).", example = "true")

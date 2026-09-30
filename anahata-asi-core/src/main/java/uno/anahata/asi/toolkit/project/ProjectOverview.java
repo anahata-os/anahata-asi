@@ -50,6 +50,18 @@ public final class ProjectOverview implements Serializable {
     @Schema(description = "The packaging type as defined in the pom.xml (e.g., 'jar', 'pom', 'nbm'). This is null for non-Maven projects.", example = "jar")
     private String packaging;
 
+    /** The Maven groupId of the project or module, if applicable. */
+    @Schema(description = "The Maven groupId of the project or module, if applicable.", example = "uno.anahata")
+    private String mavenGroupId;
+
+    /** The Maven artifactId of the project or module, if applicable. */
+    @Schema(description = "The Maven artifactId of the project or module, if applicable.", example = "anahata-asi-core")
+    private String mavenArtifactId;
+
+    /** The Maven version of the project or module, if applicable. */
+    @Schema(description = "The Maven version of the project or module, if applicable.", example = "1.3.0-SNAPSHOT")
+    private String mavenVersion;
+
     /** A list of supported IDE Project Actions that can be invoked (e.g., 'build', 'run'). */
     @Schema(description = "A list of supported high-level Project Actions that can be invoked on the Project (e.g., 'build', 'run').")
     private List<String> actions;
@@ -95,6 +107,13 @@ public final class ProjectOverview implements Serializable {
         }
         if (packaging != null && !packaging.isBlank()) {
             sb.append("  - Packaging: `").append(packaging).append("`\n");
+        }
+        if (mavenGroupId != null && !mavenGroupId.isBlank() && mavenArtifactId != null && !mavenArtifactId.isBlank()) {
+            sb.append("  - Maven Coordinates: `").append(mavenGroupId).append(":").append(mavenArtifactId);
+            if (mavenVersion != null && !mavenVersion.isBlank()) {
+                sb.append(":").append(mavenVersion);
+            }
+            sb.append("`\n");
         }
         if (javaSourceLevel != null || javaTargetLevel != null) {
             sb.append("  - Java Version: ").append(javaSourceLevel != null ? javaSourceLevel : "unknown").append(" (source), ")
