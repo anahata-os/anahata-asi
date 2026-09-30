@@ -5,7 +5,7 @@ import java.util.logging.Logger;
 import org.netbeans.api.project.Project;
 import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 
 /**
  * Stateless utility class containing the core logic for managing NetBeans 
@@ -28,7 +28,7 @@ public class ProjectsContextActionLogic {
      * @return {@code true} if the project is in context.
      */
     public static boolean isProjectInContext(Project project, Agi agi) {
-        return agi.getToolManager().getToolkitInstance(Projects.class)
+        return agi.getToolManager().getToolkitInstance(NbProjects.class)
                 .flatMap(pt -> pt.getProjectProvider(project.getProjectDirectory().getPath()))
                 .map(pcp -> pcp.isProviding())
                 .orElse(false);

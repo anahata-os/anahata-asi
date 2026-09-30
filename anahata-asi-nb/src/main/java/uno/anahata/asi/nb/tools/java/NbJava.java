@@ -33,7 +33,7 @@ import org.apache.maven.project.MavenProject;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.module.NetBeansModuleUtils;
 
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.toolkit.java.Java;
 import uno.anahata.asi.toolkit.java.AgiClassSource;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
@@ -344,8 +344,8 @@ public class NbJava extends DesktopJava {
      * @throws Exception if project resolution fails.
      */
     public String buildProjectClasspathString(String projectPath, boolean includeProjectDependencies, boolean includeTestContext) throws Exception {
-        Project project = Projects.findOpenProject(projectPath);
-        Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
+        Project project = NbProjects.findOpenProject(projectPath);
+        NbProjects projectsToolkit = getToolManager().getToolkitInstance(NbProjects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
 
         ClassPathProvider cpp = project.getLookup().lookup(ClassPathProvider.class);
         if (cpp == null) {
@@ -531,8 +531,8 @@ public class NbJava extends DesktopJava {
             @AgiToolParam("Controls whether the project's test output directory (e.g. 'target/test-classes') and test-exclusive dependencies (e.g. JUnit) from the test source group are included.") boolean includeTestContext,
             @AgiToolParam(value = "Optional additional compiler options (e.g., '--release', '21').", required = false) String[] compilerOptions,
             @AgiToolParam(value = "Optional JDK name (from Available JDKs) or explicit path to a javac executable.", required = false) String jdk) throws Exception {
-        Project project = Projects.findOpenProject(projectPath);
-        Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
+        Project project = NbProjects.findOpenProject(projectPath);
+        NbProjects projectsToolkit = getToolManager().getToolkitInstance(NbProjects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
 
         waitForIde(project, projectsToolkit.isCompileOnSaveEnabled(project));
 
@@ -568,8 +568,8 @@ public class NbJava extends DesktopJava {
             @AgiToolParam("Controls whether the project's external library dependencies from ClassPath.COMPILE (compile and provided scopes) and ClassPath.EXECUTE (runtime scope) are included. When true, extracts dependency JARs and target/classes of open project dependencies. NetBeans platform JARs and host IDE libraries are automatically deduplicated.") boolean includeProjectDependencies,
             @AgiToolParam("Controls whether the project's test output directory (e.g. 'target/test-classes') and test-exclusive dependencies (e.g. JUnit) from the test source group are included.") boolean includeTestContext,
             @AgiToolParam(value = "Optional additional compiler options (e.g., '--release', '21').", required = false) String[] compilerOptions) throws Exception {
-        Project project = Projects.findOpenProject(projectPath);
-        Projects projectsToolkit = getToolManager().getToolkitInstance(Projects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
+        Project project = NbProjects.findOpenProject(projectPath);
+        NbProjects projectsToolkit = getToolManager().getToolkitInstance(NbProjects.class).orElseThrow(() -> new IllegalStateException("Projects toolkit not found"));
 
         waitForIde(project, projectsToolkit.isCompileOnSaveEnabled(project));
 

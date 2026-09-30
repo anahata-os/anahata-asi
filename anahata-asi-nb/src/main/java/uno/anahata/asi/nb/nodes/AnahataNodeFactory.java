@@ -25,7 +25,7 @@ import org.openide.nodes.FilterNode;
 import org.openide.nodes.Node;
 import org.openide.util.ImageUtilities;
 import org.openide.util.lookup.Lookups;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 
 /**
  * A factory that creates the "Anahata" virtual folder in the NetBeans Projects window.
@@ -186,7 +186,7 @@ public class AnahataNodeFactory implements NodeFactory {
             List<FileObject> mdFiles = new ArrayList<>();
             try {
                 // Delegate creation to centralized utility
-                Projects.ensureAnahataMdExists(project);
+                NbProjects.ensureAnahataMdExists(project);
             } catch (IOException e) {
                 log.log(Level.SEVERE, "Failed to ensure anahata.md exists", e);
             }

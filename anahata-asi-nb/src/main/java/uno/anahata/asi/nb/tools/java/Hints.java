@@ -22,7 +22,7 @@ import org.netbeans.modules.java.hints.spiimpl.hints.HintsInvoker;
 import org.netbeans.modules.java.hints.spiimpl.options.HintsSettings;
 import org.netbeans.spi.editor.hints.ErrorDescription;
 import org.netbeans.spi.editor.hints.Fix;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiTool;
@@ -313,7 +313,7 @@ public class Hints extends AnahataToolkit {
         if (pageSize == null) {
             pageSize = 108;
         }
-        Project project = Projects.findOpenProject(projectPath);
+        Project project = NbProjects.findOpenProject(projectPath);
         List<HintInfo> allHints = new ArrayList<>();
         Sources sources = ProjectUtils.getSources(project);
         SourceGroup[] groups = sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA);

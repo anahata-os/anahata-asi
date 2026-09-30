@@ -52,7 +52,7 @@ import uno.anahata.asi.agi.message.RagMessage;
 import org.openide.util.Task;
 import org.openide.util.TaskListener;
 import org.openide.windows.IOProvider;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.nb.util.TeeInputOutput;
 import uno.anahata.asi.agi.tool.AgiToolkit;
@@ -309,7 +309,7 @@ public class Maven extends AnahataToolkit {
 
             // Phase 2: Modifying pom.xml...
             summary.append("Phase 2: Modifying pom.xml...\n");
-            Project project = Projects.findOpenProject(projectPath);
+            Project project = NbProjects.findOpenProject(projectPath);
             FileObject pom = project.getProjectDirectory().getFileObject("pom.xml");
             if (pom == null) {
                 summary.append("Result: FAILED. Could not find pom.xml.");
@@ -370,7 +370,7 @@ public class Maven extends AnahataToolkit {
     public static List<DependencyScope> getDeclaredDependencies(
             @AgiToolParam("The absolute path of the project to analyze.") String projectPath) throws Exception {
         
-        Project project = Projects.findOpenProject(projectPath);
+        Project project = NbProjects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         List<Dependency> dependencies = nbMavenProject.getMavenProject().getDependencies();
         return groupDeclaredDependencies(dependencies);
@@ -386,7 +386,7 @@ public class Maven extends AnahataToolkit {
     public List<ResolvedDependencyScope> getResolvedDependencies(
             @AgiToolParam("The absolute path of the project to analyze.") String projectPath) throws Exception {
 
-        Project project = Projects.findOpenProject(projectPath);
+        Project project = NbProjects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         Collection<Artifact> artifacts = nbMavenProject.getMavenProject().getArtifacts();
         return groupResolvedArtifacts(artifacts);
@@ -512,7 +512,7 @@ public class Maven extends AnahataToolkit {
             @AgiToolParam("A list of additional Maven options.") List<String> options,
             @AgiToolParam("The maximum time to wait for the build to complete, in milliseconds.") Long timeout) throws Exception {
 
-        Project project = Projects.findOpenProject(projectPath);
+        Project project = NbProjects.findOpenProject(projectPath);
         
         long effectiveTimeout = timeout != null ? timeout : DEFAULT_TIMEOUT_MS;
         
@@ -682,7 +682,7 @@ public class Maven extends AnahataToolkit {
         public String downloadProjectDependencies(
                 @AgiToolParam("The absolute path of the project to download dependencies for.") String projectPath,
                 @AgiToolParam("A list of classifiers to download (e.g., ['sources', 'javadoc']).") List<String> classifiers) throws Exception {
-        Project project = Projects.findOpenProject(projectPath);
+        Project project = NbProjects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject == null) {
             throw new IllegalStateException("Project '" + projectPath + "' is not a Maven project or could not be found.");
@@ -737,7 +737,7 @@ public class Maven extends AnahataToolkit {
                 @AgiToolParam("The version of the dependency (e.g., 'LATEST', '1.0.0').") String version,
                 @AgiToolParam("The classifier of the artifact to download (e.g., 'sources', 'javadoc'). Use null for the main artifact.") String classifier,
                 @AgiToolParam("The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.") String type) throws Exception {
-        Project project = Projects.findOpenProject(projectPath);
+        Project project = NbProjects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject == null) {
             throw new IllegalStateException("Project '" + projectPath + "' is not a Maven project or could not be found.");

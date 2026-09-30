@@ -13,7 +13,7 @@ import org.openide.loaders.DataObject;
 import org.openide.loaders.DataShadow;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 
 /**
  * The decoupled logic engine for Anahata NetBeans annotations.
@@ -313,8 +313,8 @@ public class AnahataAnnotationLogic {
             return names;
         }
 
-        String path = Projects.getCanonicalPath(p.getProjectDirectory());
-        agi.getToolManager().getToolkitInstance(Projects.class).ifPresent(tool -> {
+        String path = NbProjects.getCanonicalPath(p.getProjectDirectory());
+        agi.getToolManager().getToolkitInstance(NbProjects.class).ifPresent(tool -> {
             tool.getProjectProvider(path).ifPresent(pcp -> {
                 names.addAll(flattenProvidingNames(pcp));
             });

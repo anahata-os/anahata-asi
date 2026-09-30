@@ -21,7 +21,7 @@ import org.openide.util.actions.Presenter;
 import uno.anahata.asi.nb.AgiTopComponent;
 import uno.anahata.asi.nb.AnahataInstaller;
 import uno.anahata.asi.agi.Agi;
-import uno.anahata.asi.nb.tools.project.Projects;
+import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.swing.icons.IconUtils;
 
 /**
@@ -172,7 +172,7 @@ public final class AddProjectToContextAction extends AbstractAction implements C
      * @param projects The list of projects to add.
      */
     private void addProjectsToAgi(Agi agi, List<Project> projects) {
-        agi.getToolManager().getToolkitInstance(Projects.class).ifPresent(projectsTool -> {
+        agi.getToolManager().getToolkitInstance(NbProjects.class).ifPresent(projectsTool -> {
             for (Project p : projects) {
                 String path = p.getProjectDirectory().getPath();
                 projectsTool.setProjectProviderEnabled(path, true);
