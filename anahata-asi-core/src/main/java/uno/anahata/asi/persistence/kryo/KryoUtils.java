@@ -173,7 +173,7 @@ public class KryoUtils {
             Object object = kryo.readClassAndObject(input);
             String className = object != null ? object.getClass().getSimpleName() : clazz.getSimpleName();
             long end = System.currentTimeMillis();
-            log.info("Kryo deserialization of {} took {} ms, size: {}", className, (end - start), FileUtils.byteCountToDisplaySize(bytes.length));
+            log.debug("Kryo deserialization of {} took {} ms, size: {}", className, (end - start), FileUtils.byteCountToDisplaySize(bytes.length));
             return clazz.cast(object);
         }
     }

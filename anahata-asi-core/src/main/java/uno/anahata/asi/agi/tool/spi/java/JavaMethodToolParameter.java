@@ -96,7 +96,7 @@ public class JavaMethodToolParameter extends AbstractToolParameter<JavaMethodToo
             rendererId = "";
         }
         
-        log.info("generating schema for " + p.getName() + " " + paramAnnotation + " ");
+        log.debug("generating schema for " + p.getName() + " " + paramAnnotation + " ");
         String jsonSchema = SchemaProvider.generateInlinedSchemaString(p.getParameterizedType());
         if (jsonSchema == null) {
             throw new IllegalArgumentException("Could not generate schema for parameter " + p.getName() + " in method " + p.getDeclaringExecutable().getName());
