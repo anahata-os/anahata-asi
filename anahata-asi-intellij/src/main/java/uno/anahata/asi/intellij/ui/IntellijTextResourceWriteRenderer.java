@@ -165,15 +165,15 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
         Agi agi = agiPanel.getAgi();
         boolean pending = call.getResponse().getStatus() == ToolExecutionStatus.PENDING;
 
-        try {
-            update.validate(agi);
-        } catch (Exception e) {
-            if (pending) {
+        if (pending) {
+            try {
+                update.validate(agi);
+            } catch (Exception e) {
                 call.getResponse().fail(e.getMessage());
                 call.getResponse().addError(e);
+                showError("Validation failed: " + e.getMessage());
+                return true;
             }
-            showError("Validation failed: " + e.getMessage());
-            return true;
         }
 
         try {
@@ -181,7 +181,13 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
                 update.captureOriginalContent(agi);
             }
             String base = nullToEmpty(update.getOriginalContent());
-            String proposed = nullToEmpty(update.calculateResultingContent(agi));
+            String proposed;
+            try {
+                proposed = nullToEmpty(update.calculateResultingContent(agi));
+            } catch (Exception ex) {
+                log.debug("Could not recalculate resulting content, falling back to base", ex);
+                proposed = base;
+            }
 
             if (diffPanel != null && Objects.equals(base, lastBase) && Objects.equals(proposed, lastProposed)) {
                 return false;
@@ -254,10 +260,18 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
             }, contentDisposable);
         }
 
-        String proposedTitle = editable ? "Proposed (editable)" : "Proposed";
+        String baseTitle = editable ? "Current on disk" : "Original State";
+        String proposedTitle;
+        if (editable) {
+            proposedTitle = "Proposed (editable)";
+        } else if (call.getResponse().getStatus() == ToolExecutionStatus.EXECUTED) {
+            proposedTitle = "Applied Changes";
+        } else {
+            proposedTitle = "Proposed (" + call.getResponse().getStatus() + ")";
+        }
         SimpleDiffRequest request = new SimpleDiffRequest(
                 "Anahata: " + safeName(update.getOriginalResourceName()),
-                baseContent, proposedContent, "Current on disk", proposedTitle);
+                baseContent, proposedContent, baseTitle, proposedTitle);
         diffPanel.setRequest(request);
 
         container.removeAll();

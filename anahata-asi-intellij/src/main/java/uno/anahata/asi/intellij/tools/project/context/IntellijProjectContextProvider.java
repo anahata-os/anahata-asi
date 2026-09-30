@@ -287,6 +287,11 @@ public class IntellijProjectContextProvider extends AbstractProjectContextProvid
         }
 
         if (DumbService.isDumb(p)) {
+            log.info("Waiting for IntelliJ indexer/scanner to complete before querying alerts for: {}", p.getName());
+            DumbService.getInstance(p).waitForSmartMode(60_000);
+        }
+
+        if (DumbService.isDumb(p)) {
             sb.append("\n  ## ").append(m != null ? "Module" : "Project").append(" Alerts: ")
               .append(m != null ? m.getName() : p.getName()).append(" (indexing in progress — alerts unavailable)\n");
             return;

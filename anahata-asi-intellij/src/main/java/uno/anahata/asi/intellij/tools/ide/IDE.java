@@ -130,8 +130,14 @@ public class IDE extends AnahataToolkit {
         if (project == null) {
             throw new AgiToolException("No open project can host: " + path);
         }
-        ApplicationManager.getApplication().invokeAndWait(() ->
-                ProjectView.getInstance(project).select(null, vf, true));
+        ApplicationManager.getApplication().invokeAndWait(() -> {
+            ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("Project");
+            if (tw != null) {
+                tw.activate(() -> ProjectView.getInstance(project).select(null, vf, true), true);
+            } else {
+                ProjectView.getInstance(project).select(null, vf, true);
+            }
+        });
         return "Selected " + path + " in the Project view.";
     }
 
