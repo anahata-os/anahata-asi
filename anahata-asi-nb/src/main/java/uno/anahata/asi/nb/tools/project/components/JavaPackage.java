@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * A domain object representing a logical Java package within a project.
@@ -39,6 +40,11 @@ public final class JavaPackage extends ProjectNode {
      */
     @Builder.Default
     private List<ProjectComponent> components = new ArrayList<>();
+
+    /**
+     * Optional first sentence of package-info.java Javadoc summary.
+     */
+    private String javadocSummary;
     
     /**
      * Adds a top-level Java component to this package.
@@ -73,44 +79,31 @@ public final class JavaPackage extends ProjectNode {
      * </p>
      */
     @Override
-    public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
-        long totalSize = getTotalSize();
-
-        sb.append(indent).append("- 📦 `").append(name).append("` ");
-        
-        if (summary) {
-            Map<String, Long> counts = components.stream()
-                    .collect(Collectors.groupingBy(ProjectComponent::getComponentType, Collectors.counting()));
-            
-            String stats = counts.entrySet().stream()
-                    .map(e -> e.getValue() + " " + e.getKey())
-                    .collect(Collectors.joining(", "));
-            
-            sb.append("(").append(stats).append(") [").append(TextUtils.formatSize(totalSize)).append("]");
+    public void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope) {
+        sb.append(indent).append("- 📦 `").append(name).append("`");
+        if (scope.isShowJavadoc() && javadocSummary != null && !javadocSummary.isBlank()) {
+            sb.append(" // ").append(javadocSummary);
         }
-        
         sb.append("\n");
 
-        if (!summary) {
-            List<ProjectComponent> sorted = new ArrayList<>(components);
-            sorted.sort((a, b) -> {
-                String aName = a.getFileName() != null ? a.getFileName() : "";
-                String bName = b.getFileName() != null ? b.getFileName() : "";
-                if (aName.startsWith("package-info")) {
-                    return -1;
-                }
-                if (bName.startsWith("package-info")) {
-                    return 1;
-                }
-                
-                String aVal = a.getFqn() != null ? a.getFqn() : aName;
-                String bVal = b.getFqn() != null ? b.getFqn() : bName;
-                return aVal.compareToIgnoreCase(bVal);
-            });
-
-            for (ProjectComponent component : sorted) {
-                component.renderMarkdown(sb, indent + "  ", false);
+        List<ProjectComponent> sorted = new ArrayList<>(components);
+        sorted.sort((a, b) -> {
+            String aName = a.getFileName() != null ? a.getFileName() : "";
+            String bName = b.getFileName() != null ? b.getFileName() : "";
+            if (aName.startsWith("package-info")) {
+                return -1;
             }
+            if (bName.startsWith("package-info")) {
+                return 1;
+            }
+            
+            String aVal = a.getFqn() != null ? a.getFqn() : aName;
+            String bVal = b.getFqn() != null ? b.getFqn() : bName;
+            return aVal.compareToIgnoreCase(bVal);
+        });
+
+        for (ProjectComponent component : sorted) {
+            component.renderMarkdown(sb, indent + "  ", scope);
         }
     }
 }

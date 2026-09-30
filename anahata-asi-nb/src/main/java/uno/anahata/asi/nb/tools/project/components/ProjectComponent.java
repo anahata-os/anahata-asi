@@ -14,6 +14,7 @@ import org.netbeans.api.java.source.ElementHandle;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * A leaf or branch node representing a physical file or a logical Java type.
@@ -52,6 +53,22 @@ public final class ProjectComponent extends ProjectNode {
     @ToString.Exclude
     private transient FileObject fileObject;
 
+    /**
+     * The ElementHandle identifying the Java type, if applicable.
+     */
+    @ToString.Exclude
+    private transient ElementHandle<?> handle;
+
+    /**
+     * Optional formatted supertypes string (e.g. "extends DesktopAgiTool implements Callable").
+     */
+    private String supertypes;
+
+    /**
+     * Optional first sentence of class-level Javadoc summary.
+     */
+    private String javadocSummary;
+
     /** 
      * The parent component in the hierarchy. 
      * This is used to distinguish between top-level types and inner/nested types.
@@ -81,6 +98,7 @@ public final class ProjectComponent extends ProjectNode {
      */
     public ProjectComponent(FileObject fo, ElementHandle<?> handle) throws FileStateInvalidException {
         this.fileObject = fo;
+        this.handle = handle;
         this.fqn = (handle != null) ? handle.getQualifiedName() : null;
         this.kind = (handle != null) ? handle.getKind() : null;
         this.children = new ArrayList<>();
@@ -143,13 +161,7 @@ public final class ProjectComponent extends ProjectNode {
      * </p>
      */
     @Override
-    public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
-        // We only skip rendering for components with parents in summary mode
-        // to allow root-level files to always show.
-        if (summary && parent != null) {
-             return;
-        }
-
+    public void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope) {
         boolean isTopLevelFile = (parent == null);
         String icon = isTopLevelFile ? "📄 " : "";
         String simpleName = getSimpleName();
@@ -157,32 +169,40 @@ public final class ProjectComponent extends ProjectNode {
         if (fileName == null) {
             fileName = simpleName;
         }
-        
-        String status = "";
-        if (annotatedName != null && !annotatedName.isEmpty()) {
-            status = annotatedName.replace(fileName, "").trim();
-            if (!status.isEmpty()) {
-                status = " " + status;
+
+        sb.append(indent).append("- ").append(icon).append("`").append(simpleName).append("`");
+
+        if (scope.isShowElementKind() && kind != null) {
+            sb.append(" (").append(kind.name()).append(")");
+        }
+
+        if (scope.isShowSupertypes() && supertypes != null && !supertypes.isBlank()) {
+            sb.append(" ").append(supertypes);
+        }
+
+        if (scope.isShowVcsStatus()) {
+            if (annotatedName != null && !annotatedName.isEmpty()) {
+                String status = annotatedName.replace(fileName, "").trim();
+                if (!status.isEmpty()) {
+                    sb.append(" ").append(status);
+                }
             }
         }
 
-        sb.append(indent).append("- ").append(icon).append("`").append(simpleName).append("` ");
-        
-        if (kind != null) {
-            sb.append("(").append(kind.name()).append(") ");
-        }
-        
-        sb.append(status);
-        
-        // Show size only for top-level physical files
-        if (isTopLevelFile && fileObject != null) {
+        if (scope.isShowFileSizes() && isTopLevelFile && fileObject != null) {
             sb.append(" [").append(TextUtils.formatSize(fileObject.getSize())).append("]");
         }
-        
+
+        if (scope.isShowJavadoc() && javadocSummary != null && !javadocSummary.isBlank()) {
+            sb.append(" // ").append(javadocSummary);
+        }
+
         sb.append("\n");
 
-        for (ProjectComponent child : children) {
-            child.renderMarkdown(sb, indent + "  ", false);
+        if (scope.isShowInnerClasses()) {
+            for (ProjectComponent child : children) {
+                child.renderMarkdown(sb, indent + "  ", scope);
+            }
         }
     }
 

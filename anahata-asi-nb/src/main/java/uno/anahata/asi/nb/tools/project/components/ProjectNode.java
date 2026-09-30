@@ -2,6 +2,7 @@
 package uno.anahata.asi.nb.tools.project.components;
 
 import java.io.Serializable;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * The abstract base class for all structural nodes in the project model.
@@ -26,18 +27,11 @@ public abstract class ProjectNode implements Serializable {
     public abstract long getTotalSize();
 
     /**
-     * Renders the node and its children into a Markdown representation.
-     * <p>
-     * Implementation details:
-     * The renderer must strictly honor the 'summary' flag. In summary mode, 
-     * it should only output aggregate totals for the node. In standard mode, 
-     * it must perform a hierarchical traversal, using indentation to represent 
-     * nesting depth and specialized icons to denote node types.
-     * </p>
-     * 
+     * Renders the node and its children into a Markdown representation respecting the granularity scope.
+     *
      * @param sb The target StringBuilder to append the Markdown to.
      * @param indent The current indentation string (e.g., "  ") for nesting level.
-     * @param summary If true, renders only the condensed/aggregate view.
+     * @param scope The active project structure granularity scope.
      */
-    public abstract void renderMarkdown(StringBuilder sb, String indent, boolean summary);
+    public abstract void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope);
 }

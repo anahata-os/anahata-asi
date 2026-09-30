@@ -11,6 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import uno.anahata.asi.internal.TextUtils;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * A domain object representing a physical directory containing project resources.
@@ -69,28 +70,10 @@ public final class ResourceFolder extends ProjectNode {
      * </p>
      */
     @Override
-    public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
-        long totalSize = getTotalSize();
-
-        sb.append(indent).append("- 📂 `").append(path).append("` ");
-        
-        if (summary) {
-            Map<String, Long> counts = components.stream()
-                    .collect(Collectors.groupingBy(ProjectComponent::getComponentType, Collectors.counting()));
-            
-            String stats = counts.entrySet().stream()
-                    .map(e -> e.getValue() + " " + e.getKey())
-                    .collect(Collectors.joining(", "));
-            
-            sb.append("(").append(stats).append(") [").append(TextUtils.formatSize(totalSize)).append("]");
-        }
-        
-        sb.append("\n");
-
-        if (!summary) {
-            for (ProjectComponent component : components) {
-                component.renderMarkdown(sb, indent + "  ", false);
-            }
+    public void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope) {
+        sb.append(indent).append("- 📂 `").append(path).append("`\n");
+        for (ProjectComponent component : components) {
+            component.renderMarkdown(sb, indent + "  ", scope);
         }
     }
 }

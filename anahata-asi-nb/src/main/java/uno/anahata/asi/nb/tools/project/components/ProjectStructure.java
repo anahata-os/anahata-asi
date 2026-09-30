@@ -14,6 +14,7 @@ import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
 import org.openide.filesystems.FileObject;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * The high-level orchestrator for the refined project structure model.
@@ -63,6 +64,12 @@ public final class ProjectStructure extends ProjectNode {
     private List<ResourceSourceGroup> resourceSourceGroups = new ArrayList<>();
 
     /**
+     * Warnings encountered during AST or filesystem scanning.
+     */
+    @Builder.Default
+    private List<String> scanWarnings = new ArrayList<>();
+
+    /**
      * Builds the complete project structure recursively.
      * <p>
      * Implementation details:
@@ -74,12 +81,30 @@ public final class ProjectStructure extends ProjectNode {
      * @param project The NetBeans project instance to map.
      * @throws Exception if construction of any constituent group fails.
      */
+    /**
+     * Builds the complete project structure recursively using a default granularity scope.
+     *
+     * @param project The NetBeans project instance to map.
+     * @throws Exception if construction of any constituent group fails.
+     */
     public ProjectStructure(Project project) throws Exception {
+        this(project, new ProjectStructureScope());
+    }
+
+    /**
+     * Builds the complete project structure recursively respecting the specified granularity scope.
+     *
+     * @param project The NetBeans project instance to map.
+     * @param scope The active project structure granularity scope.
+     * @throws Exception if construction of any constituent group fails.
+     */
+    public ProjectStructure(Project project, ProjectStructureScope scope) throws Exception {
         this.projectName = ProjectUtils.getInformation(project).getDisplayName();
         this.rootFiles = new ArrayList<>();
         this.rootFolders = new ArrayList<>();
         this.javaSourceGroups = new ArrayList<>();
         this.resourceSourceGroups = new ArrayList<>();
+        this.scanWarnings = new ArrayList<>();
 
         FileObject root = project.getProjectDirectory();
         Sources sources = ProjectUtils.getSources(project);
@@ -103,11 +128,13 @@ public final class ProjectStructure extends ProjectNode {
         }
 
         for (SourceGroup sg : sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_JAVA)) {
-            javaSourceGroups.add(new JavaSourceGroup(project, sg));
+            javaSourceGroups.add(new JavaSourceGroup(project, sg, scope, scanWarnings));
         }
 
-        for (SourceGroup sg : sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)) {
-            resourceSourceGroups.add(new ResourceSourceGroup(project, sg));
+        if (scope == null || scope.isShowResources()) {
+            for (SourceGroup sg : sources.getSourceGroups(JavaProjectConstants.SOURCES_TYPE_RESOURCES)) {
+                resourceSourceGroups.add(new ResourceSourceGroup(project, sg));
+            }
         }
     }
 
@@ -136,25 +163,36 @@ public final class ProjectStructure extends ProjectNode {
      * </p>
      */
     @Override
-    public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
+    public void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope) {
         sb.append(indent).append("## Project Structure: ").append(projectName).append("\n");
 
-        if (!rootFiles.isEmpty() || !rootFolders.isEmpty()) {
+        if (scope.isShowRootFiles() && (!rootFiles.isEmpty() || !rootFolders.isEmpty())) {
             sb.append("\n").append(indent).append("### Root Directory\n");
             if (!rootFolders.isEmpty()) {
                 sb.append(indent).append("  - Folders: `").append(String.join("`, `", rootFolders)).append("`\n");
             }
             for (ProjectComponent file : rootFiles) {
-                file.renderMarkdown(sb, indent + "  ", summary);
+                file.renderMarkdown(sb, indent + "  ", scope);
             }
         }
 
         for (JavaSourceGroup group : javaSourceGroups) {
-            group.renderMarkdown(sb, indent, summary);
+            group.renderMarkdown(sb, indent, scope);
         }
 
-        for (ResourceSourceGroup group : resourceSourceGroups) {
-            group.renderMarkdown(sb, indent, summary);
+        if (scope.isShowResources()) {
+            for (ResourceSourceGroup group : resourceSourceGroups) {
+                group.renderMarkdown(sb, indent, scope);
+            }
+        }
+
+        if (scanWarnings != null && !scanWarnings.isEmpty()) {
+            sb.append("\n").append(indent).append("> [!WARNING]\n");
+            sb.append(indent).append("> Structure Scan Notice (").append(scanWarnings.size()).append(" warnings encountered):\n");
+            for (String w : scanWarnings) {
+                sb.append(indent).append("> - ").append(w).append("\n");
+            }
+            sb.append(indent).append("> Check IDE logs for full stack traces and details.\n");
         }
     }
 }

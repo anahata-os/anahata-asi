@@ -16,6 +16,7 @@ import org.netbeans.api.project.SourceGroup;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.FileUtil;
+import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 
 /**
  * A specialized container for a physical resource source group (e.g., src/main/resources).
@@ -138,7 +139,7 @@ public final class ResourceSourceGroup extends ProjectNode {
      * </p>
      */
     @Override
-    public void renderMarkdown(StringBuilder sb, String indent, boolean summary) {
+    public void renderMarkdown(StringBuilder sb, String indent, ProjectStructureScope scope) {
         sb.append("\n").append(indent).append("### ").append(name);
         if (relPath != null && !relPath.isEmpty()) {
             sb.append(" (`").append(relPath).append("`) ");
@@ -153,7 +154,7 @@ public final class ResourceSourceGroup extends ProjectNode {
         folders.sort(Comparator.comparing(ResourceFolder::getPath));
 
         for (ResourceFolder folder : folders) {
-            folder.renderMarkdown(sb, indent, summary);
+            folder.renderMarkdown(sb, indent, scope);
         }
     }
 }
