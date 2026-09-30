@@ -3,9 +3,9 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,938 | Brand Awareness / Discovery (id=125) |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,152 | The Singularity / ASI Container (id=135) |
-| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 178 | Autonomous Update Channel (id=141) |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,966 | Brand Awareness / Discovery (id=125) |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,157 | The Singularity / ASI Container (id=135) |
+| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 218 | Autonomous Update Channel (id=141) |
 
  > [!TIP]
  > **One-Shot Portal Scraper & Velocity Guide:**
@@ -61,10 +61,12 @@
 "5. **Update `ledger.md`**: Record the new counts in `## 📈 Distribution Funnel` and append a fresh log row in `## 🛠️ Milestone Log
 | Date | V1 (125) | V2 (135) | UC (141) | Total | Δ Total | Velocity (DL/h) | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 2026-09-28 08:25 | 4,938 | 1,152 | 178 | 6,268 | +22 | 0.95 | V1: +3 (0.13 DLs/hr), V2: +8 (0.35 DLs/hr), UC: +11 (0.47 DLs/hr) in 23.2 hours (Combined V1+V2: 0.47 DLs/hr, Total: 6,268, Total Velocity: 0.95 DLs/hr) |
-| 2026-09-27 09:15 | 4,935 | 1,144 | 167 | 6,246 | +16 | 1.05 | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +16 (1.05 DLs/hr) in 15.2 hours (Combined V1+V2: 0.00 DLs/hr, Total: 6,246, Total Velocity: 1.05 DLs/hr) |
-| 2026-09-26 18:03 | 4,935 | 1,144 | 151 | 6,230 | +152 | 2.77 | V1: +38 (0.69 DLs/hr), V2: +7 (0.13 DLs/hr), UC: +107 (1.95 DLs/hr) in 55.0 hours (Combined V1+V2: 0.82 DLs/hr, Total: 6,230, Total Velocity: 2.77 DLs/hr) |
-| 2026-09-24 11:06 | 4,897 | 1,137 | 44 | 6,078 | +393 |  | V1: +237 (0.31 DLs/hr), V2: +112 (0.15 DLs/hr), UC: 44 DLs (id=141) in 753.7 hours (Combined V1+V2: 0.46 DLs/hr, Total: 6,078) |
+| 2026-09-30 14:27 | 4,966 | 1,157 | 218 | 6,341 | +31 | 1.04 | V1: +2 (0.07 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +29 (0.97 DLs/hr) in 29.8 hours (Total Velocity: 1.04 DLs/hr) |
+| 2026-09-29 08:38 | 4,964 | 1,157 | 189 | 6,310 | +42 | 1.73 | V1: +26 (1.07 DLs/hr), V2: +5 (0.21 DLs/hr), UC: +11 (0.45 DLs/hr) in 24.2 hours (Total Velocity: 1.73 DLs/hr) |
+| 2026-09-28 08:25 | 4,938 | 1,152 | 178 | 6,268 | +22 | 0.95 | V1: +3 (0.13 DLs/hr), V2: +8 (0.35 DLs/hr), UC: +11 (0.47 DLs/hr) in 23.2 hours (Total Velocity: 0.95 DLs/hr) |
+| 2026-09-27 09:15 | 4,935 | 1,144 | 167 | 6,246 | +16 | 1.05 | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +16 (1.05 DLs/hr) in 15.2 hours (Total Velocity: 1.05 DLs/hr) |
+| 2026-09-26 18:03 | 4,935 | 1,144 | 151 | 6,230 | +152 | 2.77 | V1: +38 (0.69 DLs/hr), V2: +7 (0.13 DLs/hr), UC: +107 (1.95 DLs/hr) in 55.0 hours (Total Velocity: 2.77 DLs/hr) |
+| 2026-09-24 11:06 | 4,897 | 1,137 | 44 | 6,078 | +393 |  | V1: +237 (0.31 DLs/hr), V2: +112 (0.15 DLs/hr), UC: 44 DLs (id=141) in 753.7 hours (Total Velocity: 0.52 DLs/hr) |
 | 2026-08-24 01:23 | 4,660 | 1,025 | 0 | 5,685 | +14 | 0.26 | V1: +10 (0.19 DLs/hr), V2: +4 (0.07 DLs/hr) in 53.8 hours (Combined: 0.26 DLs/hr) |
 | 2026-08-21 19:37 | 4,650 | 1,021 | 0 | 5,671 | +17 | 0.52 | V1: +9 (0.28 DLs/hr), V2: +8 (0.25 DLs/hr) in 32.6 hours (Combined: 0.52 DLs/hr) |
 | 2026-08-20 11:01 | 4,641 | 1,013 | 0 | 5,654 | +16 | 0.98 | V1: +7 (0.43 DLs/hr), V2: +9 (0.55 DLs/hr) in 16.3 hours (Combined: 0.98 DLs/hr) |
