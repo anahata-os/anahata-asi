@@ -29,7 +29,9 @@ The `README.md` is our primary sales weapon. It leads with the **ASI Container**
 *   **The "Deep Strike" Contrast:**
     > Why settle for a stateless API wrapper when you can have a full ASI Container? 🚀
     > Anahata provides the architectural rigor of the Java ecosystem to the frontier of AI. 148 tools. JIT Compilation. Zero Telemetry.
-    > #OpenSourceAI #ASI #JavaDev #DeepStrike
+    > #VibeCoding #Java #OpenSourceAI #AIAgents #NetBeans #IntelliJ #DevTools #BuildInPublic
+    > Tag / Reply in Relevant Threads: Look for tweets by Java champions, Apache NetBeans accounts, or threads debating “Cursor vs Copilot vs Claude Code”, and drop Anahata as the open-source, JVM-native answer.
+
 
 ### C. Community & Funding (The "Red Hat" Play)
 -   **Bottom-Up Adoption:** The codebase is 100% Apache 2.0. Frictionless legal approval for developers.
