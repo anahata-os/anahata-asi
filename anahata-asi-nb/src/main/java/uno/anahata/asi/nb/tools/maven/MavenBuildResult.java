@@ -23,6 +23,7 @@ import lombok.ToString;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
+@Deprecated(since = "1.3.0", forRemoval = true)
 @Schema(description = "Represents the detailed result of a Maven build execution, including status, exit code, and captured output.")
 public class MavenBuildResult {
 
