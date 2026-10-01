@@ -1,7 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.toolkit.maven;
+package uno.anahata.asi.nb.tools.maven;
 
-import uno.anahata.asi.toolkit.maven.MavenQueryClause;
+import uno.anahata.asi.nb.tools.maven.MavenQueryClause;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

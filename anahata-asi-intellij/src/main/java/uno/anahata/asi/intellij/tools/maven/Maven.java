@@ -27,20 +27,31 @@ import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
 import uno.anahata.asi.toolkit.maven.DependencyGroup;
 import uno.anahata.asi.toolkit.maven.DependencyScope;
 
+import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
+import org.apache.maven.artifact.versioning.ComparableVersion;
+import org.jetbrains.idea.maven.indices.MavenGAVIndex;
+import org.jetbrains.idea.maven.indices.MavenIndicesManager;
+import org.jetbrains.idea.maven.model.MavenRemoteRepository;
 import org.jetbrains.idea.maven.model.MavenRepoArtifactInfo;
+import org.jetbrains.idea.maven.project.MavenGeneralSettings;
+import uno.anahata.asi.agi.message.RagMessage;
 
 /**
  * A toolkit for inspecting and building Maven projects through the IntelliJ IDEA Maven
@@ -79,6 +90,87 @@ public class Maven extends AnahataToolkit {
                 "The Maven toolkit inspects and builds Maven projects that are imported in IntelliJ. "
                 + "Use getDependencies to inspect a project's resolved classpath, "
                 + "and runGoals to execute Maven goals (output streams to the IDE Maven Run console).");
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Populates the RAG message with live IntelliJ Maven configuration, active local and remote
+     * repositories, background repository index status, and currently imported Maven projects.
+     * </p>
+     *
+     * @param ragMessage the turn's RAG message accumulator.
+     */
+    @Override
+    public void populateMessage(RagMessage ragMessage) {
+        Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+        if (openProjects.length == 0) {
+            return;
+        }
+        Project project = openProjects[0];
+        MavenProjectsManager projMgr = MavenProjectsManager.getInstance(project);
+        if (projMgr == null) {
+            return;
+        }
+        MavenIndicesManager indicesMgr = MavenIndicesManager.getInstance(project);
+
+        StringBuilder sb = new StringBuilder("## IntelliJ Maven Configuration & Runtime\n");
+        MavenGeneralSettings settings = projMgr.getGeneralSettings();
+        if (settings != null) {
+            sb.append("- **Maven Home**: ").append(settings.getMavenHomeType() != null ? settings.getMavenHomeType() : "Default").append("\n");
+            String localRepo = settings.getLocalRepository();
+            if (localRepo == null || localRepo.isBlank()) {
+                localRepo = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository";
+            }
+            sb.append("- **Local Repository**: `").append(localRepo).append("`\n");
+            String userSettings = settings.getUserSettingsFile();
+            if (userSettings == null || userSettings.isBlank()) {
+                userSettings = System.getProperty("user.home") + File.separator + ".m2" + File.separator + "settings.xml (default)";
+            }
+            sb.append("- **User Settings File**: `").append(userSettings).append("`\n");
+            sb.append("- **Work Offline**: ").append(settings.isWorkOffline() ? "✅ Yes" : "❌ No").append("\n");
+            if (settings.getThreads() != null && !settings.getThreads().isBlank()) {
+                sb.append("- **Build Threads**: `").append(settings.getThreads()).append("`\n");
+            }
+            sb.append("- **Output Logging Level**: `").append(settings.getOutputLevel()).append("`\n");
+        }
+
+        boolean indexReady = indicesMgr != null && indicesMgr.isInit();
+        sb.append("- **Index Manager Initialized**: ").append(indexReady ? "✅ Yes" : "⏳ In Progress / Not Ready").append("\n\n");
+
+        sb.append("### Configured Repositories & Index Status\n");
+        sb.append("| Repository ID | Kind | Index Status | URL / Path |\n");
+        sb.append("|---|---|---|---|\n");
+
+        String localRepoPath = (settings != null && settings.getLocalRepository() != null && !settings.getLocalRepository().isBlank())
+                ? settings.getLocalRepository()
+                : System.getProperty("user.home") + File.separator + ".m2" + File.separator + "repository";
+        sb.append("| `local` | Local | ").append(indexReady ? "✅ Indexed" : "⏳ Pending")
+          .append(" | `").append(localRepoPath).append("` |\n");
+
+        Map<String, MavenRemoteRepository> remoteRepos = new LinkedHashMap<>();
+        for (MavenProject mp : projMgr.getProjects()) {
+            for (MavenRemoteRepository r : mp.getRemoteRepositories()) {
+                remoteRepos.putIfAbsent(r.getId() + "|" + r.getUrl(), r);
+            }
+        }
+
+        for (MavenRemoteRepository r : remoteRepos.values()) {
+            sb.append("| `").append(r.getId()).append("` | Remote | ")
+              .append(indexReady ? "✅ Active" : "⏳ Pending")
+              .append(" | `").append(r.getUrl()).append("` |\n");
+        }
+
+        List<MavenProject> mps = projMgr.getProjects();
+        if (!mps.isEmpty()) {
+            sb.append("\n### Imported Maven Projects (").append(mps.size()).append(")\n");
+            for (MavenProject mp : mps) {
+                sb.append("- **").append(mp.getMavenId().getKey()).append("** (`")
+                  .append(mp.getPackaging()).append("`) in `").append(mp.getDirectory()).append("`\n");
+            }
+        }
+
+        ragMessage.addTextPart(sb.toString());
     }
 
     /**
@@ -219,6 +311,198 @@ public class Maven extends AnahataToolkit {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Unified search across Maven repositories and indices with coordinate navigation, version resolution, and stability filtering.
+     * <p>
+     * Supports three complementary lookup modes:
+     * <ul>
+     *   <li><b>Exact Coordinate Resolution</b>: Supplying both {@code groupId} and {@code artifactId} resolves all indexed
+     *       versions instantly in 0 ms.</li>
+     *   <li><b>Group Navigation</b>: Supplying {@code groupId} without a keyword query resolves all artifacts belonging
+     *       to that group.</li>
+     *   <li><b>Keyword Search</b>: Searching via {@code query} matches against indexed group and artifact IDs, grouping
+     *       all matching versions under consolidated artifact records.</li>
+     * </ul>
+     * </p>
+     *
+     * @param query              keyword query matched against groupId and artifactId (e.g. 'junit-jupiter' or 'lombok').
+     * @param groupId            exact groupId filter or navigation (e.g. 'org.junit.jupiter').
+     * @param artifactId         exact artifactId filter (e.g. 'junit-jupiter-api').
+     * @param includeAllVersions whether to include all indexed versions for each artifact (sorted newest first). Defaults to false (latest only).
+     * @param stableOnly         whether to filter out pre-releases (alpha, beta, rc, milestone, snapshots). Defaults to true.
+     * @param startIndex         starting index for pagination (0-based). Defaults to 0.
+     * @param pageSize           maximum number of artifacts to return. Defaults to 25.
+     * @return a {@link MavenSearchReport} containing matched artifacts, version metadata, and pagination info.
+     * @throws AgiToolException if no open project is available to query against.
+     */
+    @AgiTool("Unified search across Maven repositories and indices with coordinate navigation, version resolution, and stability filtering.")
+    public MavenSearchReport searchMaven(
+            @AgiToolParam(value = "Keyword query matched against groupId and artifactId (e.g. 'junit-jupiter' or 'lombok').", required = false) String query,
+            @AgiToolParam(value = "Exact groupId filter or navigation (e.g. 'org.junit.jupiter').", required = false) String groupId,
+            @AgiToolParam(value = "Exact artifactId filter (e.g. 'junit-jupiter-api').", required = false) String artifactId,
+            @AgiToolParam(value = "Whether to include all indexed versions for each artifact (sorted newest first). Defaults to false (latest only).", required = false) Boolean includeAllVersions,
+            @AgiToolParam(value = "Whether to filter out pre-releases (alpha, beta, rc, milestone, snapshots). Defaults to true.", required = false) Boolean stableOnly,
+            @AgiToolParam(value = "Starting index for pagination (0-based). Defaults to 0.", required = false) Integer startIndex,
+            @AgiToolParam(value = "Maximum number of artifacts to return. Defaults to 25.", required = false) Integer pageSize) throws AgiToolException {
+
+        Project[] open = ProjectManager.getInstance().getOpenProjects();
+        if (open.length == 0) {
+            throw new AgiToolException("No open project to search the Maven index against.");
+        }
+        Project project = open[0];
+        MavenIndicesManager indicesMgr = MavenIndicesManager.getInstance(project);
+        MavenGAVIndex gavIndex = indicesMgr != null ? indicesMgr.getCommonGavIndex() : null;
+
+        String cleanQuery = (query != null && !query.isBlank()) ? query.trim() : null;
+        String cleanGid = (groupId != null && !groupId.isBlank()) ? groupId.trim() : null;
+        String cleanAid = (artifactId != null && !artifactId.isBlank()) ? artifactId.trim() : null;
+        boolean includeVersions = includeAllVersions != null && includeAllVersions;
+        boolean stable = stableOnly == null || stableOnly;
+        int start = startIndex != null ? Math.max(0, startIndex) : 0;
+        int size = pageSize != null ? Math.max(1, pageSize) : 25;
+
+        List<MavenArtifactGroup> allArtifacts = new ArrayList<>();
+
+        // Fast-path 1: Exact Coordinate Lookup (groupId + artifactId without keyword query)
+        if (cleanGid != null && cleanAid != null && cleanQuery == null) {
+            Set<String> indexedVersions = gavIndex != null ? gavIndex.getVersions(cleanGid, cleanAid) : Collections.emptySet();
+            List<String> sorted = sortVersions(indexedVersions, stable);
+            if (!sorted.isEmpty()) {
+                allArtifacts.add(MavenArtifactGroup.builder()
+                        .groupId(cleanGid)
+                        .artifactId(cleanAid)
+                        .latestVersion(sorted.get(0))
+                        .totalVersionsCount(sorted.size())
+                        .versions(includeVersions ? sorted : null)
+                        .build());
+            }
+        }
+        // Fast-path 2: Group ID Navigation (groupId only without keyword query or artifactId)
+        else if (cleanGid != null && cleanAid == null && cleanQuery == null) {
+            Set<String> aids = gavIndex != null ? gavIndex.getArtifactIds(cleanGid) : Collections.emptySet();
+            List<String> sortedAids = new ArrayList<>(aids);
+            Collections.sort(sortedAids);
+            for (String aid : sortedAids) {
+                Set<String> indexedVersions = gavIndex != null ? gavIndex.getVersions(cleanGid, aid) : Collections.emptySet();
+                List<String> sorted = sortVersions(indexedVersions, stable);
+                if (!sorted.isEmpty()) {
+                    allArtifacts.add(MavenArtifactGroup.builder()
+                            .groupId(cleanGid)
+                            .artifactId(aid)
+                            .latestVersion(sorted.get(0))
+                            .totalVersionsCount(sorted.size())
+                            .versions(includeVersions ? sorted : null)
+                            .build());
+                }
+            }
+        }
+        // Search path: Keyword search (or search with filters)
+        else {
+            String searchTerm = cleanQuery != null ? cleanQuery : (cleanAid != null ? cleanAid : (cleanGid != null ? cleanGid : ""));
+            if (!searchTerm.isEmpty()) {
+                int searchLimit = Math.max(100, (start + size) * 4);
+                List<MavenArtifactSearchResult> searchResults = ReadAction.computeBlocking(() ->
+                        new MavenArtifactSearcher().search(project, searchTerm, searchLimit));
+
+                Map<String, MavenArtifactGroup> dedupMap = new LinkedHashMap<>();
+                for (MavenArtifactSearchResult hit : searchResults) {
+                    MavenRepoArtifactInfo info = hit.getSearchResults();
+                    if (info == null) {
+                        continue;
+                    }
+                    String gid = info.getGroupId();
+                    String aid = info.getArtifactId();
+                    if (gid == null || aid == null) {
+                        continue;
+                    }
+                    if (cleanGid != null && !gid.equalsIgnoreCase(cleanGid)) {
+                        continue;
+                    }
+                    if (cleanAid != null && !aid.equalsIgnoreCase(cleanAid)) {
+                        continue;
+                    }
+
+                    String key = gid + ":" + aid;
+                    if (dedupMap.containsKey(key)) {
+                        continue;
+                    }
+
+                    Set<String> indexedVersions = gavIndex != null ? gavIndex.getVersions(gid, aid) : Collections.emptySet();
+                    List<String> sorted;
+                    if (!indexedVersions.isEmpty()) {
+                        sorted = sortVersions(indexedVersions, stable);
+                    } else if (info.getVersion() != null) {
+                        sorted = sortVersions(Collections.singletonList(info.getVersion()), stable);
+                    } else {
+                        sorted = Collections.emptyList();
+                    }
+
+                    if (!sorted.isEmpty()) {
+                        dedupMap.put(key, MavenArtifactGroup.builder()
+                                .groupId(gid)
+                                .artifactId(aid)
+                                .latestVersion(sorted.get(0))
+                                .totalVersionsCount(sorted.size())
+                                .versions(includeVersions ? sorted : null)
+                                .build());
+                    }
+                }
+                allArtifacts.addAll(dedupMap.values());
+            }
+        }
+
+        int totalCount = allArtifacts.size();
+        int toIndex = Math.min(totalCount, start + size);
+        List<MavenArtifactGroup> paged = (start < totalCount) ? allArtifacts.subList(start, toIndex) : Collections.emptyList();
+
+        String evaluatedFilter = cleanQuery != null ? cleanQuery : (cleanGid != null ? (cleanAid != null ? cleanGid + ":" + cleanAid : cleanGid) : "");
+        return MavenSearchReport.builder()
+                .query(evaluatedFilter)
+                .startIndex(start)
+                .totalCount(totalCount)
+                .artifacts(paged)
+                .build();
+    }
+
+    /**
+     * Determines whether an artifact version string corresponds to a stable release.
+     *
+     * @param version the version string to test.
+     * @return {@code true} if the version does not contain pre-release markers (alpha, beta, rc, snapshot, etc.).
+     */
+    private static boolean isStableVersion(String version) {
+        if (version == null) {
+            return false;
+        }
+        String lower = version.toLowerCase(Locale.ENGLISH);
+        return !lower.contains("alpha") && !lower.contains("beta") && !lower.contains("rc")
+                && !lower.contains("snapshot") && !lower.contains("preview") && !lower.contains("-m")
+                && !lower.matches(".*-(ea|cr|b)\\d+.*");
+    }
+
+    /**
+     * Filters and sorts a collection of version strings using {@link ComparableVersion} (newest first).
+     *
+     * @param versions   the candidate versions to sort.
+     * @param stableOnly whether to exclude pre-release versions.
+     * @return a mutable list of sorted versions.
+     */
+    private static List<String> sortVersions(Collection<String> versions, boolean stableOnly) {
+        List<String> list = new ArrayList<>();
+        if (versions == null) {
+            return list;
+        }
+        for (String v : versions) {
+            if (v != null && !v.isBlank()) {
+                if (!stableOnly || isStableVersion(v)) {
+                    list.add(v);
+                }
+            }
+        }
+        list.sort((a, b) -> new ComparableVersion(b).compareTo(new ComparableVersion(a)));
+        return list;
     }
 
     /**

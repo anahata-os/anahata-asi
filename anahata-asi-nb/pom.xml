@@ -459,6 +459,11 @@
         </dependency>
         <dependency>
             <groupId>org.netbeans.modules</groupId>
+            <artifactId>org-netbeans-modules-maven-model</artifactId>
+            <version>${netbeans.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.netbeans.modules</groupId>
             <artifactId>org-netbeans-modules-maven-indexer</artifactId>
             <version>${netbeans.version}</version>
         </dependency>
@@ -703,6 +708,10 @@
                         <dependency>
                             <type>impl</type>
                             <id>org.netbeans.modules:org-netbeans-modules-maven</id>
+                        </dependency>
+                        <dependency>
+                            <type>impl</type>
+                            <id>org.netbeans.modules:org-netbeans-modules-maven-model</id>
                         </dependency>
                         <dependency>
                             <type>impl</type>

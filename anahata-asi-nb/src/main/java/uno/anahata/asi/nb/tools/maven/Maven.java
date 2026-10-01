@@ -1,10 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.maven;
 
-import uno.anahata.asi.toolkit.maven.MavenArtifactSearchResult;
-import uno.anahata.asi.toolkit.maven.MavenSearchResultPage;
-import uno.anahata.asi.toolkit.maven.MavenSearchRequest;
-import uno.anahata.asi.toolkit.maven.MavenQueryClause;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;

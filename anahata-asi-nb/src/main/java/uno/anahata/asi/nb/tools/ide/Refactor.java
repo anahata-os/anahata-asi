@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -176,8 +177,9 @@ public class Refactor extends AnahataToolkit {
      * integrating). Do not include the filename if moving to a folder.
      * @return A detailed log of the refactoring process.
      * @throws Exception if the operation fails.
-     */
-    @AgiTool("Moves a Java class to a new package directory or integrates it into another existing class. When moving to another package, targetPath MUST be the destination folder (do NOT append the filename). For inner classes, use moveInnerToTopLevel first.")
+     */    
+    //AgiTool("Moves a Java class to a new package directory or integrates it into another existing class. When moving to another package, targetPath MUST be the destination folder (do NOT append the filename). For inner classes, use moveInnerToTopLevel first.")
+    @Deprecated(forRemoval = true, since = "1.3.0")
     public String moveClass(
             @AgiToolParam(value = "The absolute path of the .java file to move.", rendererId = "path") String sourcePath,
             @AgiToolParam(value = "The absolute path of the destination folder (when moving to a package) or the path of an EXISTING .java file (when integrating). Do not include the filename if moving to a folder.", rendererId = "path") String targetPath) throws Exception {
@@ -206,6 +208,77 @@ public class Refactor extends AnahataToolkit {
 
         String result = executeRefactoring(refactoring, "Move Class " + sourceFo.getName());
         return enrichWithContextInfo(sourcePath, result, "moved");
+    }
+
+    /**
+     * Moves groups of Java classes to their respective target package folders in a single atomic refactoring session.
+     * <p>
+     * Supports moving multiple classes to a single package or to different packages simultaneously.
+     * All changes, references, and imports across all open projects are updated atomically in one pass.
+     * </p>
+     *
+     * @param moves Map where each key is an absolute destination directory folder path, and the value is a list of absolute source .java file paths to move there.
+     * @return A detailed log of the batch refactoring process.
+     * @throws Exception if any path is invalid or the refactoring fails.
+     */
+    @AgiTool("Moves groups of Java classes to their respective package folders in a single atomic refactoring session.")
+    public String moveClasses(
+            @AgiToolParam("Map of target destination directory folder paths to lists of source .java files to move there.") 
+            Map<String, List<String>> moves) throws Exception {
+        if (moves == null || moves.isEmpty()) {
+            throw new IllegalArgumentException("Moves map cannot be null or empty.");
+        }
+
+        List<AbstractRefactoring> refactorings = new ArrayList<>();
+        List<String> allSourcePaths = new ArrayList<>();
+        int totalFiles = 0;
+
+        for (Map.Entry<String, List<String>> entry : moves.entrySet()) {
+            String targetPath = entry.getKey();
+            List<String> sourcePaths = entry.getValue();
+
+            if (sourcePaths == null || sourcePaths.isEmpty()) {
+                continue;
+            }
+
+            FileObject targetFo = JavaSourceUtils.getFileObject(targetPath);
+            if (!targetFo.isFolder()) {
+                throw new IllegalArgumentException("Target must be a folder: " + targetPath);
+            }
+
+            URL targetUrl = URLMapper.findURL(targetFo, URLMapper.EXTERNAL);
+            if (targetUrl == null) {
+                targetUrl = targetFo.toURL();
+            }
+
+            List<FileObject> sourceFos = new ArrayList<>();
+            for (String src : sourcePaths) {
+                FileObject sfo = JavaSourceUtils.getFileObject(src);
+                if (!"java".equals(sfo.getExt())) {
+                    throw new IllegalArgumentException("Source must be a .java file: " + src + ". Use moveFile for other types.");
+                }
+                sourceFos.add(sfo);
+                allSourcePaths.add(src);
+                totalFiles++;
+            }
+
+            MoveRefactoring refactoring = new MoveRefactoring(Lookups.fixed(sourceFos.toArray()));
+            refactoring.setTarget(Lookups.singleton(targetUrl));
+            refactorings.add(refactoring);
+        }
+
+        if (refactorings.isEmpty()) {
+            throw new IllegalArgumentException("No valid source files found to move.");
+        }
+
+        String sessionName = "Move " + totalFiles + " Classes to " + moves.size() + " Target Package(s)";
+        String result = executeRefactorings(refactorings, sessionName);
+
+        StringBuilder combined = new StringBuilder(result);
+        for (String srcPath : allSourcePaths) {
+            combined.append("\n").append(enrichWithContextInfo(srcPath, "", "moved"));
+        }
+        return combined.toString().trim();
     }
 
     /**
@@ -773,49 +846,78 @@ public class Refactor extends AnahataToolkit {
      * @return A detailed feedback string.
      */
     private String executeRefactoring(AbstractRefactoring refactoring, String sessionName) {
+        return executeRefactorings(Collections.singletonList(refactoring), sessionName);
+    }
+
+    /**
+     * Helper method to execute multiple refactoring operations through a single composite RefactoringSession.
+     * <p>
+     * Performs pre-checks and parameter validation for all refactorings, prepares them all into
+     * the same session, and commits all changes atomically in a single pass.
+     * </p>
+     *
+     * @param refactorings The list of refactoring operations to execute.
+     * @param sessionName The name for the composite refactoring session.
+     * @return A detailed feedback string.
+     */
+    private String executeRefactorings(List<AbstractRefactoring> refactorings, String sessionName) {
         log.info("Executing: {}", sessionName);
 
         // ATOMICITY FIX: For Java refactorings, we must provide ClasspathInfo in the context
         // to prevent the generic file plugin from 'stealing' the physical move/rename.
-        Lookup sourceLookup = refactoring.getRefactoringSource();
-        FileObject fo = sourceLookup.lookup(FileObject.class);
-        if (fo != null) {
-            if ("java".equals(fo.getExt())) {
-                refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{fo}));
-            } else if (fo.isFolder()) {
-                FileObject javaFo = findAnyJavaFile(fo);
-                if (javaFo != null) {
-                    refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{javaFo}));
+        for (AbstractRefactoring refactoring : refactorings) {
+            Lookup sourceLookup = refactoring.getRefactoringSource();
+            Collection<? extends FileObject> allFos = sourceLookup.lookupAll(FileObject.class);
+            if (!allFos.isEmpty()) {
+                List<FileObject> javaFiles = new ArrayList<>();
+                for (FileObject fo : allFos) {
+                    if ("java".equals(fo.getExt())) {
+                        javaFiles.add(fo);
+                    } else if (fo.isFolder()) {
+                        FileObject javaFo = findAnyJavaFile(fo);
+                        if (javaFo != null) {
+                            javaFiles.add(javaFo);
+                        }
+                    }
                 }
-            }
-        } else {
-            TreePathHandle tph = sourceLookup.lookup(TreePathHandle.class);
-            if (tph != null && tph.getFileObject() != null) {
-                refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{tph.getFileObject()}));
+                if (!javaFiles.isEmpty()) {
+                    refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(javaFiles.toArray(new FileObject[0])));
+                }
+            } else {
+                TreePathHandle tph = sourceLookup.lookup(TreePathHandle.class);
+                if (tph != null && tph.getFileObject() != null) {
+                    refactoring.getContext().add(JavaRefactoringUtils.getClasspathInfoFor(new FileObject[]{tph.getFileObject()}));
+                }
             }
         }
 
         StringBuilder feedback = new StringBuilder();
 
         feedback.append("1. Pre-check... ");
-        Problem p = refactoring.preCheck();
-        if (p != null && p.isFatal()) {
-            return feedback.append("FAILED: ").append(p.getMessage()).toString();
+        for (AbstractRefactoring refactoring : refactorings) {
+            Problem p = refactoring.preCheck();
+            if (p != null && p.isFatal()) {
+                return feedback.append("FAILED: ").append(p.getMessage()).toString();
+            }
         }
         feedback.append("OK\n");
 
         feedback.append("2. Checking parameters... ");
-        p = refactoring.checkParameters();
-        if (p != null && p.isFatal()) {
-            return feedback.append("FAILED: ").append(p.getMessage()).toString();
+        for (AbstractRefactoring refactoring : refactorings) {
+            Problem p = refactoring.checkParameters();
+            if (p != null && p.isFatal()) {
+                return feedback.append("FAILED: ").append(p.getMessage()).toString();
+            }
         }
         feedback.append("OK\n");
 
         RefactoringSession session = RefactoringSession.create(sessionName);
         feedback.append("3. Preparing session... ");
-        p = refactoring.prepare(session);
-        if (p != null && p.isFatal()) {
-            return feedback.append("FAILED: ").append(p.getMessage()).toString();
+        for (AbstractRefactoring refactoring : refactorings) {
+            Problem p = refactoring.prepare(session);
+            if (p != null && p.isFatal()) {
+                return feedback.append("FAILED: ").append(p.getMessage()).toString();
+            }
         }
 
         Collection<RefactoringElement> elements = session.getRefactoringElements();
@@ -828,7 +930,7 @@ public class Refactor extends AnahataToolkit {
         }
 
         feedback.append("4. Performing refactoring... ");
-        p = session.doRefactoring(true);
+        Problem p = session.doRefactoring(true);
         if (p != null && p.isFatal()) {
             return feedback.append("FAILED: ").append(p.getMessage()).toString();
         }
