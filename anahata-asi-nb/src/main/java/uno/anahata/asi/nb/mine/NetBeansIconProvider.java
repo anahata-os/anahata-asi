@@ -14,7 +14,6 @@ import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
 import uno.anahata.asi.nb.tools.project.context.NbProjectContextProvider;
-import uno.anahata.asi.nb.tools.project.context.ProjectContextProvider;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.swing.icons.IconProvider;
 import uno.anahata.asi.swing.icons.IconUtils;
@@ -44,11 +43,6 @@ public class NetBeansIconProvider implements IconProvider {
     public Icon getIconFor(ContextProvider cp) {
         if (cp instanceof NbProjectContextProvider npcp) {
             Project p = npcp.getProject();
-            if (p != null) {
-                return ProjectUtils.getInformation(p).getIcon();
-            }
-        } else if (cp instanceof ProjectContextProvider pcp) {
-            Project p = pcp.getProject();
             if (p != null) {
                 return ProjectUtils.getInformation(p).getIcon();
             }
