@@ -83,7 +83,7 @@ public abstract class AbstractProjectContextProvider extends BasicContextProvide
      * <p>
      * 1. Returns local {@code scope} if explicitly configured on this node.<br>
      * 2. Delegates to parent {@link AbstractProjectContextProvider} if nested (e.g. IntelliJ modules).<br>
-     * 3. Falls back to {@link AbstractProjects#getDefaultScope()} from the toolkit (e.g. NetBeans workspace default).<br>
+     * 3. Falls back to {@link AbstractProjects#defaultScope} from the toolkit (e.g. NetBeans workspace default).<br>
      * 4. Defaults to standard {@link ProjectStructureScope}.
      * </p>
      *
