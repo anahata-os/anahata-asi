@@ -10,7 +10,7 @@ import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
- * A specialized scroll pane for rendering any {@link AbstractMessage}. 
+ * A specialized scroll pane for rendering any {@link RagMessage}. 
  * This is useful for displaying messages in secondary UI locations 
  * like toolkit details or system instruction previews.
  *
