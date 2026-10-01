@@ -3,7 +3,9 @@ package uno.anahata.asi.intellij.tools.java;
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl;
+import com.intellij.codeInsight.daemon.impl.DaemonProgressIndicator;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
+import com.intellij.codeInsight.daemon.impl.HighlightingSessionImpl;
 import com.intellij.codeInsight.intention.IntentionAction;
 import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.application.ApplicationManager;
@@ -11,13 +13,13 @@ import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.colors.EditorColorsManager;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
-import com.intellij.openapi.progress.EmptyProgressIndicator;
 import com.intellij.openapi.progress.ProgressManager;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.util.ProperTextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import lombok.extern.slf4j.Slf4j;
@@ -111,8 +113,8 @@ public class Hints extends AnahataToolkit {
             if (info.getSeverity().compareTo(threshold) < 0) {
                 continue;
             }
-            String message = info.getDescription() != null ? info.getDescription() : info.getText();
-            if (message == null) {
+            String message = info.getDescription();
+            if (message == null || message.isBlank()) {
                 continue;
             }
             int line = document.getLineNumber(info.getStartOffset()) + 1;
@@ -233,10 +235,19 @@ public class Hints extends AnahataToolkit {
      */
     private List<HighlightInfo> runMainPasses(Project project, PsiFile psiFile, Document document) {
         List<HighlightInfo> infos = new ArrayList<>();
+        DaemonProgressIndicator progress = new DaemonProgressIndicator();
         ProgressManager.getInstance().runProcess(() -> {
-            DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
-            ReadAction.runBlocking(() -> infos.addAll(analyzer.runMainPasses(psiFile, document, new EmptyProgressIndicator())));
-        }, new EmptyProgressIndicator());
+            HighlightingSessionImpl.runInsideHighlightingSession(
+                    psiFile,
+                    EditorColorsManager.getInstance().getGlobalScheme(),
+                    ProperTextRange.create(0, document.getTextLength()),
+                    false,
+                    session -> {
+                        DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
+                        ReadAction.runBlocking(() -> infos.addAll(analyzer.runMainPasses(psiFile, document, progress)));
+                    }
+            );
+        }, progress);
         return infos;
     }
 
