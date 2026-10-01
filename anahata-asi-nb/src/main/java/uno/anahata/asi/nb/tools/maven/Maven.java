@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -37,8 +39,11 @@ import org.netbeans.modules.maven.embedder.MavenEmbedder;
 import org.netbeans.modules.maven.execute.MavenCommandLineExecutor;
 import org.netbeans.modules.maven.execute.cmd.ExecMojo;
 import org.netbeans.modules.maven.execute.cmd.ExecutionEventObject;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import org.netbeans.modules.maven.indexer.api.NBVersionInfo;
 import org.netbeans.modules.maven.indexer.api.QueryField;
+import org.netbeans.modules.maven.indexer.api.RepositoryInfo;
 import org.netbeans.modules.maven.indexer.api.RepositoryPreferences;
 import org.netbeans.modules.maven.indexer.api.RepositoryQueries;
 import org.openide.execution.ExecutionEngine;
@@ -166,97 +171,351 @@ public class Maven extends AnahataToolkit {
         } catch (Exception ex) {
             sb.append("- Error reading preferences: ").append(ex.getMessage()).append("\n");
         }
+
+        sb.append("\n### Maven Repositories & Index Status\n");
+        sb.append("- **Global Indexing Enabled**: ").append(RepositoryPreferences.isIndexRepositories() ? "✅ Yes" : "❌ No").append("\n");
+        sb.append("- **Remote Index Download Active**: ").append(RepositoryPreferences.isIndexDownloadEnabledEffective() ? "✅ Yes" : "❌ No");
+        if (RepositoryPreferences.isIndexDownloadPaused()) {
+            sb.append(" (⏸️ Paused)");
+        }
+        sb.append("\n\n");
+
+        try {
+            List<RepositoryInfo> loaded = RepositoryQueries.getLoadedContexts();
+            List<RepositoryInfo> repos = RepositoryPreferences.getInstance().getRepositoryInfos();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+            sb.append("| Repository ID | Name | Type | Index Loaded | Last Updated | URL / Path |\n");
+            sb.append("|---|---|---|---|---|---|\n");
+            for (RepositoryInfo repo : repos) {
+                boolean hasIndex = loaded.stream().anyMatch(l -> l.getId().equals(repo.getId()));
+                Date last = RepositoryPreferences.getLastIndexUpdate(repo.getId());
+                String lastStr = (last != null && last.getTime() > 0) ? sdf.format(last) : "Never";
+                String loc = repo.isLocal() ? "Local" : "Remote";
+                String pathOrUrl = repo.getRepositoryUrl() != null ? repo.getRepositoryUrl() : repo.getRepositoryPath();
+                sb.append("| `").append(repo.getId()).append("` | ")
+                  .append(repo.getName()).append(" | ")
+                  .append(loc).append(" | ")
+                  .append(hasIndex ? "✅ Yes" : "❌ No").append(" | ")
+                  .append(lastStr).append(" | `")
+                  .append(pathOrUrl != null ? pathOrUrl : "").append("` |\n");
+            }
+        } catch (Exception ex) {
+            sb.append("- Error inspecting repositories: ").append(ex.getMessage()).append("\n");
+        }
         
         ragMessage.addTextPart(sb.toString());
     }
     
     //<editor-fold defaultstate="collapsed" desc="From MavenSearch.java">
     /**
-     * Searches the Maven index for artifacts matching a given query.
-     * <p>
-     * This method performs a multi-field search (groupId, artifactId, version, name, description, classes)
-     * across all repositories configured in NetBeans. It supports pagination and handles
-     * query splitting for multi-keyword searches.
-     * </p>
+     * Unified search across configured Maven repositories with structured boolean query clauses, sorting, version collapsing, and classifier resolution.
      * 
-     * @param query The search query, with terms separated by spaces (e.g., 'junit platform').
-     * @param startIndex The starting index (0-based) for pagination. Defaults to 0 if null.
-     * @param pageSize The maximum number of results to return. Defaults to 100 if null.
-     * @return a MavenSearchResultPage containing the found artifacts.
-     * @throws Exception if an error occurs during the index query or result processing.
+     * @param request The Maven search request parameters.
+     * @return A paginated page of artifact search results.
+     * @throws Exception if an error occurs during search execution.
      */
-    @AgiTool("Searches the Maven index for artifacts matching a given query. The search is performed across all configured repositories (local, remote, and project-specific).")
-    public MavenSearchResultPage searchMavenIndex(
-            @AgiToolParam("The search query, with terms separated by spaces (e.g., 'junit platform').") String query,
-            @AgiToolParam("The starting index (0-based) for pagination. Defaults to 0 if null.") Integer startIndex,
-            @AgiToolParam("The maximum number of results to return. Defaults to 100 if null.") Integer pageSize) throws Exception {
-        
-        if (query == null || query.isBlank()) {
-            throw new IllegalArgumentException("Search query cannot be null or blank.");
+    @AgiTool("Unified search across configured Maven repositories with structured boolean query clauses, sorting, version collapsing, and classifier resolution.")
+    public MavenSearchResultPage searchMaven(
+            @AgiToolParam("The Maven search request parameters.") MavenSearchRequest request) throws Exception {
+
+        if (request == null) {
+            request = new MavenSearchRequest();
         }
-        
-        String q = query.trim();
-        
-        // Apply defaults
-        int start = startIndex != null ? startIndex : 0;
-        int size = pageSize != null ? pageSize : 100;
-        
-        // The AddDependencyPanel logic splits the query by spaces to allow multi-keyword searches.
-        String[] splits = q.split(" "); 
+
+        int start = request.getStartIndex() != null ? Math.max(0, request.getStartIndex()) : 0;
+        int size = request.getPageSize() != null ? Math.max(1, request.getPageSize()) : 25;
+        boolean collapse = request.getCollapseVersions() != null ? request.getCollapseVersions() : true;
+        boolean stableOnly = request.getStableOnly() != null ? request.getStableOnly() : false;
+        MavenSearchRequest.SortStrategy sortBy = request.getSortBy() != null ? request.getSortBy() : MavenSearchRequest.SortStrategy.LATEST_VERSION;
+
+        List<RepositoryInfo> repos = RepositoryPreferences.getInstance().getRepositoryInfos();
+        String gid = request.getGroupId() != null ? request.getGroupId().trim() : null;
+        String aid = request.getArtifactId() != null ? request.getArtifactId().trim() : null;
+
+        List<NBVersionInfo> candidateResults;
+
+        // Fast-path: When both groupId and artifactId are specified and no text query/clause is supplied
+        if (gid != null && !gid.isEmpty() && aid != null && !aid.isEmpty() && request.getClause() == null && (request.getQuery() == null || request.getQuery().isBlank())) {
+            RepositoryQueries.Result<NBVersionInfo> vRes = RepositoryQueries.getVersionsResult(gid, aid, repos);
+            if (vRes.isPartial()) {
+                vRes.waitForSkipped();
+            }
+            candidateResults = vRes.getResults() != null ? new ArrayList<>(vRes.getResults()) : new ArrayList<>();
+        } else if (request.getClause() != null) {
+            candidateResults = executeClause(request.getClause(), repos);
+        } else if (request.getQuery() != null && !request.getQuery().isBlank()) {
+            String[] splits = request.getQuery().trim().split("\\s+");
+            List<NBVersionInfo> intersected = null;
+
+            for (String curText : splits) {
+                List<QueryField> tokenFields = buildTokenFields(curText);
+                List<NBVersionInfo> tokenHits = queryFields(tokenFields, repos);
+
+                if (intersected == null) {
+                    intersected = new ArrayList<>(tokenHits);
+                } else {
+                    Set<String> hitKeys = tokenHits.stream()
+                            .map(h -> h.getGroupId() + ":" + h.getArtifactId() + ":" + h.getVersion())
+                            .collect(Collectors.toSet());
+                    intersected.removeIf(c -> !hitKeys.contains(c.getGroupId() + ":" + c.getArtifactId() + ":" + c.getVersion()));
+                }
+                if (intersected.isEmpty()) {
+                    break;
+                }
+            }
+            candidateResults = intersected != null ? intersected : new ArrayList<>();
+        } else {
+            candidateResults = Collections.emptyList();
+        }
+
+        // Apply additional coordinates filters if supplied alongside query/clause
+        if (gid != null && !gid.isEmpty()) {
+            candidateResults.removeIf(info -> !info.getGroupId().equalsIgnoreCase(gid));
+        }
+        if (aid != null && !aid.isEmpty()) {
+            candidateResults.removeIf(info -> !info.getArtifactId().equalsIgnoreCase(aid));
+        }
+
+        // Apply stable-only filter if requested
+        if (stableOnly) {
+            candidateResults.removeIf(info -> !isStableVersion(info.getVersion()));
+        }
+
+        // Collapse versions if requested (keeping only the newest version per groupId:artifactId)
+        if (collapse) {
+            Map<String, NBVersionInfo> latestByArtifact = new LinkedHashMap<>();
+            for (NBVersionInfo info : candidateResults) {
+                String key = info.getGroupId() + ":" + info.getArtifactId();
+                NBVersionInfo existing = latestByArtifact.get(key);
+                if (existing == null || info.compareToWithoutRepoId(existing) < 0) {
+                    latestByArtifact.put(key, info);
+                }
+            }
+            candidateResults = new ArrayList<>(latestByArtifact.values());
+        }
+
+        // Apply sorting strategy
+        if (sortBy == MavenSearchRequest.SortStrategy.LATEST_VERSION) {
+            candidateResults.sort(NBVersionInfo::compareTo);
+        } else if (sortBy == MavenSearchRequest.SortStrategy.COORDINATES) {
+            candidateResults.sort((a, b) -> {
+                int c = a.getGroupId().compareToIgnoreCase(b.getGroupId());
+                if (c != 0) {
+                    return c;
+                }
+                c = a.getArtifactId().compareToIgnoreCase(b.getArtifactId());
+                if (c != 0) {
+                    return c;
+                }
+                return a.compareTo(b);
+            });
+        } else if (sortBy == MavenSearchRequest.SortStrategy.RELEVANCE) {
+            candidateResults.sort((a, b) -> Float.compare(b.getLuceneScore(), a.getLuceneScore()));
+        }
+
+        int totalCount = candidateResults.size();
+        int toIndex = Math.min(totalCount, start + size);
+        List<NBVersionInfo> pagedSlice = (start < totalCount) ? candidateResults.subList(start, toIndex) : Collections.emptyList();
+
+        List<MavenArtifactSearchResult> pageResults = new ArrayList<>();
+        for (NBVersionInfo info : pagedSlice) {
+            List<String> classifiers = resolveClassifiers(info, repos);
+            MavenArtifactSearchResult item = new MavenArtifactSearchResult(
+                    info.getGroupId(),
+                    info.getArtifactId(),
+                    info.getVersion(),
+                    info.getRepoId(),
+                    info.getPackaging(),
+                    info.getProjectDescription(),
+                    classifiers,
+                    collapse
+            );
+            pageResults.add(item);
+        }
+
+        return new MavenSearchResultPage(start, totalCount, pageResults);
+    }
+
+    /**
+     * Executes a structured {@link MavenQueryClause} against the configured Maven repository indexes.
+     * 
+     * @param clause The query clause to evaluate.
+     * @param repos The repositories to query.
+     * @return The list of matching version records.
+     */
+    private static List<NBVersionInfo> executeClause(MavenQueryClause clause, List<RepositoryInfo> repos) {
+        if (clause == null) {
+            return Collections.emptyList();
+        }
+        if (clause.getSubClauses() != null && !clause.getSubClauses().isEmpty()) {
+            List<NBVersionInfo> composite = null;
+            for (MavenQueryClause sub : clause.getSubClauses()) {
+                List<NBVersionInfo> subHits = executeClause(sub, repos);
+                if (composite == null) {
+                    composite = new ArrayList<>(subHits);
+                } else if (clause.getOccur() == MavenQueryClause.Occur.SHOULD) {
+                    Set<String> existing = composite.stream()
+                            .map(h -> h.getGroupId() + ":" + h.getArtifactId() + ":" + h.getVersion())
+                            .collect(Collectors.toSet());
+                    for (NBVersionInfo h : subHits) {
+                        if (existing.add(h.getGroupId() + ":" + h.getArtifactId() + ":" + h.getVersion())) {
+                            composite.add(h);
+                        }
+                    }
+                } else {
+                    Set<String> subKeys = subHits.stream()
+                            .map(h -> h.getGroupId() + ":" + h.getArtifactId() + ":" + h.getVersion())
+                            .collect(Collectors.toSet());
+                    composite.removeIf(c -> !subKeys.contains(c.getGroupId() + ":" + c.getArtifactId() + ":" + c.getVersion()));
+                }
+            }
+            return composite != null ? composite : Collections.emptyList();
+        }
+
+        String val = clause.getValue();
+        if (val == null || val.isBlank()) {
+            return Collections.emptyList();
+        }
 
         List<QueryField> fields = new ArrayList<>();
-        
-        // Fields to search in the index
-        List<String> fStrings = new ArrayList<>();
-        fStrings.add(QueryField.FIELD_GROUPID);
-        fStrings.add(QueryField.FIELD_ARTIFACTID);
-        fStrings.add(QueryField.FIELD_VERSION);
-        fStrings.add(QueryField.FIELD_NAME);
-        fStrings.add(QueryField.FIELD_DESCRIPTION);
-        fStrings.add(QueryField.FIELD_CLASSES);
+        int matchType = clause.getMatch() == MavenQueryClause.Match.EXACT ? QueryField.MATCH_EXACT : QueryField.MATCH_ANY;
+        int occurType = clause.getOccur() == MavenQueryClause.Occur.MUST ? QueryField.OCCUR_MUST : QueryField.OCCUR_SHOULD;
 
-        // For each word in the query, search all fields
-        for (String curText : splits) {
-            for (String fld : fStrings) {
-                QueryField f = new QueryField();
-                f.setField(fld);
-                f.setValue(curText);
-                f.setMatch(QueryField.MATCH_ANY);
-                f.setOccur(QueryField.OCCUR_SHOULD);
-                fields.add(f);
+        MavenQueryClause.TargetField tf = clause.getField() != null ? clause.getField() : MavenQueryClause.TargetField.ALL;
+        if (tf == MavenQueryClause.TargetField.ALL) {
+            List<String> allFields = List.of(
+                QueryField.FIELD_GROUPID, QueryField.FIELD_ARTIFACTID,
+                QueryField.FIELD_NAME, QueryField.FIELD_DESCRIPTION, QueryField.FIELD_CLASSES
+            );
+            for (String fld : allFields) {
+                QueryField qf = new QueryField();
+                qf.setField(fld);
+                qf.setValue(val.trim());
+                qf.setMatch(matchType);
+                qf.setOccur(QueryField.OCCUR_SHOULD);
+                fields.add(qf);
             }
+        } else {
+            QueryField qf = new QueryField();
+            qf.setField(toQueryFieldName(tf));
+            qf.setValue(val.trim());
+            qf.setMatch(matchType);
+            qf.setOccur(occurType);
+            fields.add(qf);
         }
 
-        // Perform the search against all configured repositories
-        RepositoryQueries.Result<NBVersionInfo> results = RepositoryQueries.findResult(fields, RepositoryPreferences.getInstance().getRepositoryInfos());
+        return queryFields(fields, repos);
+    }
 
-        // Wait for partial results to complete (if any)
+    /**
+     * Maps a {@link MavenQueryClause.TargetField} enum to the internal NetBeans {@link QueryField} string constant.
+     * 
+     * @param targetField The target field enum.
+     * @return The corresponding NetBeans QueryField constant.
+     */
+    private static String toQueryFieldName(MavenQueryClause.TargetField targetField) {
+        if (targetField == null) {
+            return QueryField.FIELD_ANY;
+        }
+        return switch (targetField) {
+            case GROUP_ID -> QueryField.FIELD_GROUPID;
+            case ARTIFACT_ID -> QueryField.FIELD_ARTIFACTID;
+            case VERSION -> QueryField.FIELD_VERSION;
+            case PACKAGING -> QueryField.FIELD_PACKAGING;
+            case NAME -> QueryField.FIELD_NAME;
+            case DESCRIPTION -> QueryField.FIELD_DESCRIPTION;
+            case CLASSES -> QueryField.FIELD_CLASSES;
+            case ALL -> QueryField.FIELD_ANY;
+        };
+    }
+
+    /**
+     * Executes a list of {@link QueryField}s against the specified repository indexes and waits for results.
+     * 
+     * @param fields The list of query fields.
+     * @param repos The repositories to query.
+     * @return The list of matching version records.
+     */
+    private static List<NBVersionInfo> queryFields(List<QueryField> fields, List<RepositoryInfo> repos) {
+        RepositoryQueries.Result<NBVersionInfo> results = RepositoryQueries.findResult(fields, repos);
         if (results.isPartial()) {
             results.waitForSkipped();
         }
+        return results.getResults() != null ? new ArrayList<>(results.getResults()) : new ArrayList<>();
+    }
 
-        // Process and return the results with pagination
-        if (results.getResults() == null) {
-            return new MavenSearchResultPage(start, 0, Collections.emptyList());
+    /**
+     * Builds a list of {@link QueryField} objects for searching across all standard metadata fields for a single token.
+     * 
+     * @param token The search term.
+     * @return The list of query fields configured with SHOULD occurrence.
+     */
+    private static List<QueryField> buildTokenFields(String token) {
+        List<QueryField> fields = new ArrayList<>();
+        List<String> fStrings = List.of(
+            QueryField.FIELD_GROUPID, QueryField.FIELD_ARTIFACTID,
+            QueryField.FIELD_NAME, QueryField.FIELD_DESCRIPTION, QueryField.FIELD_CLASSES
+        );
+        for (String fld : fStrings) {
+            QueryField f = new QueryField();
+            f.setField(fld);
+            f.setValue(token);
+            f.setMatch(QueryField.MATCH_ANY);
+            f.setOccur(QueryField.OCCUR_SHOULD);
+            fields.add(f);
         }
-        
-        List<NBVersionInfo> allResults = results.getResults();
-        int totalCount = allResults.size();
+        return fields;
+    }
 
-        List<MavenArtifactSearchResult> page = allResults.stream()
-                .skip(start)
-                .limit(size)
-                .map(info -> new MavenArtifactSearchResult(
-                        info.getGroupId(),
-                        info.getArtifactId(),
-                        info.getVersion(),
-                        info.getRepoId(),
-                        info.getPackaging(),
-                        info.getProjectDescription()
-                ))
-                .collect(Collectors.toList());
-        
-        return new MavenSearchResultPage(start, totalCount, page);
+    /**
+     * Determines whether a Maven artifact version string represents a stable release.
+     * 
+     * @param version The version string to evaluate.
+     * @return true if the version does not contain alpha, beta, rc, milestone, preview, or snapshot markers.
+     */
+    private static boolean isStableVersion(String version) {
+        if (version == null) {
+            return false;
+        }
+        String lower = version.toLowerCase(Locale.ENGLISH);
+        return !lower.contains("alpha") && !lower.contains("beta") && !lower.contains("rc")
+                && !lower.contains("snapshot") && !lower.contains("preview") && !lower.contains("-m")
+                && !lower.matches(".*-(ea|cr|b)\\d+.*");
+    }
+
+    /**
+     * Resolves all available classifiers (including sources and javadoc) for a given artifact version.
+     * 
+     * @param info The artifact version information.
+     * @param repos The repositories to inspect.
+     * @return A sorted list of available classifiers, or null if none are present.
+     */
+    private static List<String> resolveClassifiers(NBVersionInfo info, List<RepositoryInfo> repos) {
+        List<String> classifiers = new ArrayList<>();
+        try {
+            RepositoryQueries.Result<NBVersionInfo> recordsRes = RepositoryQueries.getRecordsResult(
+                    info.getGroupId(), info.getArtifactId(), info.getVersion(), repos);
+            if (recordsRes != null && recordsRes.getResults() != null) {
+                for (NBVersionInfo rec : recordsRes.getResults()) {
+                    String cls = rec.getClassifier();
+                    if (cls != null && !cls.isBlank() && !classifiers.contains(cls)) {
+                        classifiers.add(cls);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Failed to resolve record classifiers for {0}:{1}:{2}", new Object[]{info.getGroupId(), info.getArtifactId(), info.getVersion()});
+        }
+
+        if (info.isSourcesExists() && !classifiers.contains("sources")) {
+            classifiers.add("sources");
+        }
+        if (info.isJavadocExists() && !classifiers.contains("javadoc")) {
+            classifiers.add("javadoc");
+        }
+        Collections.sort(classifiers);
+        return classifiers.isEmpty() ? null : classifiers;
     }
     //</editor-fold>
 
@@ -287,17 +546,21 @@ public class Maven extends AnahataToolkit {
             @AgiToolParam("The groupId of the dependency.") String groupId,
             @AgiToolParam("The artifactId of the dependency.") String artifactId,
             @AgiToolParam("The version of the dependency.") String version,
-            @AgiToolParam("The scope of the dependency (e.g., 'compile', 'test'). If null, defaults to 'compile'.") String scope,
-            @AgiToolParam("The classifier of the dependency (e.g., 'jdk17'). Can be null.") String classifier,
-            @AgiToolParam("The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.") String type) {
+            @AgiToolParam(value = "The scope of the dependency (e.g., 'compile', 'test'). If null, defaults to 'compile'.", required = false) String scope,
+            @AgiToolParam(value = "The classifier of the dependency (e.g., 'jdk17'). Can be null.", required = false) String classifier,
+            @AgiToolParam(value = "The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.", required = false) String type) {
         
         AddDependencyResult.AddDependencyResultBuilder resultBuilder = AddDependencyResult.builder();
         StringBuilder summary = new StringBuilder();
 
         try {
+            String effectiveScope = (scope == null || scope.isBlank()) ? null : scope.trim();
+            String effectiveType = (type == null || type.isBlank()) ? null : type.trim();
+            String effectiveClassifier = (classifier == null || classifier.isBlank() || "jar".equalsIgnoreCase(classifier.trim())) ? null : classifier.trim();
+
             // Phase 1: Pre-flight Check
             summary.append("Phase 1: Pre-flight check...\n");
-            boolean preflightSuccess = downloadDependencyArtifact(projectPath, groupId, artifactId, version, classifier, type);
+            boolean preflightSuccess = downloadDependencyArtifact(projectPath, groupId, artifactId, version, effectiveClassifier, effectiveType);
             resultBuilder.preflightCheckSuccess(preflightSuccess);
 
             if (!preflightSuccess) {
@@ -316,10 +579,6 @@ public class Maven extends AnahataToolkit {
                 error("Could not find pom.xml");
                 return resultBuilder.pomModificationSuccess(false).summary(summary.toString()).build();
             }
-
-            String effectiveScope = (scope == null || scope.isBlank()) ? null : scope;
-            String effectiveType = (type == null || type.isBlank()) ? null : type;
-            String effectiveClassifier = (classifier == null || classifier.isBlank()) ? null : classifier;
             
             // ModelUtils.addDependency signature: (FileObject, String, String, String, String type, String scope, String classifier, boolean isTest)
             ModelUtils.addDependency(pom, groupId, artifactId, version, effectiveType, effectiveScope, effectiveClassifier, false);
@@ -735,8 +994,8 @@ public class Maven extends AnahataToolkit {
                 @AgiToolParam("The groupId of the dependency.") String groupId,
                 @AgiToolParam("The artifactId of the dependency.") String artifactId,
                 @AgiToolParam("The version of the dependency (e.g., 'LATEST', '1.0.0').") String version,
-                @AgiToolParam("The classifier of the artifact to download (e.g., 'sources', 'javadoc'). Use null for the main artifact.") String classifier,
-                @AgiToolParam("The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.") String type) throws Exception {
+                @AgiToolParam(value = "The classifier of the artifact to download (e.g., 'sources', 'javadoc'). Use null for the main artifact.", required = false) String classifier,
+                @AgiToolParam(value = "The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.", required = false) String type) throws Exception {
         Project project = NbProjects.findOpenProject(projectPath);
         NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
         if (nbMavenProject == null) {
@@ -745,15 +1004,18 @@ public class Maven extends AnahataToolkit {
 
         MavenEmbedder embedder = EmbedderFactory.getOnlineEmbedder();
 
+        String effectiveType = (type == null || type.isBlank()) ? "jar" : type.trim();
+        String effectiveClassifier = (classifier == null || classifier.isBlank() || "jar".equalsIgnoreCase(classifier.trim())) ? null : classifier.trim();
+
         Artifact temporaryArtifact = embedder.createArtifactWithClassifier(
                 groupId,
                 artifactId,
                 version,
-                type != null ? type : "jar",
-                classifier
+                effectiveType,
+                effectiveClassifier
         );
 
-        return downloadArtifact(embedder, nbMavenProject, temporaryArtifact, classifier, new StringBuilder());
+        return downloadArtifact(embedder, nbMavenProject, temporaryArtifact, effectiveClassifier, new StringBuilder());
     }
     
     /**
