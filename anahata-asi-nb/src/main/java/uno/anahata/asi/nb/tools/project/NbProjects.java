@@ -115,29 +115,30 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
     /**
      * {@inheritDoc}
      * <p>
-     * Provides a Markdown-formatted guide on how to handle Compile On Save
-     * (CoS) project property overrides, explaining the priority of IDE
-     * configuration over POM properties and detailing FQN/path resolution
-     * strategies for loading java types by fqn or path.</p>
+     * Provides a Markdown-formatted guide on how the unified project context providers
+     * function, detailing the integrated Overview, Alerts, and Structure sections,
+     * FQN and path resolution strategies, structure granularity scoping, the automated
+     * Compile On Save / Project Alerts feedback loop, and Compile On Save (CoS)
+     * project property overrides explaining the priority of IDE configuration over POM properties.</p>
      *
      * @return A list containing the project management instructions.
      * @throws Exception on internal error.
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return Collections.singletonList("The Projects toolkit and its associated context providers allows you to interact with the netbeans projects api."
-                + ""
-                + "Besides from the tools, this toolkit automaticall registers three context providers for each open project and registers/unregisters these project-level context providers whenever the user opens or closes a project in this running instanc of NetBeans during the course of the session."
-                + "\na)Project Overview - has basic info about the project and loads the anahata.md file on the root of the project's folder as a managed Resource with SYSTEM_INSTRUCTIONS position."
-                + " These anahata.md files.are the project-level system instructions so **Don't unload these anahata.md resources without the users consent**. You can update the anahata.md file if the user asks you to using the Resources toolkit. "
-                + "This context provider has 2 child context providers:"
-                + "\n\tb)Project Structure (directory tree, file inf(type, size, version controls, sessions in context) "
-                + "\n\tc)Project Alerts: Project level problems and javac alerts. "
-                + "\n\n"
-                + "**Fqn / path resulutions**: use the Structure context provider of each project to work out fqns of all project types and the paths of all project files. Load project types with 'CodeModel.getTypeSourcesByFqn' and any other project files with the Resources toolkit. "
-                + "By default, there is a Structure context provider for each open project so you should be able to see /workout the fqns of all types in all open projects and if you have no reason to believe that there could be another type with the same fqn then there is no need to do CodeModel.findTypes, just go straight for the getXxxxbyFqn methods \n."
-                + "If you see an open project but it has no Structure context provider or it is not providing, then you can also assume there isn't any other type with the same fqn in that project."
-                + "\n\nCompile on Save (CoS) Management:\n"
+        return Collections.singletonList("The Projects toolkit and its associated context providers allow you to interact with the NetBeans Projects API.\n\n"
+                + "Besides from the tools, this toolkit automatically registers a unified project context provider for each open project in the IDE, synchronizing whenever projects are opened or closed.\n"
+                + "Each project context provider populates three integrated sections in the RAG message:\n"
+                + "1. **Project Overview**: Core metadata (packaging, Java source/target levels, encoding, Compile on Save, actions, declared dependencies, and VCS repository status). It also automatically synchronizes the project's root `anahata.md` file as a managed resource with SYSTEM_INSTRUCTIONS context position. These `anahata.md` files contain project-level system instructions, so **do not unload them without user consent**. You can update `anahata.md` using the Resources toolkit if requested.\n"
+                + "2. **Project Alerts**: Diagnostic issues, compiler errors (file-level javac alerts), and high-level project problems if any are present.\n"
+                + "3. **Project Structure**: High-speed AST directory tree of source packages, types, inner classes, resource folders, root files, and version control status badges.\n\n"
+                + "**FQN & Path Resolutions**: Use the Project Structure section of each project in the RAG message to work out the FQNs of all project types and the paths of all project files. Load Java source files with `Resources.loadResources` or `CodeModel.loadTypeSourcesByFqn` and any other project files with the Resources toolkit. By default, each open project provides its structure in the RAG message, so you can see all types and packages; if you have no reason to believe that there could be another type with the same FQN, go straight to loading by FQN rather than calling `CodeModel.findTypes`.\n\n"
+                + "**Project Structure Granularity Scope**: Use `setProjectStructureScope` to dynamically configure what metadata is included in the project structure (e.g. alerts, element kinds, inner classes, file sizes, VCS badges, supertypes, Javadocs).\n\n"
+                + "**Compile on Save & Alert Feedback Loop (DO NOT routinely call Maven compile)**:\n"
+                + "When Compile on Save (CoS) and Project Alerts are enabled, the platform holds the reloop of tool execution until the NetBeans background parser/scanner completes, guaranteeing that all compiler alerts for modified files are automatically included in the next turn's RAG message along with the tool response. "
+                + "Therefore, **never routinely invoke Maven compile (`Maven.runGoals`) or NetBeans project build actions (`NbProjects.invokeAction`) merely to check for compilation errors after modifying files**—doing so wastes turns. "
+                + "Only run Maven compile or build if new files were created, pom.xml dependencies were changed, or you have grounded reasons to believe Compile on Save is insufficient to verify your changes.\n\n"
+                + "Compile on Save (CoS) Management:\n"
                 + "NetBeans Maven projects determine the 'Compile on Save' status using a tiered priority system. "
                 + "When a user asks to change this setting, you should offer these options:\n"
                 + "1. **Project POM**: Add/update `<netbeans.compile.on.save>all</netbeans.compile.on.save>` in the project's `pom.xml` properties.\n"
@@ -731,7 +732,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
      * @param enabled Whether to enable the context provider.
      */
     @Override
-    @AgiTool("Enables or disables the top level project context provider (overview and anahata.md) for a specific project.")
+    @AgiTool("Enables or disables the project context provider for a specific project.")
     public void setProjectProviderEnabled(
             @AgiToolParam(value = "The absolute path of the project.", rendererId = "path") String projectPath,
             @AgiToolParam("Whether to enable the context provider.") boolean enabled) {
@@ -812,13 +813,13 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
             if (getProjectProvider(path).isEmpty()) {
                 NbProjectContextProvider gpcp = new NbProjectContextProvider(this, p);
                 childrenProviders.add(gpcp);
-                log.info("Added GrandProjectContextProvider for: {}", gpcp.getName());
+                log.info("Added NbProjectContextProvider for: {}", gpcp.getName());
             }
         }
         childrenProviders.removeIf(cp -> {
             if (cp instanceof NbProjectContextProvider gpcp) {
                 if (!currentPaths.contains(gpcp.getProjectPath())) {
-                    log.info("Removing GrandProjectContextProvider for closed project at: {}", gpcp.getProjectPath());
+                    log.info("Removing NbProjectContextProvider for closed project at: {}", gpcp.getProjectPath());
                     gpcp.getFlattenedHierarchy(false).forEach(child -> child.setProviding(false));
                     return true;
                 }
