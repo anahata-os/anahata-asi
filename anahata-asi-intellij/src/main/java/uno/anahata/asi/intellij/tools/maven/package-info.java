@@ -6,7 +6,7 @@
  * Interfaces directly with IntelliJ's native Maven integration subsystem:
  * </p>
  * <ul>
- *   <li>{@link uno.anahata.asi.intellij.tools.maven.Maven}: Toolkit for querying imported Maven projects, resolving
+ *   <li>{@link IntellijMaven}: Toolkit for querying imported Maven projects, resolving
  *       dependencies, parsing {@code pom.xml} declared dependencies, executing goals via {@link org.jetbrains.idea.maven.execution.MavenRunner},
  *       adding dependencies, and performing unified artifact searches.</li>
  *   <li>{@link uno.anahata.asi.intellij.tools.maven.MavenArtifactGroup}: Consolidated model representing a Maven artifact with

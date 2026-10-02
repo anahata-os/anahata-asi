@@ -14,11 +14,9 @@
  * <ul>
  *   <li><b>Context Abstraction</b>: {@link uno.anahata.asi.nb.tools.project.context.AbstractProjectContextProvider} 
  *       standardizes project resolution and IDE UI notification logic.</li>
- *   <li><b>Root Orchestration</b>: {@link uno.anahata.asi.nb.tools.project.context.ProjectContextProvider} 
- *       acts as the lifecycle manager for a project's context, including its associated instructions.</li>
- *   <li><b>Structural Providers</b>: Specialized providers like {@link uno.anahata.asi.nb.tools.project.context.ProjectStructureContextProvider} 
- *       and {@link uno.anahata.asi.nb.tools.project.context.ProjectFilesContextProvider} generate 
- *       high-fidelity Markdown representations of the project's internal state.</li>
+ *   <li><b>Unified Provider</b>: {@link NbProjectContextProvider} 
+ *       acts as the single cohesive provider combining project overview, compiler diagnostics, 
+ *       AST structure, and project-specific instructions (via {@code anahata.md}).</li>
  * </ul>
  * 
  * @author anahata

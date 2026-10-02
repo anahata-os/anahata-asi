@@ -12,7 +12,7 @@
  * Key Functional Components:
  * </p>
  * <ul>
- *   <li><b>Context Provisioning</b>: The {@link uno.anahata.asi.nb.tools.project.alerts.ProjectAlertsContextProvider} 
+ *   <li><b>Context Provisioning</b>: The {@link uno.anahata.asi.nb.tools.project.context.NbProjectContextProvider} 
  *       injects live diagnostic data into the RAG message, allowing the ASI to respond 
  *       immediately to build failures or environment issues.</li>
  *   <li><b>Diagnostic Models</b>: Data structures like {@link uno.anahata.asi.nb.tools.project.alerts.JavacAlert} 
