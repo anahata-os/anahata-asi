@@ -1,6 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.tools.maven;
 
+import com.intellij.execution.process.ProcessEvent;
+import com.intellij.execution.process.ProcessHandler;
+import com.intellij.execution.process.ProcessListener;
+import com.intellij.execution.process.ProcessOutputType;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
@@ -8,10 +12,13 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.util.Consumer;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.idea.maven.execution.MavenRunner;
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
+import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
 import org.jetbrains.idea.maven.indices.MavenArtifactSearchResult;
 import org.jetbrains.idea.maven.indices.MavenArtifactSearcher;
 import org.jetbrains.idea.maven.model.MavenArtifact;
@@ -22,12 +29,17 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
 import uno.anahata.asi.toolkit.maven.DependencyGroup;
 import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.toolkit.maven.MavenBuildResult;
+import uno.anahata.asi.toolkit.maven.MavenBuildResult.ProcessStatus;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,8 +51,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -69,12 +83,12 @@ import uno.anahata.asi.agi.message.RagMessage;
  */
 @Slf4j
 @AgiToolkit("A toolkit for inspecting and building Maven projects in IntelliJ IDEA.")
-public class Maven extends AnahataToolkit {
+public class IntellijMaven extends AnahataToolkit {
 
     /**
      * Constructs the Maven toolkit (instantiated reflectively via its public no-arg constructor).
      */
-    public Maven() {
+    public IntellijMaven() {
     }
 
     /**
@@ -219,98 +233,320 @@ public class Maven extends AnahataToolkit {
         }
     }
 
+    /** Maximum number of output lines to keep in stdOutput in the DTO (head + tail). */
+    private static final int MAX_OUTPUT_HEAD_LINES = 25;
+    private static final int MAX_OUTPUT_TAIL_LINES = 75;
+    /** Default timeout for Maven build execution (15 minutes). */
+    private static final int DEFAULT_TIMEOUT_SECONDS = 900;
+
     /**
-     * Executes Maven goals against the project at the given path and awaits completion.
-     * <p>
-     * The goals run through the platform {@link MavenRunner}; this call blocks (off the EDT)
-     * until the build finishes or a generous timeout elapses. Console output is shown in the
-     * IDE's Maven Run tool window.
-     * </p>
+     * Executes Maven goals against a project synchronously, streaming stdout/stderr to the tool logs,
+     * saving the full untruncated log file to disk, and returning a structured {@link MavenBuildResult}.
      *
-     * @param projectPath the absolute path of the project directory or its {@code pom.xml}.
-     * @param goals       the Maven goals to run (e.g. {@code clean}, {@code install}).
-     * @param profiles    the profiles to activate, or {@code null}/empty for none.
-     * @return a completion summary.
-     * @throws AgiToolException if the project cannot be resolved or the build is interrupted.
+     * @param projectPath    the absolute path of the Maven project directory or its {@code pom.xml}.
+     * @param goals          the Maven goals to run (e.g. {@code ['clean', 'package']}).
+     * @param profiles       the profiles to activate, or {@code null}/empty for none.
+     * @param properties     a map of custom properties to set ({@code -Dkey=value}).
+     * @param options        a list of additional command-line options (e.g. {@code ['-X', '-U', '--offline']}).
+     * @param skipTests      whether to skip tests ({@code -DskipTests}). Defaults to {@code false}.
+     * @param vmOptions      JVM options for the runner (e.g. {@code '-Xmx2048m'}).
+     * @param timeoutSeconds the maximum time to wait for the build to complete, in seconds (default 900).
+     * @return a {@link MavenBuildResult} containing execution status, exit code, output, error, and log file path.
+     * @throws AgiToolException if the project cannot be resolved.
      */
-    @AgiTool("Executes Maven goals against a project and waits for completion (output shows in the IDE Maven console).")
-    public String runGoals(
+    @AgiTool("Executes Maven goals against a project synchronously, streaming stdout/stderr to the tool logs, saving the full build log to disk, and returning a structured MavenBuildResult.")
+    public MavenBuildResult runGoals(
             @AgiToolParam("The absolute path of the Maven project directory or its pom.xml.") String projectPath,
-            @AgiToolParam("The Maven goals to run, e.g. ['clean','install'].") List<String> goals,
-            @AgiToolParam(value = "Profiles to activate, or empty for none.", required = false) List<String> profiles) throws AgiToolException {
+            @AgiToolParam("The Maven goals to run, e.g. ['clean','package'].") List<String> goals,
+            @AgiToolParam(value = "Profiles to activate, or empty for none.", required = false) List<String> profiles,
+            @AgiToolParam(value = "A map of properties to set (-Dkey=value).", required = false) Map<String, String> properties,
+            @AgiToolParam(value = "A list of additional Maven options (e.g. ['-X', '-U', '--offline']).", required = false) List<String> options,
+            @AgiToolParam(value = "Whether to skip tests (-DskipTests). Defaults to false.", required = false) Boolean skipTests,
+            @AgiToolParam(value = "JVM options for the runner (e.g. '-Xmx2048m').", required = false) String vmOptions,
+            @AgiToolParam(value = "The maximum time to wait for the build to complete, in seconds (default 900).", required = false) Integer timeoutSeconds) throws AgiToolException {
 
         Object[] context = resolveMavenContext(projectPath);
         Project ideProject = (Project) context[0];
         MavenProject mp = (MavenProject) context[1];
         String workingDir = mp.getDirectory();
 
+        List<String> commandLine = new ArrayList<>(goals);
+        if (options != null) {
+            commandLine.addAll(options);
+        }
+
+        MavenRunner runner = MavenRunner.getInstance(ideProject);
         MavenRunnerParameters params = new MavenRunnerParameters(
-                true, workingDir, "pom.xml", goals,
-                profiles != null ? profiles : Collections.emptyList());
+                true,
+                workingDir,
+                "pom.xml",
+                commandLine,
+                profiles != null ? profiles : Collections.emptyList()
+        );
 
+        MavenRunnerSettings settings = runner.getSettings().clone();
+        if (properties != null && !properties.isEmpty()) {
+            settings.getMavenProperties().putAll(properties);
+        }
+        if (skipTests != null) {
+            settings.setSkipTests(skipTests);
+        }
+        if (vmOptions != null && !vmOptions.isBlank()) {
+            settings.setVmOptions(vmOptions.trim());
+        }
+
+        int effectiveTimeout = (timeoutSeconds != null && timeoutSeconds > 0) ? timeoutSeconds : DEFAULT_TIMEOUT_SECONDS;
+        log("Executing Maven goals " + goals + " on " + mp.getMavenId());
+
+        List<String> stdoutLines = new ArrayList<>();
+        List<String> stderrLines = new ArrayList<>();
+        StringBuilder stdoutLineBuf = new StringBuilder();
+        StringBuilder stderrLineBuf = new StringBuilder();
+        List<MavenBuildResult.BuildPhase> phases = Collections.synchronizedList(new ArrayList<>());
+        Map<String, Long> mojoStartTimes = new ConcurrentHashMap<>();
+        AtomicInteger exitCodeHolder = new AtomicInteger(-1);
         CountDownLatch latch = new CountDownLatch(1);
-        ApplicationManager.getApplication().invokeLater(() -> {
-            MavenRunner runner = MavenRunner.getInstance(ideProject);
-            runner.run(params, runner.getSettings(), latch::countDown);
-        });
+        ProcessHandler[] processHandlerHolder = new ProcessHandler[1];
 
+        File tempLogFile;
+        BufferedWriter logWriter;
         try {
-            boolean finished = latch.await(15, TimeUnit.MINUTES);
-            if (!finished) {
-                return "Maven goals " + goals + " are still running after 15 minutes for " + projectPath
-                        + " (see the Maven Run console).";
+            tempLogFile = File.createTempFile("anahata-intellij-maven-", ".log");
+            logWriter = new BufferedWriter(new FileWriter(tempLogFile));
+        } catch (Exception e) {
+            throw new AgiToolException("Failed to initialize temporary log file: " + e.getMessage());
+        }
+
+        Consumer<ProcessHandler> onAttach = processHandler -> {
+            processHandlerHolder[0] = processHandler;
+            processHandler.addProcessListener(new ProcessListener() {
+                @Override
+                public void startNotified(ProcessEvent event) {
+                }
+
+                @Override
+                public void processTerminated(ProcessEvent event) {
+                    exitCodeHolder.set(event.getExitCode());
+                    flushLineBuffer(stdoutLineBuf, stdoutLines, phases, mojoStartTimes);
+                    flushLineBuffer(stderrLineBuf, stderrLines, null, null);
+                    latch.countDown();
+                }
+
+                @Override
+                public void onTextAvailable(ProcessEvent event, Key outputType) {
+                    String text = event.getText();
+                    if (ProcessOutputType.isStderr(outputType)) {
+                        processTextChunk(text, stderrLineBuf, logWriter, stderrLines, null, null);
+                    } else {
+                        processTextChunk(text, stdoutLineBuf, logWriter, stdoutLines, phases, mojoStartTimes);
+                    }
+                }
+            });
+        };
+
+        String actionTitle = "Maven: " + String.join(" ", goals);
+        runner.runBatch(
+                List.of(params),
+                null,
+                settings,
+                actionTitle,
+                null,
+                onAttach,
+                false
+        );
+
+        ProcessStatus status;
+        try {
+            boolean finished = latch.await(effectiveTimeout, TimeUnit.SECONDS);
+            if (finished) {
+                status = ProcessStatus.COMPLETED;
+            } else {
+                status = ProcessStatus.TIMEOUT;
+                if (processHandlerHolder[0] != null) {
+                    processHandlerHolder[0].destroyProcess();
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new AgiToolException("Interrupted while awaiting Maven goals for: " + projectPath);
+            status = ProcessStatus.INTERRUPTED;
+            if (processHandlerHolder[0] != null) {
+                processHandlerHolder[0].destroyProcess();
+            }
+        } finally {
+            try {
+                synchronized (logWriter) {
+                    logWriter.flush();
+                    logWriter.close();
+                }
+            } catch (Exception ignored) {
+            }
         }
-        log("Maven goals " + goals + " completed for " + projectPath);
-        return "Maven goals " + goals + " completed for " + mp.getMavenId() + " (output in the IDE Maven Run console).";
+
+        String logFilePath = tempLogFile.getAbsolutePath();
+        String stdOutput;
+        synchronized (stdoutLines) {
+            int total = stdoutLines.size();
+            if (total <= (MAX_OUTPUT_HEAD_LINES + MAX_OUTPUT_TAIL_LINES)) {
+                stdOutput = String.join("\n", stdoutLines);
+            } else {
+                List<String> head = stdoutLines.subList(0, MAX_OUTPUT_HEAD_LINES);
+                List<String> tail = stdoutLines.subList(total - MAX_OUTPUT_TAIL_LINES, total);
+                int omitted = total - MAX_OUTPUT_HEAD_LINES - MAX_OUTPUT_TAIL_LINES;
+                stdOutput = String.join("\n", head)
+                        + "\n\n... [truncated " + omitted + " lines; see full log file at: " + logFilePath + "] ...\n\n"
+                        + String.join("\n", tail);
+            }
+        }
+
+        String stdError;
+        synchronized (stderrLines) {
+            int total = stderrLines.size();
+            int startIdx = Math.max(0, total - MAX_OUTPUT_TAIL_LINES);
+            stdError = String.join("\n", stderrLines.subList(startIdx, total));
+        }
+
+        Integer exitCode = exitCodeHolder.get();
+
+        log("Maven run completed with status: " + status + ", exitCode: " + exitCode + ", " + phases.size() + " phases executed. (Log: " + logFilePath + ")");
+        return new MavenBuildResult(status, exitCode, stdOutput, stdError, logFilePath, phases);
     }
 
     /**
-     * Searches the configured Maven repository index for artifacts matching a query.
-     * <p>
-     * Uses {@link MavenArtifactSearcher} against the index of the first open project. Results
-     * depend on the repository index having been built/downloaded by the IDE; an empty result
-     * usually means the index is not yet available.
-     * </p>
+     * Accumulates character chunks from process output, buffers complete lines on newlines,
+     * strips carriage returns, parses IntelliJ EventSpy telemetry into build phases, and writes
+     * clean output lines to the target collection and disk log.
      *
-     * @param query      the search query (matched against groupId/artifactId).
-     * @param maxResults the maximum number of results, or {@code null} for 50.
-     * @return a Markdown listing of matching {@code groupId:artifactId:version} coordinates.
-     * @throws AgiToolException if no project is open.
+     * @param text            the incoming chunk from the process handler.
+     * @param lineBuffer      the line accumulator.
+     * @param logWriter       the file writer to preserve untruncated logs on disk.
+     * @param targetLines     the collection storing captured lines.
+     * @param phases          the build phases collection to populate from EventSpy telemetry.
+     * @param mojoStartTimes  the map tracking mojo start timestamps.
      */
-    @AgiTool("Searches the Maven repository index for artifacts matching a query (requires the IDE's repository index).")
-    public String searchMavenIndex(
-            @AgiToolParam("The search query, matched against groupId/artifactId.") String query,
-            @AgiToolParam(value = "The maximum number of results (default 50).", required = false) Integer maxResults) throws AgiToolException {
+    private static void processTextChunk(
+            String text,
+            StringBuilder lineBuffer,
+            BufferedWriter logWriter,
+            List<String> targetLines,
+            List<MavenBuildResult.BuildPhase> phases,
+            Map<String, Long> mojoStartTimes) {
 
-        Project[] open = ProjectManager.getInstance().getOpenProjects();
-        if (open.length == 0) {
-            throw new AgiToolException("No open project to search the Maven index against.");
+        if (text == null) {
+            return;
         }
-        Project ideProject = open[0];
-        int max = maxResults != null ? maxResults : 50;
-
-        List<MavenArtifactSearchResult> results = ReadAction.computeBlocking(() ->
-                new MavenArtifactSearcher().search(ideProject, query, max));
-        if (results.isEmpty()) {
-            return "No index results for '" + query + "' (the repository index may not be built yet).";
+        try {
+            synchronized (logWriter) {
+                logWriter.write(text);
+            }
+        } catch (Exception ignored) {
         }
 
-        StringBuilder sb = new StringBuilder("## Maven Index Results: '").append(query).append("'\n");
-        for (MavenArtifactSearchResult result : results) {
-            MavenRepoArtifactInfo info = result.getSearchResults();
-            if (info != null) {
-                sb.append("- `").append(info.getGroupId()).append(":").append(info.getArtifactId());
-                if (info.getVersion() != null) {
-                    sb.append(":").append(info.getVersion());
+        synchronized (lineBuffer) {
+            lineBuffer.append(text);
+            int newlineIdx;
+            while ((newlineIdx = lineBuffer.indexOf("\n")) != -1) {
+                String line = lineBuffer.substring(0, newlineIdx).replaceAll("\r$", "").trim();
+                lineBuffer.delete(0, newlineIdx + 1);
+
+                if (!line.isEmpty()) {
+                    if (line.startsWith("[IJ]-")) {
+                        handleIjTelemetryLine(line, phases, mojoStartTimes);
+                    } else {
+                        synchronized (targetLines) {
+                            targetLines.add(line);
+                        }
+                    }
                 }
-                sb.append("`\n");
             }
         }
-        return sb.toString();
+    }
+
+    /**
+     * Parses an internal IntelliJ EventSpy IPC line into structured key-value attributes.
+     *
+     * @param line the raw event line starting with {@code [IJ]-}.
+     * @return a map containing the event attributes including {@code eventType}.
+     */
+    private static Map<String, String> parseIjEvent(String line) {
+        Map<String, String> map = new LinkedHashMap<>();
+        String[] parts = line.split("-\\[IJ\\]-");
+        if (parts.length > 0) {
+            String event = parts[0].replaceAll("^\\[IJ\\]-\\d+-", "").replaceAll("^\\[IJ\\]-", "").trim();
+            map.put("eventType", event);
+        }
+        for (int i = 1; i < parts.length; i++) {
+            String part = parts[i];
+            int eq = part.indexOf('=');
+            if (eq != -1) {
+                map.put(part.substring(0, eq).trim(), part.substring(eq + 1).trim());
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Inspects an IntelliJ EventSpy line and updates the active build phase lifecycle records.
+     *
+     * @param line           the event line.
+     * @param phases         the list of build phases to record into.
+     * @param mojoStartTimes the map tracking active mojo start timestamps.
+     */
+    private static void handleIjTelemetryLine(
+            String line,
+            List<MavenBuildResult.BuildPhase> phases,
+            Map<String, Long> mojoStartTimes) {
+
+        if (phases == null || mojoStartTimes == null) {
+            return;
+        }
+        Map<String, String> event = parseIjEvent(line);
+        String eventType = event.get("eventType");
+        if (eventType == null) {
+            return;
+        }
+        String id = event.getOrDefault("id", "unknown");
+        String goal = event.getOrDefault("goal", "unknown");
+        String key = id + ":" + goal;
+
+        if ("MojoStarted".equals(eventType)) {
+            mojoStartTimes.put(key, System.currentTimeMillis());
+        } else if ("MojoSucceeded".equals(eventType) || "MojoFailed".equals(eventType)) {
+            Long startTime = mojoStartTimes.remove(key);
+            long duration = (startTime != null) ? Math.max(0, System.currentTimeMillis() - startTime) : 0;
+            boolean success = "MojoSucceeded".equals(eventType);
+            phases.add(new MavenBuildResult.BuildPhase(goal, id, success, duration));
+        }
+    }
+
+    /**
+     * Flushes any remaining trailing text in a line buffer upon process termination.
+     *
+     * @param lineBuffer     the line accumulator.
+     * @param targetLines    the collection storing captured lines.
+     * @param phases         the build phases collection to populate from EventSpy telemetry.
+     * @param mojoStartTimes the map tracking active mojo start timestamps.
+     */
+    private static void flushLineBuffer(
+            StringBuilder lineBuffer,
+            List<String> targetLines,
+            List<MavenBuildResult.BuildPhase> phases,
+            Map<String, Long> mojoStartTimes) {
+
+        synchronized (lineBuffer) {
+            if (!lineBuffer.isEmpty()) {
+                String line = lineBuffer.toString().replaceAll("\r$", "").trim();
+                if (!line.isEmpty()) {
+                    if (line.startsWith("[IJ]-")) {
+                        handleIjTelemetryLine(line, phases, mojoStartTimes);
+                    } else {
+                        synchronized (targetLines) {
+                            targetLines.add(line);
+                        }
+                    }
+                }
+                lineBuffer.setLength(0);
+            }
+        }
     }
 
     /**
@@ -325,7 +561,6 @@ public class Maven extends AnahataToolkit {
      *   <li><b>Keyword Search</b>: Searching via {@code query} matches against indexed group and artifact IDs, grouping
      *       all matching versions under consolidated artifact records.</li>
      * </ul>
-     * </p>
      *
      * @param query              keyword query matched against groupId and artifactId (e.g. 'junit-jupiter' or 'lombok').
      * @param groupId            exact groupId filter or navigation (e.g. 'org.junit.jupiter').

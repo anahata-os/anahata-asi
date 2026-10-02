@@ -45,7 +45,7 @@ import org.jetbrains.idea.maven.project.MavenProjectsManager;
 import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
-import uno.anahata.asi.intellij.tools.maven.Maven;
+import uno.anahata.asi.intellij.tools.maven.IntellijMaven;
 import uno.anahata.asi.intellij.tools.project.IntellijProjects;
 import uno.anahata.asi.intellij.tools.vcs.IntellijVCS;
 import uno.anahata.asi.toolkit.maven.DependencyScope;
@@ -689,7 +689,7 @@ public class IntellijProjectContextProvider extends AbstractProjectContextProvid
 
         List<DependencyScope> declaredDeps = null;
         try {
-            declaredDeps = Maven.getDeclaredDependencies(projectPath);
+            declaredDeps = IntellijMaven.getDeclaredDependencies(projectPath);
         } catch (Exception e) {
             log.debug("No declared dependencies resolved for: {}", projectPath);
         }
