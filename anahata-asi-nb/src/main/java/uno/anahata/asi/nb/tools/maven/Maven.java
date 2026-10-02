@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.maven;
 
+import uno.anahata.asi.toolkit.maven.MavenBuildResult;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -27,6 +28,16 @@ import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.execution.ExecutionEvent;
 import org.apache.maven.model.Dependency;
+import org.netbeans.modules.maven.model.ModelOperation;
+import org.netbeans.modules.maven.model.Utilities;
+import org.netbeans.modules.maven.model.pom.POMModel;
+import org.netbeans.modules.xml.xam.Component;
+import org.netbeans.modules.xml.xam.dom.AbstractDocumentModel;
+import org.netbeans.modules.xml.xam.dom.AbstractDocumentComponent;
+import org.netbeans.modules.xml.xam.dom.DocumentModelAccess;
+import org.w3c.dom.Comment;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
 import org.netbeans.api.project.ProjectUtils;
@@ -51,7 +62,7 @@ import org.openide.execution.ExecutorTask;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.modules.InstalledFileLocator;
-import org.openide.util.Utilities;
+import org.openide.util.BaseUtilities;
 import org.openide.util.NbPreferences;
 import uno.anahata.asi.agi.message.RagMessage;
 import org.openide.util.Task;
@@ -125,7 +136,7 @@ public class Maven extends AnahataToolkit {
             File mavenHome = InstalledFileLocator.getDefault().locate("maven", "org.netbeans.modules.maven", false);
             if (mavenHome != null && mavenHome.exists()) {
                 String binPath = "bin/mvn";
-                if (Utilities.isWindows()) {
+                if (BaseUtilities.isWindows()) {
                     binPath = "bin\\mvn.cmd";
                 }
                 File mvnBin = new File(mavenHome, binPath);
@@ -521,11 +532,75 @@ public class Maven extends AnahataToolkit {
 
     //<editor-fold defaultstate="collapsed" desc="From MavenPom.java">
     /**
+     * Resolves a Maven property expression (e.g. '${netbeans.version}' or '${project.version}')
+     * against the active Maven project model, including all inherited parent POM and profile properties.
+     * 
+     * @param project The open NetBeans project.
+     * @param version The literal version string or property expression.
+     * @return The evaluated version string if resolved, or the original version string.
+     */
+    private static String resolvePropertyVersion(Project project, String version) {
+        if (version == null || version.isBlank() || !version.startsWith("${") || !version.endsWith("}")) {
+            return version;
+        }
+        try {
+            NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
+            if (nbMavenProject != null && nbMavenProject.getMavenProject() != null) {
+                org.apache.maven.project.MavenProject mp = nbMavenProject.getMavenProject();
+                String propName = version.substring(2, version.length() - 1).trim();
+
+                if ("project.version".equals(propName) || "version".equals(propName)) {
+                    return mp.getVersion();
+                } else if ("project.groupId".equals(propName) || "groupId".equals(propName)) {
+                    return mp.getGroupId();
+                } else if ("project.artifactId".equals(propName) || "artifactId".equals(propName)) {
+                    return mp.getArtifactId();
+                } else {
+                    String resolved = mp.getProperties().getProperty(propName);
+                    if (resolved != null && !resolved.isBlank()) {
+                        return resolved.trim();
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Could not resolve property version: " + version, e);
+        }
+        return version;
+    }
+
+    /**
+     * Finds the managed dependency in the project's effective dependencyManagement, if present.
+     * 
+     * @param project The open NetBeans project.
+     * @param groupId The groupId of the dependency.
+     * @param artifactId The artifactId of the dependency.
+     * @return The managed Dependency from the MavenProject model, or null if not managed.
+     */
+    private static Dependency findManagedDependency(Project project, String groupId, String artifactId) {
+        try {
+            NbMavenProject nbMavenProject = project.getLookup().lookup(NbMavenProject.class);
+            if (nbMavenProject != null && nbMavenProject.getMavenProject() != null) {
+                org.apache.maven.model.DependencyManagement dm = nbMavenProject.getMavenProject().getDependencyManagement();
+                if (dm != null && dm.getDependencies() != null) {
+                    for (Dependency d : dm.getDependencies()) {
+                        if (groupId.equalsIgnoreCase(d.getGroupId()) && artifactId.equalsIgnoreCase(d.getArtifactId())) {
+                            return d;
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            LOG.log(Level.FINE, "Failed to inspect dependencyManagement", e);
+        }
+        return null;
+    }
+
+    /**
      * The definitive 'super-tool' for adding a Maven dependency.
      * <p>This tool follows a safe, multi-phase process:</p>
      * <ol>
-     *   <li><b>Pre-flight:</b> Verifies artifact existence in remote repositories.</li>
-     *   <li><b>Modification:</b> Atomically adds the dependency to the project's {@code pom.xml}.</li>
+     *   <li><b>Pre-flight:</b> Verifies artifact existence in remote repositories (resolving properties like {@code ${netbeans.version}}).</li>
+     *   <li><b>Modification:</b> Atomically adds the dependency to the project's {@code pom.xml} using NetBeans POM Model, with optional relative positioning and comments.</li>
      *   <li><b>Resolution:</b> Runs {@code dependency:resolve} to ensure transitive dependencies are satisfied.</li>
      *   <li><b>Background:</b> Triggers asynchronous download of sources and javadocs.</li>
      * </ol>
@@ -534,33 +609,70 @@ public class Maven extends AnahataToolkit {
      * @param projectPath The absolute path of the project to modify.
      * @param groupId The groupId of the dependency.
      * @param artifactId The artifactId of the dependency.
-     * @param version The version of the dependency.
+     * @param version The version of the dependency (supports property expressions like '${netbeans.version}', or null if managed by dependencyManagement). If omitted, the managed version is used. If specified and matches dependencyManagement, the redundant &lt;version&gt; tag is automatically omitted from pom.xml to prevent IDE warnings. If specified and different, it will explicitly override the managed version.
      * @param scope The scope of the dependency (e.g., 'compile', 'test'). If null, defaults to 'compile'.
      * @param classifier The classifier of the dependency (e.g., 'jdk17'). Can be null.
      * @param type The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.
+     * @param beforeDependency Optional artifactId of an existing dependency to insert this dependency BEFORE.
+     * @param afterDependency Optional artifactId of an existing dependency to insert this dependency AFTER.
+     * @param comment Optional descriptive XML comment to place directly above the dependency in pom.xml.
      * @return an AddDependencyResult object containing the outcome of each phase.
      */
-    @AgiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process and returns a structured result object. The model is responsible for interpreting the result. **Doesn't work with ${project.version}. Use the Resources toolkit if you need to add a multimodule project dependency.**")
+    @AgiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process, supports property versions like ${netbeans.version}, optional relative positioning, and XML comments.")
     public AddDependencyResult addDependency(
             @AgiToolParam("The absolute path of the project to modify.") String projectPath,
             @AgiToolParam("The groupId of the dependency.") String groupId,
             @AgiToolParam("The artifactId of the dependency.") String artifactId,
-            @AgiToolParam("The version of the dependency.") String version,
+            @AgiToolParam(value = "The version of the dependency (supports property expressions like '${netbeans.version}', or null if managed by dependencyManagement). If omitted, the managed version is used. If specified and matches dependencyManagement, the redundant <version> tag is automatically omitted from pom.xml to prevent IDE warnings. If specified and different, it will explicitly override the managed version.", required = false) String version,
             @AgiToolParam(value = "The scope of the dependency (e.g., 'compile', 'test'). If null, defaults to 'compile'.", required = false) String scope,
             @AgiToolParam(value = "The classifier of the dependency (e.g., 'jdk17'). Can be null.", required = false) String classifier,
-            @AgiToolParam(value = "The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.", required = false) String type) {
+            @AgiToolParam(value = "The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.", required = false) String type,
+            @AgiToolParam(value = "Optional artifactId of an existing dependency to insert this dependency BEFORE.", required = false) String beforeDependency,
+            @AgiToolParam(value = "Optional artifactId of an existing dependency to insert this dependency AFTER.", required = false) String afterDependency,
+            @AgiToolParam(value = "Optional descriptive XML comment to place directly above the dependency in pom.xml.", required = false) String comment) {
         
         AddDependencyResult.AddDependencyResultBuilder resultBuilder = AddDependencyResult.builder();
         StringBuilder summary = new StringBuilder();
 
         try {
+            Project project = NbProjects.findOpenProject(projectPath);
             String effectiveScope = (scope == null || scope.isBlank()) ? null : scope.trim();
             String effectiveType = (type == null || type.isBlank()) ? null : type.trim();
             String effectiveClassifier = (classifier == null || classifier.isBlank() || "jar".equalsIgnoreCase(classifier.trim())) ? null : classifier.trim();
 
+            Dependency managedDep = findManagedDependency(project, groupId, artifactId);
+            String preflightVersion;
+            final boolean versionOmittedBecauseManaged;
+
+            if (version != null && !version.isBlank()) {
+                preflightVersion = resolvePropertyVersion(project, version);
+                if (managedDep != null && managedDep.getVersion() != null) {
+                    String resolvedManagedVersion = resolvePropertyVersion(project, managedDep.getVersion());
+                    if (preflightVersion.equals(resolvedManagedVersion) || version.trim().equals(managedDep.getVersion().trim())) {
+                        versionOmittedBecauseManaged = true;
+                        log("Dependency " + groupId + ":" + artifactId + " is managed by dependencyManagement (" + resolvedManagedVersion + "). Redundant <version> will be omitted from pom.xml.");
+                    } else {
+                        versionOmittedBecauseManaged = false;
+                    }
+                } else {
+                    versionOmittedBecauseManaged = false;
+                }
+            } else if (managedDep != null && managedDep.getVersion() != null) {
+                preflightVersion = resolvePropertyVersion(project, managedDep.getVersion());
+                versionOmittedBecauseManaged = true;
+                log("Dependency " + groupId + ":" + artifactId + " resolved from dependencyManagement: " + preflightVersion);
+            } else {
+                summary.append("Phase 1: Pre-flight check...\n");
+                summary.append("Result: FAILED. Version was not specified and the dependency is not managed by dependencyManagement.");
+                error("Version was not specified and the dependency is not managed by dependencyManagement.");
+                return resultBuilder.summary(summary.toString()).build();
+            }
+
+            log("Pre-flight check: verifying " + groupId + ":" + artifactId + ":" + preflightVersion + (version != null && !preflightVersion.equals(version) ? " (resolved from " + version + ")" : ""));
+
             // Phase 1: Pre-flight Check
             summary.append("Phase 1: Pre-flight check...\n");
-            boolean preflightSuccess = downloadDependencyArtifact(projectPath, groupId, artifactId, version, effectiveClassifier, effectiveType);
+            boolean preflightSuccess = downloadDependencyArtifact(projectPath, groupId, artifactId, preflightVersion, effectiveClassifier, effectiveType);
             resultBuilder.preflightCheckSuccess(preflightSuccess);
 
             if (!preflightSuccess) {
@@ -572,16 +684,94 @@ public class Maven extends AnahataToolkit {
 
             // Phase 2: Modifying pom.xml...
             summary.append("Phase 2: Modifying pom.xml...\n");
-            Project project = NbProjects.findOpenProject(projectPath);
             FileObject pom = project.getProjectDirectory().getFileObject("pom.xml");
             if (pom == null) {
                 summary.append("Result: FAILED. Could not find pom.xml.");
                 error("Could not find pom.xml");
                 return resultBuilder.pomModificationSuccess(false).summary(summary.toString()).build();
             }
-            
-            // ModelUtils.addDependency signature: (FileObject, String, String, String, String type, String scope, String classifier, boolean isTest)
-            ModelUtils.addDependency(pom, groupId, artifactId, version, effectiveType, effectiveScope, effectiveClassifier, false);
+
+            ModelOperation<POMModel> operation = new ModelOperation<>() {
+                @Override
+                public void performOperation(POMModel model) {
+                    var project = model.getProject();
+                    var existingDeps = project.getDependencies();
+                    var existingDep = project.findDependencyById(groupId, artifactId, null);
+                    boolean isNew = (existingDep == null);
+
+                    final var dep = isNew
+                            ? model.getFactory().createDependency()
+                            : existingDep;
+
+                    if (isNew) {
+                        dep.setGroupId(groupId);
+                        dep.setArtifactId(artifactId);
+                    }
+
+                    if (versionOmittedBecauseManaged) {
+                        dep.setVersion(null);
+                    } else if (version != null && !version.isBlank()) {
+                        dep.setVersion(version);
+                    }
+                    if (effectiveScope != null) {
+                        dep.setScope(effectiveScope);
+                    }
+                    if (effectiveType != null && !"jar".equals(effectiveType)) {
+                        dep.setType(effectiveType);
+                    }
+                    if (effectiveClassifier != null) {
+                        dep.setClassifier(effectiveClassifier);
+                    }
+
+                    String anchorArtifact = (beforeDependency != null && !beforeDependency.isBlank())
+                            ? beforeDependency.trim()
+                            : (afterDependency != null && !afterDependency.isBlank() ? afterDependency.trim() : null);
+
+                    var anchorDep = (anchorArtifact != null && !existingDeps.isEmpty())
+                            ? existingDeps.stream()
+                                    .filter(d -> anchorArtifact.equalsIgnoreCase(d.getArtifactId()) && !d.equals(dep))
+                                    .findFirst()
+                                    .orElse(null)
+                            : null;
+
+                    AbstractDocumentModel adm = (AbstractDocumentModel) model;
+
+                    if (isNew) {
+                        if (anchorDep != null) {
+                            int anchorIndex = existingDeps.indexOf(anchorDep);
+                            int targetIndex = (beforeDependency != null && !beforeDependency.isBlank()) ? anchorIndex : anchorIndex + 1;
+                            Component parentComp = ((Component) anchorDep).getParent();
+                            adm.addChildComponent(parentComp, (Component) dep, targetIndex);
+                            log("Inserted dependency " + (beforeDependency != null && !beforeDependency.isBlank() ? "before: " : "after: ") + anchorArtifact);
+                        } else if (!existingDeps.isEmpty()) {
+                            Component parentComp = ((Component) existingDeps.get(0)).getParent();
+                            adm.addChildComponent(parentComp, (Component) dep, existingDeps.size());
+                            log("Appended dependency to existing dependencies list.");
+                        } else {
+                            project.addDependency(dep);
+                            log("Added dependency to project.");
+                        }
+                    }
+
+                    if (comment != null && !comment.isBlank()) {
+                        try {
+                            Component parentComp = ((Component) dep).getParent();
+                            if (parentComp instanceof AbstractDocumentComponent adc) {
+                                DocumentModelAccess access = adm.getAccess();
+                                Comment commentNode = model.getDocument().createComment("<!-- " + comment.trim() + " -->");
+                                Element depPeer = ((AbstractDocumentComponent) dep).getPeer();
+                                access.insertBefore(adc.getPeer(), commentNode, depPeer, adc);
+                                log("Inserted XML comment above dependency: " + comment.trim());
+                            }
+                        } catch (Exception e) {
+                            error("Failed to insert comment: " + e.getMessage(), e);
+                            LOG.log(Level.FINE, "Failed to insert comment", e);
+                        }
+                    }
+                }
+            };
+            Utilities.performPOMModelOperations(pom, List.of(operation));
+
             resultBuilder.pomModificationSuccess(true);
             summary.append("Result: SUCCESS. Dependency added to pom.xml.\n\n");
 
