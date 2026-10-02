@@ -64,10 +64,10 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Set up JDK 25
+      - name: Set up JDK 27
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '27'
           distribution: 'temurin'
           cache: 'maven'
 
