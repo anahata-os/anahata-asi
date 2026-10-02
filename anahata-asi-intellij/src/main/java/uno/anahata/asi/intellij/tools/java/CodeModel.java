@@ -17,6 +17,7 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.ToolPermission;
+import uno.anahata.asi.agi.resource.handle.StringHandle;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 
 import javax.lang.model.element.ElementKind;
@@ -168,6 +169,12 @@ public class CodeModel extends AnahataToolkit {
 
     /**
      * Loads the source file for a given JavaType as a managed text resource.
+     * <p>
+     * If the source file is located on the local filesystem, it is registered directly via
+     * its file path with full editing and VCS tracking support. If the class belongs to a
+     * library JAR (with attached sources or decompiled bytecode), its source text is registered
+     * as a managed in-memory resource via {@link StringHandle}.
+     * </p>
      * 
      * @param javaType The target JavaType.
      * @return Confirmation message.
@@ -176,28 +183,83 @@ public class CodeModel extends AnahataToolkit {
     @AgiTool("Loads the source file for a given `JavaType` (as returned by `Codemodel.findTypes`) as a managed text resource. Works only for outer types (whole java files that can be loaded into context), for inner classess use `getMemberSources` or `getMemberSourcesByFqn`")
     public String loadTypeSources(
             @AgiToolParam("The minimalist keychain DTO from a findTypes call.") JavaType javaType) throws Exception {
-        if (javaType.getUrl() != null) {
-            Path path = Path.of(javaType.getUrl().toURI());
-            if (Files.exists(path)) {
-                String actor = getModelId() + " via @AgiTool getTypeSources";
-                getAgi().getResourceManager().registerPaths(List.of(path), actor);
-                return "Source file '" + path.getFileName() + "' registered as a managed resource.";
+        awaitSmart();
+        String actor = getModelId() + " via @AgiTool loadTypeSources";
+
+        // 1. If URL points directly to a local disk file, register physical path
+        if (javaType.getUrl() != null && "file".equalsIgnoreCase(javaType.getUrl().getProtocol())) {
+            try {
+                Path path = Path.of(javaType.getUrl().toURI());
+                if (Files.exists(path)) {
+                    getAgi().getResourceManager().registerPaths(List.of(path), actor);
+                    return "Source file '" + path.getFileName() + "' registered as a managed resource.";
+                }
+            } catch (Exception ignored) {
             }
         }
-        return "Source code not available for this type.";
+
+        // 2. Resolve via PSI to access project files, attached sources, or decompiled bytecode
+        return ReadAction.computeBlocking(() -> {
+            PsiClass cl = findPsiClass(javaType.getFqn());
+            if (cl == null) {
+                return "Source code not available for this type (class not found: " + javaType.getFqn() + ").";
+            }
+
+            PsiElement nav = cl.getNavigationElement();
+            PsiFile psiFile = (nav != null) ? nav.getContainingFile() : cl.getContainingFile();
+            if (psiFile == null) {
+                return "Source code not available for this type (containing file not found).";
+            }
+
+            VirtualFile vf = psiFile.getVirtualFile();
+            if (vf != null && vf.isInLocalFileSystem()) {
+                Path localPath = Path.of(vf.getPath());
+                if (Files.exists(localPath)) {
+                    getAgi().getResourceManager().registerPaths(List.of(localPath), actor);
+                    return "Source file '" + localPath.getFileName() + "' registered as a managed resource.";
+                }
+            }
+
+            // In-memory / JAR / decompiled content: register via StringHandle
+            String text = psiFile.getText();
+            if (text == null || text.isBlank()) {
+                return "Source code not available for this type (empty content).";
+            }
+
+            String fileName = psiFile.getName();
+            String resName = cl.getQualifiedName() != null ? cl.getQualifiedName() + " (" + fileName + ")" : fileName;
+            StringHandle handle = new StringHandle(resName, text);
+            if (vf != null) {
+                handle.setContextPath(vf.getPath());
+            }
+            getAgi().getResourceManager().registerHandle(handle, actor);
+            return "Source for '" + resName + "' registered as a managed memory resource.";
+        });
     }
 
     /**
-     * Loads the source file for of a java type as a managed resource by its fully qualified name.
+     * Loads the source files for java types as managed resources by their fully qualified names (fqns).
      * 
-     * @param fqn The target FQN.
-     * @return Confirmation message.
+     * @param fqns The list of fully qualified names of the types to load.
+     * @return Confirmation message summarizing the loaded sources.
      * @throws Exception on execution failure.
      */
-    @AgiTool(value = "Loads the source file for of a java type as a managed resource by its fully qualified name (fqn). Fails if the FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
+    @AgiTool(value = "Loads the source files for java types as managed resources by their fully qualified names (fqns). Fails if any FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
     public String loadTypeSourcesByFqn(
-            @AgiToolParam("The fully qualified name of the type.") String fqn) throws Exception {
-        return loadTypeSources(resolveUniqueType(fqn));
+            @AgiToolParam("The list of fully qualified names of the types.") List<String> fqns) throws Exception {
+        StringBuilder sb = new StringBuilder();
+        for (String fqn : fqns) {
+            try {
+                String result = loadTypeSources(resolveUniqueType(fqn));
+                if (!sb.isEmpty()) {
+                    sb.append("\n");
+                }
+                sb.append(fqn).append(": ").append(result);
+            } catch (Exception e) {
+                error("could not load sources for " + fqn + ": " + e.getMessage());
+            }
+        }
+        return sb.toString();
     }
 
     /**
