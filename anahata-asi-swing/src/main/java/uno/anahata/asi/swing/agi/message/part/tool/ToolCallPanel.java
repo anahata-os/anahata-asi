@@ -32,8 +32,10 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import lombok.NonNull;
 import net.miginfocom.swing.MigLayout;
 import org.jdesktop.swingx.JXTitledPanel;
@@ -87,18 +89,18 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     /** Tabbed pane for Output, Logs, Errors, and Attachments. */
     private JTabbedPane resultsTabbedPane;
     /** Scroll pane for the raw text output. */
-    private JScrollPane outputScrollPane;
+    private RTextScrollPane outputScrollPane;
     /** Scroll pane for the execution error log. */
-    private JScrollPane errorScrollPane;
+    private RTextScrollPane errorScrollPane;
     /** Scroll pane for the execution logs. */
-    private JScrollPane logsScrollPane;
+    private RTextScrollPane logsScrollPane;
     
     /** Text area for the primary tool output. */
-    private JTextArea outputArea;
+    private RSyntaxTextArea outputArea;
     /** Text area for the tool error stream. */
-    private JTextArea errorArea;
+    private RSyntaxTextArea errorArea;
     /** Text area for the tool's diagnostic logs. */
-    private JTextArea logsArea;
+    private RSyntaxTextArea logsArea;
     /** Panel for displaying binary attachments. */
     private ToolResponseAttachmentsPanel attachmentsPanel;
     
@@ -226,13 +228,16 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         logsArea.addMouseListener(collapseOnDoubleClick);
         attachmentsPanel = new ToolResponseAttachmentsPanel(agiPanel);
 
-        outputScrollPane = new JScrollPane(outputArea);
+        outputScrollPane = new RTextScrollPane(outputArea);
+        outputScrollPane.setLineNumbersEnabled(true);
         outputScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(outputScrollPane, e));
 
-        errorScrollPane = new JScrollPane(errorArea);
+        errorScrollPane = new RTextScrollPane(errorArea);
+        errorScrollPane.setLineNumbersEnabled(true);
         errorScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(errorScrollPane, e));
 
-        logsScrollPane = new JScrollPane(logsArea);
+        logsScrollPane = new RTextScrollPane(logsArea);
+        logsScrollPane.setLineNumbersEnabled(true);
         logsScrollPane.addMouseWheelListener(e -> SwingUtils.redispatchMouseWheelEvent(logsScrollPane, e));
 
         responseTitledPanel = new JXTitledPanel("Response");
@@ -433,6 +438,9 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         boolean hasOutput = !output.isEmpty();
         if (hasOutput) {
             outputArea.setText(output);
+            outputArea.setCaretPosition(0);
+        } else {
+            outputArea.setText("");
         }
 
         boolean hasAttachments = !response.getAttachments().isEmpty();
@@ -448,12 +456,18 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         boolean hasLogs = !logs.isEmpty();
         if (hasLogs) {
             logsArea.setText(logs);
+            logsArea.setCaretPosition(0);
+        } else {
+            logsArea.setText("");
         }
 
         String error = response.getErrors() != null ? response.getErrors() : "";
         boolean hasError = !error.isEmpty();
         if (hasError) {
             errorArea.setText(error);
+            errorArea.setCaretPosition(0);
+        } else {
+            errorArea.setText("");
         }
 
         // 2. Sync Tabs (Order: Output, Attachments, Logs, Error)
@@ -592,16 +606,21 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
     }
 
     /**
-     * Helper to create a styled text area for tool results.
-     * @param bg The background color (may be null for transparent).
+     * Helper to create a styled RSyntaxTextArea for tool results.
+     * 
      * @param fg The foreground color.
-     * @return A styled JTextArea.
+     * @param bg The background color (may be null for transparent).
+     * @return A styled RSyntaxTextArea.
      */
-    private JTextArea createTextArea(Color fg, Color bg) {
-        JTextArea area = new JTextArea();
+    private RSyntaxTextArea createTextArea(Color fg, Color bg) {
+        RSyntaxTextArea area = new RSyntaxTextArea();
         area.setEditable(false);
-        area.setLineWrap(true);
-        area.setWrapStyleWord(true);
+        area.setLineWrap(false);
+        area.setTabSize(4);
+        area.setAntiAliasingEnabled(true);
+        area.setCodeFoldingEnabled(false);
+        area.setHighlightCurrentLine(false);
+        area.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         area.setForeground(fg);
         if (bg != null) {
             area.setBackground(bg);
