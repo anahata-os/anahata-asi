@@ -54,6 +54,7 @@ uno.anahata.asi.swing.agi.message.part
 uno.anahata.asi.swing.agi.message.part.text
 uno.anahata.asi.swing.agi.message.part.tool
 uno.anahata.asi.swing.agi.message.part.tool.param
+uno.anahata.asi.swing.agi.project
 uno.anahata.asi.swing.agi.render
 uno.anahata.asi.swing.agi.resources
 uno.anahata.asi.swing.agi.resources.handle
@@ -76,6 +77,8 @@ uno.anahata.asi.toolkit
 uno.anahata.asi.toolkit.audio
 uno.anahata.asi.toolkit.java
 uno.anahata.asi.toolkit.java.classpath
+uno.anahata.asi.toolkit.maven
+uno.anahata.asi.toolkit.project
 uno.anahata.asi.toolkit.resources
 uno.anahata.asi.toolkit.resources.text
 uno.anahata.asi.toolkit.resources.text.lines
