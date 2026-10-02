@@ -120,3 +120,89 @@ Through root-cause profiling, architecture redesign, and clean implementation, p
 ### G. Plugin Reloading Architecture
 - **Rule**: `IntellijProjects.buildProject` (make) only compiles classes to `target/classes`. It does **NOT** package the plugin distribution archive.
 - To reload the IntelliJ plugin, `anahata-asi-intellij` must be built via `mvn package` (or `mvn clean package -DskipTests`), after which clicking "Reload plugin" loads the updated artifact.
+
+---
+
+## 6. Session Handover & Achievements (2026-10-02: CodeModel Library Sources & Maven DOM Architecture)
+
+### A. IntelliJ Maven Build Execution (`IntellijMaven.runGoals`)
+- **Parity with NetBeans**: Verified full parity against NetBeans `Maven.runGoals`.
+- **IntelliJ EventSpy Telemetry**: Automatically parses IntelliJ's `[IJ]-3-` telemetry events for `MojoStarted`, `MojoSucceeded`, and `MojoFailed` into structured `List<BuildPhase> phases` without reflection.
+- **Output Management & Token Protection**:
+  * Output $\le$ 100 lines: 100% full output captured.
+  * Output > 100 lines: Sliced with **Head (25 lines) + Tail (75 lines)** capping to protect prompt context, with truncation marker pointing to disk log.
+  * Full untruncated raw output continuously streamed to disk at `/tmp/anahata-intellij-maven-*.log`.
+- **Live Verification**: Successfully executed `clean package` on `anahata-asi-intellij` inside the live JVM with `exitCode=0` and 8 structured phases captured.
+
+### B. CodeModel Library & Decompiled Source Loading (`CodeModel.loadTypeSources`)
+- **Root Cause of Failed Source Loads**:
+  1. `getUrlOfClass` returned `vFile.getPath()`, which for JAR classes contains `!/` (e.g. `/path/to/maven.jar!/.../MavenDomUtil.class`). Passing this to `Path.of(...).toURI()` caused `Files.exists` to fail because `!` is not a directory on standard OS filesystems.
+  2. `cl.getContainingFile()` for compiled library classes returns a `.class` stub. The actual attached source or decompiled code lives at `cl.getNavigationElement().getContainingFile()`.
+- **Dual-Path Solution in `loadTypeSources`**:
+  1. **Physical Files (`vFile.isInLocalFileSystem()`)**: Registered directly via local `Path` using `ResourceManager.registerPaths` for full editing, diff gutter bubbles, and VCS tracking.
+  2. **Library / Attached / Decompiled Sources (`StringHandle`)**:
+     * Follows `cl.getNavigationElement().getContainingFile()` to extract full Kotlin/Java source from attached source JARs or Fernflower decompiler in memory (`psiFile.getText()`).
+     * Wraps in `StringHandle(fqn + " (" + fileName + ")", text)` and sets `handle.setContextPath(vf.getPath())` to preserve origin JAR traceability.
+     * Registered as a managed in-memory resource via `ResourceManager.registerHandle(handle, actor)`.
+  3. **Batch Loading (`loadTypeSourcesByFqn`)**: Upgraded to accept `List<String> fqns` for 100% NetBeans parity, allowing multiple types to be registered in a single turn.
+- **`UrlHandle` Incompatibility**:
+  * Confirmed that `UrlHandle` is designed strictly for HTTP/HTTPS remote URLs (`HttpURLConnection`) and throws `ClassCastException` on `JarURLConnection`, cannot parse IntelliJ's `jar:///` VFS scheme, and cannot handle on-the-fly decompiled bytecode. `StringHandle` is the correct, proven design.
+
+---
+
+## 7. Active Resources Inventory (Handover Snapshot)
+
+### Managed Context Resources:
+1. `IntellijMaven.java`: `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-intellij/src/main/java/uno/anahata/asi/intellij/tools/maven/IntellijMaven.java`
+2. `just-in-case.md`: `/home/pablo/NetBeansProjects/anahata-asi-parent/just-in-case.md`
+3. `MavenBuildResult.java`: `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-core/src/main/java/uno/anahata/asi/toolkit/maven/MavenBuildResult.java`
+4. `Maven.java` (NetBeans): `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-nb/src/main/java/uno/anahata/asi/nb/tools/maven/Maven.java`
+5. `CodeModel.java` (IntelliJ): `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-intellij/src/main/java/uno/anahata/asi/intellij/tools/java/CodeModel.java`
+6. `CodeModel.java` (NetBeans): `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-nb/src/main/java/uno/anahata/asi/nb/tools/java/CodeModel.java`
+7. `JavaTypeSource.java`: `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-nb/src/main/java/uno/anahata/asi/nb/tools/java/JavaTypeSource.java`
+8. `IntellijHandle.java`: `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-intellij/src/main/java/uno/anahata/asi/intellij/resources/handle/IntellijHandle.java`
+9. `StringHandle.java`: `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-core/src/main/java/uno/anahata/asi/agi/resource/handle/StringHandle.java`
+10. `UrlHandle.java`: `/home/pablo/NetBeansProjects/anahata-asi-parent/anahata-asi-core/src/main/java/uno/anahata/asi/agi/resource/handle/UrlHandle.java`
+11. `MavenDomUtil.kt` (In-Memory via StringHandle): `org.jetbrains.idea.maven.dom.MavenDomUtil`
+
+---
+
+## 8. Pending Tasks (Post-Reload Roadmap)
+
+### Task 1: Native IntelliJ Maven DOM Migration in `IntellijMaven.java`
+- **Replace StAX XML Stream Parsing in `getDeclaredDependencies`**:
+  * Use IntelliJ's native DOM API:
+    ```java
+    MavenDomProjectModel domModel = MavenDomUtil.getMavenDomProjectModel(project, pomVf);
+    List<MavenDomDependency> deps = domModel.getDependencies().getDependencies();
+    ```
+  * Map typed fields (`getGroupId()`, `getArtifactId()`, `getVersion()`, `getScope()`, `getClassifier()`, `getType()`, `getExclusions()`) into `List<DependencyScope>`.
+  * Completely delete the 120 lines of StAX parsing (`parseDeclaredDependencies` and XML reader loops).
+- **Replace String Searching in `addDependency`**:
+  * Use IntelliJ's native DOM API:
+    ```java
+    WriteCommandAction.runWriteCommandAction(project, () -> {
+        MavenDomProjectModel domModel = MavenDomUtil.getMavenDomProjectModel(project, pomVf);
+        MavenDomDependency dep = domModel.getDependencies().addDependency();
+        dep.getGroupId().setStringValue(groupId);
+        dep.getArtifactId().setStringValue(artifactId);
+        if (version != null && !version.isBlank()) dep.getVersion().setStringValue(version);
+        if (scope != null && !scope.isBlank()) dep.getScope().setStringValue(scope);
+    });
+    ```
+  * Preserves XML code-style formatting, comments, and triggers project model reimport cleanly.
+
+### Task 2: OS Clipboard Image Pasting Fix
+- **Problem**: In IntelliJ, pressing `Ctrl+V` in the chat input text area is intercepted by IntelliJ's global `ActionManager` (`$Paste` / `EditorPaste`), which routes through `CopyPasteManager` and drops binary image flavors (`DataFlavor.imageFlavor`).
+- **Solution**: In `InputPanel` (or `IntellijAgiConfig`), register an explicit `Ctrl+V` key listener/action on `inputTextArea` that checks `Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null)` directly for `DataFlavor.imageFlavor`. If image data is present, attach the image to the chat; otherwise delegate to default text paste.
+
+### Task 3: Test `CodeModel.loadTypeSourcesByFqn` on the 6 Maven DOM Types
+- After plugin reload, verify batch loading with:
+  `CodeModel.loadTypeSourcesByFqn([`
+  `  "org.jetbrains.idea.maven.dom.MavenDomUtil",`
+  `  "org.jetbrains.idea.maven.dom.model.MavenDomProjectModel",`
+  `  "org.jetbrains.idea.maven.dom.model.MavenDomDependencies",`
+  `  "org.jetbrains.idea.maven.dom.model.MavenDomDependency",`
+  `  "org.jetbrains.idea.maven.project.MavenProject",`
+  `  "org.jetbrains.idea.maven.utils.MavenArtifactUtil"`
+  `])`
