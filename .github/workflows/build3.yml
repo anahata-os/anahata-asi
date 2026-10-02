@@ -110,7 +110,7 @@ jobs:
           echo "================================================================="
           echo " [INFO] Generating Platform Core Javadoc (Excluding IDE Plugins)..."
           echo "================================================================="
-          mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -DadditionalOptions="--add-stylesheet src/main/javadoc/anahata-barca-theme.css" -ntp
+          mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -ntp
           mkdir -p "docs/apidocs/${BASE_VER}/apidocs"
           cp -r target/reports/apidocs/* "docs/apidocs/${BASE_VER}/apidocs/"
 
