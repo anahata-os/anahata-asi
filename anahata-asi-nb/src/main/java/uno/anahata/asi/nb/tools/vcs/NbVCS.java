@@ -34,6 +34,7 @@ import org.netbeans.libs.git.GitUser;
 import org.netbeans.libs.git.SearchCriteria;
 import org.netbeans.libs.git.progress.ProgressMonitor;
 import org.netbeans.modules.git.Git;
+import static org.netbeans.libs.git.GitClient.WORKING_TREE;
 import org.netbeans.modules.git.client.GitClient;
 import org.netbeans.modules.git.ui.commit.GitCommitPanel;
 import org.netbeans.modules.localhistory.LocalHistory;
@@ -896,16 +897,23 @@ public class NbVCS extends AbstractVCS {
                     ? new File[]{resolveRepoFile(repoRoot, filePath)}
                     : new File[]{repoRoot};
 
+            boolean isTargetWorkingCopy = isWorkingCopyAlias(targetRevision);
+            boolean isBaseWorkingCopy = isWorkingCopyAlias(baseRevision);
+
+            String baseRev = isBaseWorkingCopy ? WORKING_TREE : baseRevision.trim();
+            String targetRev = isTargetWorkingCopy ? WORKING_TREE : targetRevision.trim();
+
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            client.exportDiff(files, baseRevision.trim(), targetRevision.trim(), baos, monitor);
+            client.exportDiff(files, baseRev, targetRev, baos, monitor);
 
             String diff = baos.toString(StandardCharsets.UTF_8).trim();
+            String targetLabel = (targetRevision != null && !targetRevision.isBlank()) ? targetRevision.trim() : "WORKING_COPY";
             if (diff.isBlank()) {
-                return "No differences found between " + baseRevision + " and " + targetRevision + (filePath != null ? " for " + filePath : "");
+                return "No differences found between " + baseRevision + " and " + targetLabel + (filePath != null ? " for " + filePath : "");
             }
 
             if (summaryOnly != null && summaryOnly) {
-                return parseDiffSummary(diff, repoRoot.getName(), baseRevision, targetRevision);
+                return parseDiffSummary(diff, repoRoot.getName(), baseRevision, targetLabel);
             }
 
             return diff;

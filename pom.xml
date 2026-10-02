@@ -357,10 +357,6 @@
                         <detectJavaApiLink>true</detectJavaApiLink>
                         <detectOfflineLinks>true</detectOfflineLinks>
                         <show>private</show>
-                        <javadocDirectory>${project.basedir}/src/main/javadoc</javadocDirectory>
-                        <addStylesheets>
-                            <addStylesheet>anahata-barca-theme.css</addStylesheet>
-                        </addStylesheets>
 
                         <top>
                             <![CDATA[
@@ -461,7 +457,7 @@
                                 </goals>
                                 <configuration>
                                     <!-- Clean standard Javadocs for Maven Central artifact JARs (zero website CSS) -->
-                                    <addStylesheets/>
+                                    <addStylesheets combine.self="override"/>
                                 </configuration>
                             </execution>
                             <execution>
