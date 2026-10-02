@@ -218,6 +218,7 @@ public class YouTube extends AnahataToolkit {
     @AgiTool(value = "Launches the screen recording overlay to record desktop activity and publish to YouTube.", permission = ToolPermission.APPROVE_ALWAYS)
     public String startScreenRecording(
             @AgiToolParam("The title for the recorded YouTube video.") String videoTitle,
+            @AgiToolParam(value = "The description for the recorded YouTube video.", required = false) String videoDescription,
             @AgiToolParam(value = "Optional target playlist ID.", required = false) String playlistId,
             @AgiToolParam(value = "Privacy status (unlisted, public, private).", required = false) String privacyStatus,
             @AgiToolParam(value = "Optional custom target MP4 file path on disk.", required = false) String customTargetFilePath) throws Exception {
@@ -267,7 +268,9 @@ public class YouTube extends AnahataToolkit {
                             YouTubeVideoUploadRequest req = YouTubeVideoUploadRequest.builder()
                                     .videoFilePath(session.videoPath().toString())
                                     .title(videoTitle)
-                                    .description("Recorded via Anahata ASI Screen Recorder.\n\nhttps://asi.anahata.uno")
+                                    .description(videoDescription != null && !videoDescription.isBlank()
+                                            ? videoDescription
+                                            : "Recorded via Anahata ASI Screen Recorder.\n\nhttps://asi.anahata.uno")
                                     .playlistId(playlistId)
                                     .privacyStatus(privacyStatus != null ? privacyStatus : "unlisted")
                                     .build();
@@ -439,6 +442,100 @@ public class YouTube extends AnahataToolkit {
      * @return Confirmation message with the video ID.
      * @throws Exception If thumbnail upload or authorization fails.
      */
+    /**
+     * Updates the metadata (title, description, tags, privacy status, thumbnail) of an existing YouTube video.
+     *
+     * @param videoId The YouTube video ID.
+     * @param title The optional new video title.
+     * @param description The optional new video description.
+     * @param tags The optional list of search tags.
+     * @param privacyStatus The optional privacy status ("unlisted", "public", "private").
+     * @param thumbnailPath The optional local path to a new thumbnail image (.png or .jpg).
+     * @return Confirmation message.
+     * @throws Exception If updating metadata fails.
+     */
+    @AgiTool(value = "Updates the metadata (title, description, tags, privacy status, thumbnail) of an existing YouTube video.", permission = ToolPermission.APPROVE_ALWAYS)
+    public String updateVideoMetadata(
+            @AgiToolParam("The YouTube video ID.") String videoId,
+            @AgiToolParam(value = "New video title (or null to preserve existing).", required = false) String title,
+            @AgiToolParam(value = "New video description (or null to preserve existing).", required = false) String description,
+            @AgiToolParam(value = "New search tags (or null to preserve existing).", required = false) List<String> tags,
+            @AgiToolParam(value = "Privacy status (unlisted, public, private, or null to preserve existing).", required = false) String privacyStatus,
+            @AgiToolParam(value = "Optional path to a new thumbnail image file (.png or .jpg).", required = false) String thumbnailPath) throws Exception {
+        if (videoId == null || videoId.isBlank()) {
+            throw new AgiToolException("Video ID cannot be null or blank");
+        }
+        YouTubeCredentials credentials = YouTubeCredentials.load();
+        String accessToken = YouTubeAuthHelper.getValidAccessToken(credentials);
+
+        // 1. Fetch current snippet and status
+        String getUrl = "https://www.googleapis.com/youtube/v3/videos?part=snippet,status&id=" + videoId;
+        HttpRequest getReq = HttpRequest.newBuilder().uri(URI.create(getUrl)).header("Authorization", "Bearer " + accessToken).GET().build();
+        HttpResponse<String> getRes = HTTP_CLIENT.send(getReq, HttpResponse.BodyHandlers.ofString());
+        if (getRes.statusCode() != 200) {
+            throw new AgiToolException("Failed to retrieve video details for " + videoId + ": HTTP " + getRes.statusCode() + " - " + getRes.body());
+        }
+        JsonNode json = MAPPER.readTree(getRes.body());
+        JsonNode items = json.path("items");
+        if (items.isEmpty()) {
+            throw new AgiToolException("No video found on YouTube with ID: " + videoId);
+        }
+        JsonNode existingSnippet = items.get(0).path("snippet");
+        JsonNode existingStatus = items.get(0).path("status");
+
+        // 2. Prepare merged payload
+        ObjectNode root = MAPPER.createObjectNode();
+        root.put("id", videoId);
+        ObjectNode snippet = root.putObject("snippet");
+
+        String finalTitle = (title != null && !title.isBlank()) ? title : existingSnippet.path("title").asText();
+        if (finalTitle != null && finalTitle.length() > 100) {
+            finalTitle = finalTitle.substring(0, 97) + "...";
+        }
+        snippet.put("title", finalTitle);
+
+        String finalDesc = (description != null) ? description : existingSnippet.path("description").asText("");
+        snippet.put("description", finalDesc);
+
+        String categoryId = existingSnippet.hasNonNull("categoryId") ? existingSnippet.path("categoryId").asText() : "28";
+        snippet.put("categoryId", categoryId);
+
+        if (tags != null && !tags.isEmpty()) {
+            ArrayNode tagsArray = snippet.putArray("tags");
+            tags.forEach(tagsArray::add);
+        } else if (existingSnippet.has("tags")) {
+            snippet.set("tags", existingSnippet.get("tags"));
+        }
+
+        ObjectNode status = root.putObject("status");
+        String finalPrivacy = (privacyStatus != null && !privacyStatus.isBlank()) ? privacyStatus : existingStatus.path("privacyStatus").asText("unlisted");
+        status.put("privacyStatus", finalPrivacy);
+        if (existingStatus.has("selfDeclaredMadeForKids")) {
+            status.put("selfDeclaredMadeForKids", existingStatus.get("selfDeclaredMadeForKids").asBoolean());
+        }
+
+        // 3. Send PUT request
+        String putJson = MAPPER.writeValueAsString(root);
+        HttpRequest putReq = HttpRequest.newBuilder()
+                .uri(URI.create("https://www.googleapis.com/youtube/v3/videos?part=snippet,status"))
+                .header("Authorization", "Bearer " + accessToken)
+                .header("Content-Type", "application/json; charset=UTF-8")
+                .PUT(HttpRequest.BodyPublishers.ofString(putJson))
+                .build();
+        HttpResponse<String> putRes = HTTP_CLIENT.send(putReq, HttpResponse.BodyHandlers.ofString());
+        if (putRes.statusCode() != 200) {
+            throw new AgiToolException("Failed to update YouTube video metadata: HTTP " + putRes.statusCode() + " - " + putRes.body());
+        }
+
+        // 4. Update thumbnail if provided
+        if (thumbnailPath != null && !thumbnailPath.isBlank()) {
+            setThumbnail(videoId, thumbnailPath);
+        }
+
+        log.info("Successfully updated metadata for YouTube video {}", videoId);
+        return "Successfully updated metadata for YouTube video " + videoId + " (Title: '" + finalTitle + "', Privacy: '" + finalPrivacy + "')";
+    }
+
     @AgiTool(value = "Sets the custom thumbnail image for a YouTube video.", permission = ToolPermission.APPROVE_ALWAYS)
     public String setThumbnail(
             @AgiToolParam("The YouTube video ID.") String videoId,
