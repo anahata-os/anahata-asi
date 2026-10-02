@@ -288,19 +288,150 @@ public class TeeInputOutput implements InputOutput {
 
         /**
          * {@inheritDoc}
+         * <p>Terminates the current line by writing the line separator string to both writers.</p>
+         */
+        @Override
+        public void println() {
+            try {
+                if (w1 instanceof OutputWriter ow) {
+                    ow.println();
+                } else {
+                    w1.write(System.lineSeparator());
+                }
+                w2.write(System.lineSeparator());
+            } catch (IOException e) {
+                handleException(e);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a string and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(String s) {
+            try {
+                if (w1 instanceof OutputWriter ow) {
+                    ow.println(s);
+                } else {
+                    w1.write(s != null ? s : "null");
+                    w1.write(System.lineSeparator());
+                }
+                w2.write(s != null ? s : "null");
+                w2.write(System.lineSeparator());
+            } catch (IOException e) {
+                handleException(e);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints an object and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(Object x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a boolean and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(boolean x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a character and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(char x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints an integer and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(int x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a long and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(long x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a float and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(float x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a double and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(double x) {
+            println(String.valueOf(x));
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints an array of characters and terminates the line across both underlying writers.</p>
+         */
+        @Override
+        public void println(char[] x) {
+            println(x == null ? "null" : new String(x));
+        }
+
+        /**
+         * {@inheritDoc}
          * <p>Prints a line of text to both writers, handling the optional 
          * listener for the primary writer.</p>
          */
         @Override
         public void println(String s, OutputListener l) {
             try {
-                if (w1 instanceof OutputWriter) {
-                    ((OutputWriter) w1).println(s, l);
+                if (w1 instanceof OutputWriter ow) {
+                    ow.println(s, l);
                 } else {
-                    w1.write(s);
+                    w1.write(s != null ? s : "null");
                     w1.write(System.lineSeparator());
                 }
-                w2.write(s);
+                w2.write(s != null ? s : "null");
+                w2.write(System.lineSeparator());
+            } catch (IOException e) {
+                handleException(e);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Prints a line of text to both writers, handling the optional 
+         * listener and importance flag for the primary writer.</p>
+         */
+        @Override
+        public void println(String s, OutputListener l, boolean important) {
+            try {
+                if (w1 instanceof OutputWriter ow) {
+                    ow.println(s, l, important);
+                } else {
+                    w1.write(s != null ? s : "null");
+                    w1.write(System.lineSeparator());
+                }
+                w2.write(s != null ? s : "null");
                 w2.write(System.lineSeparator());
             } catch (IOException e) {
                 handleException(e);
