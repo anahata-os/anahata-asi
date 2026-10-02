@@ -70,10 +70,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25 & Maven Settings
+      - name: Set up JDK 27 & Maven Settings
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '27'
           distribution: 'temurin'
           cache: 'maven'
           server-id: sonatype-central
@@ -110,7 +110,7 @@ jobs:
           echo "================================================================="
           echo " [INFO] Generating Platform Core Javadoc (Excluding IDE Plugins)..."
           echo "================================================================="
-          mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -ntp
+          mvn javadoc:aggregate -pl !:anahata-asi-nb,!:anahata-asi-nb-uc,!:anahata-asi-intellij -DadditionalOptions="--add-stylesheet src/main/javadoc/anahata-barca-theme.css" -ntp
           mkdir -p "docs/apidocs/${BASE_VER}/apidocs"
           cp -r target/reports/apidocs/* "docs/apidocs/${BASE_VER}/apidocs/"
 
@@ -517,10 +517,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      - name: Set up JDK 27
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '27'
           distribution: 'temurin'
           cache: 'maven'
 
@@ -570,10 +570,10 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 25
+      - name: Set up JDK 27
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: '27'
           distribution: 'temurin'
           cache: 'maven'
 
