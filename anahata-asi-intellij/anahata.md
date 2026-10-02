@@ -57,7 +57,8 @@ Shared PSI/VFS resolution lives in `internal.JavaPsi` (used by CodeRefiner/Batch
 - **Git-specific VCS ops** — branch/commit/log/blame need `git4idea`, which is not a resolvable Maven artifact (the generic status is done via `ChangeListManager`).
 - **Route `CodeRefinementBatch` through the diff panel** — so `refine` also renders as an editable diff (currently returns a textual unified diff).
 
-## 6. Build note
-The parent pins Lombok `1.18.46` (JDK 24-safe). The earlier `1.18.34` crashed a full `@Data`/`@Getter` recompile on JDK 24 with `TypeTag.UNKNOWN`; that is resolved.
+## 6. Build & Plugin Reloading Standard
+1. **Lombok Pinned**: The parent pins Lombok `1.18.46` (JDK 24-safe). The earlier `1.18.34` crashed a full `@Data`/`@Getter` recompile on JDK 24 with `TypeTag.UNKNOWN`; that is resolved.
+2. **Packaging Before Reload Mandatory**: `IntellijProjects.buildProject` (incremental make/rebuild) only compiles classes to `target/classes`, but does **NOT** build or assemble the plugin distribution artifact needed for IntelliJ's plugin hot reload! To reload the plugin, `anahata-asi-intellij` **MUST be packaged via `mvn package`** (or `mvn clean package -DskipTests`). Never invoke `IntellijProjects.buildProject` expecting it to package the plugin.
 
 Força Barça!
