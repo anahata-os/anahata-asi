@@ -31,7 +31,6 @@ import org.jetbrains.idea.maven.model.MavenArtifact;
 import org.jetbrains.idea.maven.model.MavenId;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
-import org.jetbrains.idea.maven.utils.MavenArtifactUtil;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -885,8 +884,8 @@ public class IntellijMaven extends AnahataToolkit {
 
             // Phase 1: Pre-flight check
             summary.append("Phase 1: Pre-flight check...\n");
-            MavenId mid = new MavenId(groupId.trim(), artifactId.trim(), preflightVersion);
-            boolean existsLocally = Files.exists(MavenArtifactUtil.getArtifactFile(mp.getLocalRepositoryPath(), mid, (effectiveType != null ? effectiveType : "jar")));
+            Path localArtifact = resolveLocalArtifactPath(mp.getLocalRepositoryPath(), groupId.trim(), artifactId.trim(), preflightVersion, effectiveClassifier, effectiveType);
+            boolean existsLocally = Files.exists(localArtifact);
             boolean preflightSuccess = existsLocally;
             if (!preflightSuccess) {
                 MavenGAVIndex gavIndex = MavenIndicesManager.getInstance(ideProject).getCommonGavIndex();
@@ -1003,6 +1002,26 @@ public class IntellijMaven extends AnahataToolkit {
             error("FATAL ERROR: An unexpected exception occurred in addDependency: " + e.getMessage(), e);
             return resultBuilder.summary(summary.toString()).build();
         }
+    }
+
+    /**
+     * Resolves the expected filesystem path of an artifact within the local Maven repository.
+     *
+     * @param localRepo   The root directory of the local Maven repository.
+     * @param groupId     The Maven group ID.
+     * @param artifactId  The Maven artifact ID.
+     * @param version     The artifact version.
+     * @param classifier  The optional artifact classifier.
+     * @param type        The artifact packaging type (defaults to 'jar').
+     * @return The expected filesystem path of the artifact file.
+     */
+    private static Path resolveLocalArtifactPath(Path localRepo, String groupId, String artifactId, String version, String classifier, String type) {
+        String groupPath = groupId.replace('.', File.separatorChar);
+        String ext = (type != null && !type.isBlank()) ? type.trim() : "jar";
+        String fileName = (classifier != null && !classifier.isBlank())
+                ? artifactId + "-" + version + "-" + classifier.trim() + "." + ext
+                : artifactId + "-" + version + "." + ext;
+        return localRepo.resolve(groupPath).resolve(artifactId).resolve(version).resolve(fileName);
     }
 
     /**
