@@ -12,6 +12,7 @@ import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.tools.ide.IDE;
+import uno.anahata.asi.intellij.tools.ide.SelectInTarget;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;
 
@@ -139,7 +140,7 @@ public class IntellijResourceUI extends DefaultResourceUI {
         String path = getPath(resource);
         if (path != null) {
             try {
-                IDE.selectIn(path);
+                IDE.selectIn(path, SelectInTarget.PROJECTS);
             } catch (Exception e) {
                 log.error("Failed to select resource in IDE: " + path, e);
             }

@@ -1,8 +1,10 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.tools.ide;
 
+import com.intellij.ide.actions.RevealFileAction;
 import com.intellij.ide.projectView.ProjectView;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.application.PathManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -21,6 +23,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.tools.ide.context.OpenToolWindowsContextProvider;
 
 import java.io.File;
@@ -109,36 +112,57 @@ public class IDE extends AnahataToolkit {
     }
 
     /**
-     * Reveals and selects a file or folder in the Project tool window.
-     * <p>
-     * Maps the NetBeans "Select in Projects" behaviour. Runs on the EDT because it
-     * drives the Project view UI.
-     * </p>
+     * Selects and highlights a file or folder in a specific IDE view (Project view, Structure view, or OS File Manager).
      *
-     * @param path the absolute path of the file or folder to reveal.
+     * @param path   the absolute path of the file or folder to reveal.
+     * @param target the target view to select in (PROJECTS, STRUCTURE, or FILES). Defaults to PROJECTS if null.
      * @return a confirmation message.
      * @throws AgiToolException if the path cannot be resolved or hosted by an open project.
      */
-    @AgiTool("Reveals and selects the specified file or folder in the IDE Project view.")
+    @AgiTool("Reveals and selects the specified file or folder in the selected IDE view.")
     public static String selectIn(
-            @AgiToolParam("The absolute path of the file or folder to reveal.") String path) throws AgiToolException {
+            @AgiToolParam("The absolute path of the file or folder to reveal.") String path,
+            @AgiToolParam(value = "The target IDE view to select in (PROJECTS, STRUCTURE, or FILES). Defaults to PROJECTS.", required = false) SelectInTarget target) throws AgiToolException {
         VirtualFile vf = VfsUtil.findFile(Path.of(path), true);
         if (vf == null) {
             throw new AgiToolException("Target not found: " + path);
         }
-        Project project = findHostProject(vf);
+        Project project = ProjectUtils.findHostProject(vf);
         if (project == null) {
             throw new AgiToolException("No open project can host: " + path);
         }
-        ApplicationManager.getApplication().invokeAndWait(() -> {
-            ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("Project");
-            if (tw != null) {
-                tw.activate(() -> ProjectView.getInstance(project).select(null, vf, true), true);
-            } else {
-                ProjectView.getInstance(project).select(null, vf, true);
+
+        SelectInTarget effectiveTarget = target != null ? target : SelectInTarget.PROJECTS;
+
+        Runnable selectTask = () -> {
+            switch (effectiveTarget) {
+                case PROJECTS -> {
+                    ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("Project");
+                    if (tw != null) {
+                        tw.activate(() -> ProjectView.getInstance(project).select(null, vf, true), true);
+                    } else {
+                        ProjectView.getInstance(project).select(null, vf, true);
+                    }
+                }
+                case STRUCTURE -> {
+                    FileEditorManager.getInstance(project).openFile(vf, true);
+                    ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("Structure");
+                    if (tw != null) {
+                        tw.activate(null, true);
+                    }
+                }
+                case FILES -> {
+                    RevealFileAction.openFile(Path.of(path));
+                }
             }
-        });
-        return "Selected " + path + " in the Project view.";
+        };
+
+        if (ApplicationManager.getApplication().isDispatchThread()) {
+            selectTask.run();
+        } else {
+            ApplicationManager.getApplication().invokeAndWait(selectTask);
+        }
+        return "Selected " + path + " in " + effectiveTarget + ".";
     }
 
     /**
@@ -170,20 +194,4 @@ public class IDE extends AnahataToolkit {
         return "| Tool Window | Project | Visible | Active |\n|---|---|---|---|\n" + rows;
     }
 
-    /**
-     * Resolves the open project whose content roots contain the given file, falling
-     * back to the first open project.
-     *
-     * @param file the file to host.
-     * @return a hosting project, or {@code null} if no projects are open.
-     */
-    private static Project findHostProject(VirtualFile file) {
-        Project[] open = ProjectManager.getInstance().getOpenProjects();
-        for (Project project : open) {
-            if (ProjectRootManager.getInstance(project).getFileIndex().isInContent(file)) {
-                return project;
-            }
-        }
-        return open.length > 0 ? open[0] : null;
-    }
 }

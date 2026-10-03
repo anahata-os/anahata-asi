@@ -32,9 +32,12 @@ import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRenderer;
+import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
+import uno.anahata.asi.agi.resource.Resource;
+import net.miginfocom.swing.MigLayout;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -42,6 +45,8 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.util.List;
 import java.util.Objects;
 
@@ -274,10 +279,76 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
                 baseContent, proposedContent, baseTitle, proposedTitle);
         diffPanel.setRequest(request);
 
+        Resource resource = (agiPanel != null && agiPanel.getAgi() != null && update != null && update.getResourceUuid() != null)
+                ? agiPanel.getAgi().getResourceManager().get(update.getResourceUuid())
+                : null;
+        JPanel headerPanel = createHeaderPanel(resource, lineComments(), call.getResponse().getStatus());
+
         container.removeAll();
+        container.add(headerPanel, BorderLayout.NORTH);
         container.add(diffPanel.getComponent(), BorderLayout.CENTER);
         container.revalidate();
         container.repaint();
+    }
+
+    /**
+     * Creates the top header panel containing the file identity, action buttons,
+     * and AI line comments summary.
+     *
+     * @param resource the managed resource being updated.
+     * @param comments the list of AI line comments.
+     * @param status   the tool call execution status.
+     * @return the populated header panel.
+     */
+    private JPanel createHeaderPanel(Resource resource, List<LineComment> comments, ToolExecutionStatus status) {
+        JPanel panel = new JPanel(new BorderLayout());
+        JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        topRow.setOpaque(false);
+
+        String labelText;
+        switch (status) {
+            case PENDING -> labelText = "Proposed Changes:";
+            case EXECUTED -> labelText = "Applied Changes:";
+            case DECLINED -> labelText = "Changes (Declined):";
+            case FAILED -> labelText = "Changes (Failed):";
+            default -> labelText = "Changes (" + status + "):";
+        }
+        JLabel statusLabel = new JLabel(labelText);
+        statusLabel.setFont(statusLabel.getFont().deriveFont(Font.BOLD));
+        topRow.add(statusLabel);
+
+        if (resource != null) {
+            JLabel htmlDisplayName = new JLabel(resource.getHtmlDisplayName());
+            if (resource.getHandle() != null && resource.getHandle().getUri() != null) {
+                htmlDisplayName.setToolTipText(resource.getHandle().getUri().toString());
+            }
+            htmlDisplayName.setOpaque(false);
+            topRow.add(htmlDisplayName);
+
+            ResourceUiRegistry.getInstance().getResourceUI().populateActions(topRow, resource, agiPanel);
+        }
+
+        panel.add(topRow, BorderLayout.NORTH);
+
+        if (comments != null && !comments.isEmpty()) {
+            JPanel dashboard = new JPanel(new MigLayout("fillx, insets 0 15 5 10", "[grow, left][]", "[]"));
+            dashboard.setOpaque(false);
+
+            StringBuilder sb = new StringBuilder("<html><div style='text-align: right;'>");
+            for (LineComment lc : comments) {
+                sb.append("<i style='color: #888888; font-size: 10pt;'>Line ").append(lc.getLineNumber()).append(":</i> ")
+                        .append("<span style='color: #666666; font-size: 10pt;'>").append(escape(lc.getComment())).append("</span><br>");
+            }
+            sb.append("</div></html>");
+
+            JLabel commentsLabel = new JLabel(sb.toString());
+            commentsLabel.setVerticalAlignment(JLabel.TOP);
+            dashboard.add(commentsLabel, "cell 1 0, aligny top, alignx right");
+
+            panel.add(dashboard, BorderLayout.CENTER);
+        }
+
+        return panel;
     }
 
     /**
