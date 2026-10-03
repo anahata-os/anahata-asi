@@ -142,6 +142,9 @@ public class AgiPanel extends ScrollablePanel {
         add(headerPanel, BorderLayout.NORTH);
         add(toolbarPanel, BorderLayout.WEST);
         add(mainSplitPane, BorderLayout.CENTER);
+
+        // Notify host configuration that panel initialization is complete
+        agiConfig.onAgiPanelInitialized(this);
     }
     
     /**

@@ -2,6 +2,12 @@
 package uno.anahata.asi.intellij;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.CustomShortcutSet;
+import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.actionSystem.ShortcutSet;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.ui.JBColor;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -33,6 +39,13 @@ import uno.anahata.asi.intellij.tools.debugger.Debugger;
 import uno.anahata.asi.intellij.tools.run.RunConfigurations;
 import uno.anahata.asi.intellij.tools.terminal.Terminals;
 import uno.anahata.asi.intellij.tools.vcs.IntellijVCS;
+import java.awt.Toolkit;
+import java.awt.event.KeyEvent;
+import javax.swing.KeyStroke;
+import org.jetbrains.annotations.NotNull;
+import org.jdesktop.swingx.JXTextArea;
+import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.AgiTransferHandler;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.toolkit.DesktopJava;
@@ -233,7 +246,35 @@ public class IntellijAgiConfig extends SwingAgiConfig {
             button.setBorder(BorderFactory.createEmptyBorder(1, 1, 1, 1));
         }
     }
-   
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Overrides the lifecycle hook to register an IntelliJ-aware component-scoped {@link AnAction}
+     * for clipboard paste (Ctrl+V on Windows/Linux, Cmd+V on macOS) directly on the input text area.
+     * This intercepts the keystroke before IntelliJ's global {@code EditorPaste} action can consume it,
+     * routing it directly through {@link javax.swing.text.JTextComponent#paste()} and {@link AgiTransferHandler}
+     * to support binary images, file drops, and text seamlessly.
+     * </p>
+     *
+     * @param agiPanel The newly initialized AgiPanel.
+     */
+    @Override
+    public void onAgiPanelInitialized(AgiPanel agiPanel) {
+        JXTextArea textArea = agiPanel.getInputPanel().getInputTextArea();
+
+        int shortcutMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        KeyStroke pasteStroke = KeyStroke.getKeyStroke(KeyEvent.VK_V, shortcutMask);
+        ShortcutSet shortcutSet = new CustomShortcutSet(new KeyboardShortcut(pasteStroke, null));
+
+        AnAction pasteAction = new DumbAwareAction() {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                textArea.paste();
+            }
+        };
+        pasteAction.registerCustomShortcutSet(shortcutSet, textArea);
+    }
 
     /**
      * Constructs a new IntelliJ AGI configuration.
