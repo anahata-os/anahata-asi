@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins>
+  <plugin id="uno.anahata.asi.intellij" url="https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-intellij-1.3.3-SNAPSHOT.zip" version="1.3.3-SNAPSHOT">
+    <name>Anahata ASI</name>
+    <description><![CDATA[Anahata ASI Studio for IntelliJ IDEA.<br>Brings the power of Anahata ASI directly into your IDE.]]></description>
+    <version>1.3.3-SNAPSHOT</version>
+    <vendor email="anahata@anahata.uno" url="https://asi.anahata.uno">Anahata</vendor>
+    <idea-version since-build="241" until-build="263.*"/>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
+  </plugin>
+</plugins>
