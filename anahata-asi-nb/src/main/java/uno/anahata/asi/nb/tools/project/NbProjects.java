@@ -502,7 +502,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
         try {
             compileOnSave = isCompileOnSaveEnabled(target);
         } catch (Exception e) {
-            log.debug("Failed to read compile.on.save status for project: " + projectPath, e);
+            log.warn("Failed to read compile.on.save status for project: " + projectPath, e);
         }
 
         String htmlDisplayName = null;
@@ -510,7 +510,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
             org.openide.nodes.Node node = org.openide.loaders.DataObject.find(root).getNodeDelegate();
             htmlDisplayName = node.getHtmlDisplayName();
         } catch (Exception e) {
-            log.debug("Failed to get HTML display name for project root", e);
+            log.warn("Failed to get HTML display name for project root", e);
         }
 
         String vcsOverview = null;
@@ -520,7 +520,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
                 try {
                     vcsOverview = vcsOpt.get().getRepositoryOverview(projectPath);
                 } catch (Exception e) {
-                    log.debug("Could not resolve VCS overview for {}: {}", projectPath, e.getMessage());
+                    log.warn("Could not resolve VCS overview for {}: {}", projectPath, e.getMessage());
                 }
             }
         }
