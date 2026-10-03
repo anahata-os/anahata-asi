@@ -338,10 +338,32 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
     }
 
     /**
+     * Updates the display name of the tool window tab for the given session across all open project tool windows.
+     *
+     * @param agi The AGI session whose tab title to update.
+     */
+    public static void updateToolWindowTabTitle(Agi agi) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            for (Project project : ProjectManager.getInstance().getOpenProjects()) {
+                ToolWindow tw = ToolWindowManager.getInstance(project).getToolWindow("Anahata ASI");
+                if (tw != null) {
+                    for (Content c : tw.getContentManager().getContents()) {
+                        if (c.getComponent() instanceof AgiPanel panel && panel.getAgi() == agi) {
+                            c.setDisplayName(agi.getDisplayName());
+                            break;
+                        }
+                    }
+                }
+            }
+        }, ModalityState.any());
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
      * Implementation details: Triggers a reactive UI refresh of the Project View tree across
-     * all open IntelliJ project windows whenever session resources, nicknames, or visibility changes.
+     * all open IntelliJ project windows whenever session resources, nicknames, or visibility changes,
+     * and synchronizes the tool window tab title when a session's nickname changes.
      * </p>
      *
      * @param agi The session whose state changed.
@@ -349,6 +371,9 @@ public class IntellijAsiContainer extends AbstractSwingAsiContainer implements D
      */
     @Override
     protected void onSessionContextChanged(Agi agi, String propertyName) {
+        if ("nickname".equals(propertyName) || propertyName == null) {
+            updateToolWindowTabTitle(agi);
+        }
         refreshProjectViews();
     }
 
