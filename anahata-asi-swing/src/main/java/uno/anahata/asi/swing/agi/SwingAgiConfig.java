@@ -425,6 +425,19 @@ public class SwingAgiConfig extends AgiConfig {
     }
 
     /**
+     * Lifecycle callback invoked when an {@link AgiPanel} has completed initializing its components.
+     * <p>
+     * Host configurations (such as {@code IntellijAgiConfig}) override this method to install
+     * platform-specific key bindings, action providers, or focus listeners without coupling
+     * the shared Swing module to host-specific APIs.
+     * </p>
+     *
+     * @param agiPanel The newly initialized AgiPanel.
+     */
+    public void onAgiPanelInitialized(AgiPanel agiPanel) {
+    }
+
+    /**
      * Checks if the active Look and Feel is a dark variant.
      *
      * @return true if dark mode is active.
