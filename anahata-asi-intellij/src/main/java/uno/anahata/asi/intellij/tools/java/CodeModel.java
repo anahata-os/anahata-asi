@@ -162,7 +162,7 @@ public class CodeModel extends AnahataToolkit {
                 }
             }
         } catch (Exception e) {
-            // ignore
+            error("Could not resolve URL for class: " + cl.getQualifiedName(), e);
         }
         return null;
     }
@@ -194,7 +194,8 @@ public class CodeModel extends AnahataToolkit {
                     getAgi().getResourceManager().registerPaths(List.of(path), actor);
                     return "Source file '" + path.getFileName() + "' registered as a managed resource.";
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                error("Could not register local file path directly for " + javaType.getUrl() + ": " + e.getMessage(), e);
             }
         }
 
@@ -256,7 +257,7 @@ public class CodeModel extends AnahataToolkit {
                 }
                 sb.append(fqn).append(": ").append(result);
             } catch (Exception e) {
-                error("could not load sources for " + fqn + ": " + e.getMessage());
+                error("Could not load sources for " + fqn + ": " + e.getMessage(), e);
             }
         }
         return sb.toString();
@@ -827,7 +828,7 @@ public class CodeModel extends AnahataToolkit {
                     }
                 }
             } catch (Exception e) {
-                // Ignore search exceptions
+                error("Error searching inheritors for class: " + cl.getQualifiedName(), e);
             }
         }
         return node;
