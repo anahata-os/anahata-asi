@@ -12,8 +12,6 @@
  * Architectural Components:
  * </p>
  * <ul>
- *   <li><b>Context Abstraction</b>: {@link uno.anahata.asi.nb.tools.project.context.AbstractProjectContextProvider} 
- *       standardizes project resolution and IDE UI notification logic.</li>
  *   <li><b>Unified Provider</b>: {@link NbProjectContextProvider} 
  *       acts as the single cohesive provider combining project overview, compiler diagnostics, 
  *       AST structure, and project-specific instructions (via {@code anahata.md}).</li>
