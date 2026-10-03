@@ -87,7 +87,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
      * provider.
      */
     public void inspect(String apiKey) {
-        log.info("Inspecting Hugging Face model {}", getModelId());
+        log.debug("Inspecting Hugging Face model {}", getModelId());
 
         // 1. config.json
         JsonNode config = fetchHubJson("config.json", apiKey);
@@ -150,7 +150,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
         // 3. generation_config.json
         JsonNode genConfig = fetchHubJson("generation_config.json", apiKey);
         if (genConfig != null) {
-            log.info("Got generation_config.json for {}", getModelId());
+            log.debug("Got generation_config.json for {}", getModelId());
             this.generationConfig = genConfig;
             // Note: max_new_tokens in generation_config is an author demo default, not a model ceiling.
             // We leave maxOutputTokens unconstrained so generation can fill available context.
@@ -180,7 +180,7 @@ public class HuggingFaceModel extends OpenAiCompatibleModel {
      */
     private JsonNode fetchHubJson(String filename, String apiKey) {
         String url = HuggingFaceProvider.HF_HUB_BASE + getModelId() + "/resolve/main/" + filename;
-        log.info("Fetching Hub metadata: {}", url);
+        log.debug("Fetching Hub metadata: {}", url);
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(URI.create(url))
