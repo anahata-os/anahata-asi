@@ -45,22 +45,10 @@ public class NbProjectContextProvider extends AbstractProjectContextProvider {
             try {
                 project = NbProjects.findOpenProject(projectPath);
             } catch (Exception e) {
-                log.debug("Project no longer open or resolvable at path: {}", projectPath);
+                log.warn("Project no longer open or resolvable at path: {}", projectPath);
             }
         }
         return project;
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Re-establishes the transient NetBeans Project reference if open projects are already available.
-     * </p>
-     */
-    @Override
-    public void rebind() {
-        super.rebind();
-        getProject();
     }
 
     /**
