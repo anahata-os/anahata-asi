@@ -620,6 +620,7 @@ public class ToolCallPanel extends AbstractPartPanel<AbstractToolCall<?, ?>> {
         area.setAntiAliasingEnabled(true);
         area.setCodeFoldingEnabled(false);
         area.setHighlightCurrentLine(false);
+        area.setDragEnabled(false);
         area.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         area.setForeground(fg);
         if (bg != null) {
