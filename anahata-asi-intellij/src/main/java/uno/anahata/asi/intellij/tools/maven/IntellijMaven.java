@@ -5,6 +5,7 @@ import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.process.ProcessOutputType;
+import com.intellij.lang.xml.XMLLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.Document;
@@ -14,7 +15,12 @@ import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.util.Key;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiComment;
+import com.intellij.psi.PsiParserFacade;
+import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.xml.XmlTag;
 import com.intellij.util.Consumer;
+import com.intellij.util.xml.reflect.DomCollectionChildDescription;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.idea.maven.execution.MavenRunner;
 import org.jetbrains.idea.maven.execution.MavenRunnerParameters;
@@ -22,8 +28,10 @@ import org.jetbrains.idea.maven.execution.MavenRunnerSettings;
 import org.jetbrains.idea.maven.indices.MavenArtifactSearchResult;
 import org.jetbrains.idea.maven.indices.MavenArtifactSearcher;
 import org.jetbrains.idea.maven.model.MavenArtifact;
+import org.jetbrains.idea.maven.model.MavenId;
 import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectsManager;
+import org.jetbrains.idea.maven.utils.MavenArtifactUtil;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -31,6 +39,7 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
+import uno.anahata.asi.toolkit.maven.AddDependencyResult;
 import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
 import uno.anahata.asi.toolkit.maven.DependencyGroup;
 import uno.anahata.asi.toolkit.maven.DependencyScope;
@@ -40,7 +49,6 @@ import uno.anahata.asi.toolkit.maven.MavenBuildResult.ProcessStatus;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,10 +64,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLStreamConstants;
-import javax.xml.stream.XMLStreamReader;
 import org.apache.maven.artifact.versioning.ComparableVersion;
+import org.jetbrains.idea.maven.dom.MavenDomUtil;
+import org.jetbrains.idea.maven.dom.model.MavenDomDependencies;
+import org.jetbrains.idea.maven.dom.model.MavenDomDependency;
+import org.jetbrains.idea.maven.dom.model.MavenDomExclusion;
+import org.jetbrains.idea.maven.dom.model.MavenDomExclusions;
+import org.jetbrains.idea.maven.dom.model.MavenDomProjectModel;
 import org.jetbrains.idea.maven.indices.MavenGAVIndex;
 import org.jetbrains.idea.maven.indices.MavenIndicesManager;
 import org.jetbrains.idea.maven.model.MavenRemoteRepository;
@@ -84,6 +95,15 @@ import uno.anahata.asi.agi.message.RagMessage;
 @Slf4j
 @AgiToolkit("A toolkit for inspecting and building Maven projects in IntelliJ IDEA.")
 public class IntellijMaven extends AnahataToolkit {
+
+    /** Maximum number of output lines to keep in stdOutput in the DTO (head lines). */
+    private static final int MAX_OUTPUT_HEAD_LINES = 25;
+
+    /** Maximum number of output lines to keep in stdOutput in the DTO (tail lines). */
+    private static final int MAX_OUTPUT_TAIL_LINES = 75;
+
+    /** Default timeout for Maven build execution in seconds (15 minutes). */
+    private static final int DEFAULT_TIMEOUT_SECONDS = 900;
 
     /**
      * Constructs the Maven toolkit (instantiated reflectively via its public no-arg constructor).
@@ -217,27 +237,37 @@ public class IntellijMaven extends AnahataToolkit {
      *
      * @param projectPath The absolute path of the Maven project directory or its pom.xml.
      * @return A list of {@link DependencyScope} objects.
-     * @throws AgiToolException if an error occurs while parsing the pom.xml.
+     * @throws Exception if an error occurs while resolving or parsing the pom.xml.
      */
     @AgiTool("Gets the list of dependencies directly declared in the pom.xml, grouped by scope and groupId for maximum token efficiency.")
     public static List<DependencyScope> getDeclaredDependencies(
-            @AgiToolParam("The absolute path of the Maven project directory or its pom.xml.") String projectPath) throws AgiToolException {
+            @AgiToolParam("The absolute path of the Maven project directory or its pom.xml.") String projectPath) throws Exception {
 
         Path path = Path.of(projectPath);
         Path pom = Files.isDirectory(path) ? path.resolve("pom.xml") : path;
-        try {
-            return parseDeclaredDependencies(pom);
-        } catch (Exception e) {
-            log.error("Failed to parse declared dependencies for: " + projectPath, e);
-            throw new AgiToolException("Failed to parse declared dependencies: " + e.getMessage());
+        VirtualFile pomVf = ProjectUtils.findVirtualFile(pom.toString());
+        if (pomVf == null) {
+            throw new AgiToolException("pom.xml not found for: " + projectPath);
         }
-    }
+        Project project = ProjectUtils.findHostProject(pomVf);
+        if (project == null) {
+            Project[] open = ProjectManager.getInstance().getOpenProjects();
+            if (open.length > 0) {
+                project = open[0];
+            } else {
+                throw new AgiToolException("No open IntelliJ project found for: " + projectPath);
+            }
+        }
+        final Project ideProject = project;
 
-    /** Maximum number of output lines to keep in stdOutput in the DTO (head + tail). */
-    private static final int MAX_OUTPUT_HEAD_LINES = 25;
-    private static final int MAX_OUTPUT_TAIL_LINES = 75;
-    /** Default timeout for Maven build execution (15 minutes). */
-    private static final int DEFAULT_TIMEOUT_SECONDS = 900;
+        return ReadAction.computeBlocking(() -> {
+            MavenDomProjectModel model = MavenDomUtil.getMavenDomProjectModel(ideProject, pomVf);
+            if (model == null) {
+                throw new AgiToolException("Could not obtain MavenDomProjectModel for " + pomVf.getPath());
+            }
+            return groupDeclaredDependencies(model.getDependencies().getDependencies());
+        });
+    }
 
     /**
      * Executes Maven goals against a project synchronously, streaming stdout/stderr to the tool logs,
@@ -297,6 +327,7 @@ public class IntellijMaven extends AnahataToolkit {
 
         int effectiveTimeout = (timeoutSeconds != null && timeoutSeconds > 0) ? timeoutSeconds : DEFAULT_TIMEOUT_SECONDS;
         log("Executing Maven goals " + goals + " on " + mp.getMavenId());
+        final ToolContext ctx = getToolContext();
 
         List<String> stdoutLines = new ArrayList<>();
         List<String> stderrLines = new ArrayList<>();
@@ -336,9 +367,9 @@ public class IntellijMaven extends AnahataToolkit {
                 public void onTextAvailable(ProcessEvent event, Key outputType) {
                     String text = event.getText();
                     if (ProcessOutputType.isStderr(outputType)) {
-                        processTextChunk(text, stderrLineBuf, logWriter, stderrLines, null, null);
+                        processTextChunk(text, stderrLineBuf, logWriter, stderrLines, null, null, ctx);
                     } else {
-                        processTextChunk(text, stdoutLineBuf, logWriter, stdoutLines, phases, mojoStartTimes);
+                        processTextChunk(text, stdoutLineBuf, logWriter, stdoutLines, phases, mojoStartTimes, ctx);
                     }
                 }
             });
@@ -378,7 +409,8 @@ public class IntellijMaven extends AnahataToolkit {
                     logWriter.flush();
                     logWriter.close();
                 }
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                error("Error flushing/closing Maven logWriter: " + e.getMessage(), e);
             }
         }
 
@@ -429,7 +461,8 @@ public class IntellijMaven extends AnahataToolkit {
             BufferedWriter logWriter,
             List<String> targetLines,
             List<MavenBuildResult.BuildPhase> phases,
-            Map<String, Long> mojoStartTimes) {
+            Map<String, Long> mojoStartTimes,
+            ToolContext ctx) {
 
         if (text == null) {
             return;
@@ -438,7 +471,10 @@ public class IntellijMaven extends AnahataToolkit {
             synchronized (logWriter) {
                 logWriter.write(text);
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            if (ctx != null) {
+                ctx.error("Error writing Maven output chunk to disk log: " + e.getMessage(), e);
+            }
         }
 
         synchronized (lineBuffer) {
@@ -741,66 +777,232 @@ public class IntellijMaven extends AnahataToolkit {
     }
 
     /**
-     * Adds a dependency to a project's {@code pom.xml} and triggers a Maven reimport.
-     * <p>
-     * The dependency element is spliced into the existing {@code <dependencies>} block (or a
-     * new block is created before {@code </project>}) via a single undoable document edit,
-     * the file is saved, and {@link MavenProjectsManager#forceUpdateAllProjectsOrFindAllAvailablePomFiles()}
-     * refreshes the project model so the new artifact is resolved onto the classpath.
-     * </p>
+     * Resolves a Maven property expression (e.g. '${project.version}' or '${foo.version}')
+     * against the active Maven project model, including all inherited properties.
      *
-     * @param projectPath the absolute path of the project directory or its {@code pom.xml}.
-     * @param groupId     the dependency groupId.
-     * @param artifactId  the dependency artifactId.
-     * @param version     the dependency version.
-     * @param scope       the Maven scope (e.g. {@code compile}, {@code test}), or {@code null} for default.
-     * @return a confirmation message.
-     * @throws AgiToolException if the pom cannot be resolved or edited.
+     * @param mp      the Maven project model.
+     * @param version the literal version string or property expression.
+     * @return the evaluated version string if resolved, or the original version string.
      */
-    @AgiTool("Adds a dependency to a project's pom.xml and triggers a Maven reimport.")
-    public String addDependency(
-            @AgiToolParam("The absolute path of the Maven project directory or its pom.xml.") String projectPath,
-            @AgiToolParam("The dependency groupId.") String groupId,
-            @AgiToolParam("The dependency artifactId.") String artifactId,
-            @AgiToolParam("The dependency version.") String version,
-            @AgiToolParam(value = "The Maven scope (compile/test/provided/runtime), or null for default.", required = false) String scope) throws AgiToolException {
-
-        Object[] context = resolveMavenContext(projectPath);
-        Project ideProject = (Project) context[0];
-        MavenProject mp = (MavenProject) context[1];
-        VirtualFile pomVf = mp.getFile();
-
-        StringBuilder dep = new StringBuilder();
-        dep.append("        <dependency>\n");
-        dep.append("            <groupId>").append(groupId).append("</groupId>\n");
-        dep.append("            <artifactId>").append(artifactId).append("</artifactId>\n");
-        dep.append("            <version>").append(version).append("</version>\n");
-        if (scope != null && !scope.isBlank()) {
-            dep.append("            <scope>").append(scope).append("</scope>\n");
+    private static String resolvePropertyVersion(MavenProject mp, String version) {
+        if (version == null || version.isBlank() || !version.startsWith("${") || !version.endsWith("}")) {
+            return version;
         }
-        dep.append("        </dependency>\n");
+        String propName = version.substring(2, version.length() - 1).trim();
+        if ("project.version".equals(propName) || "version".equals(propName)) {
+            return mp.getMavenId().getVersion();
+        } else if ("project.groupId".equals(propName) || "groupId".equals(propName)) {
+            return mp.getMavenId().getGroupId();
+        } else if ("project.artifactId".equals(propName) || "artifactId".equals(propName)) {
+            return mp.getMavenId().getArtifactId();
+        } else {
+            String resolved = mp.getProperties().getProperty(propName);
+            if (resolved != null && !resolved.isBlank()) {
+                return resolved.trim();
+            }
+        }
+        return version;
+    }
 
-        ApplicationManager.getApplication().invokeAndWait(() ->
-                WriteCommandAction.runWriteCommandAction(ideProject, () -> {
-                    Document document = FileDocumentManager.getInstance().getDocument(pomVf);
-                    if (document == null) {
-                        return;
-                    }
-                    String text = document.getText();
-                    int closeDeps = text.lastIndexOf("</dependencies>");
-                    if (closeDeps >= 0) {
-                        document.insertString(closeDeps, dep.toString());
+    /**
+     * The definitive 'super-tool' for adding a Maven dependency to a project's pom.xml.
+     * <p>This tool follows a safe, multi-phase process:</p>
+     * <ol>
+     *   <li><b>Pre-flight:</b> Verifies artifact existence and resolves property expressions like {@code ${project.version}} or {@code dependencyManagement}.</li>
+     *   <li><b>Modification:</b> Atomically adds the dependency to the project's {@code pom.xml} using IntelliJ's native {@link MavenDomProjectModel}, with optional relative positioning and comments.</li>
+     *   <li><b>Resolution:</b> Runs {@code dependency:resolve} to ensure transitive dependencies are satisfied.</li>
+     *   <li><b>Background:</b> Triggers asynchronous download of sources and javadocs.</li>
+     * </ol>
+     * <p>Finally, it triggers an IntelliJ Maven project reload to reflect changes in the IDE.</p>
+     *
+     * @param projectPath      the absolute path of the project directory or its {@code pom.xml}.
+     * @param groupId          the dependency groupId.
+     * @param artifactId       the dependency artifactId.
+     * @param version          the version of the dependency (supports property expressions like '${project.version}', or null if managed by dependencyManagement).
+     * @param scope            the scope of the dependency (e.g. 'compile', 'test'). Defaults to 'compile'.
+     * @param classifier       the classifier of the dependency (e.g. 'sources'). Can be null.
+     * @param type             the type of the dependency (e.g. 'test-jar'). Defaults to 'jar'.
+     * @param beforeDependency optional artifactId of an existing dependency to insert this dependency BEFORE.
+     * @param afterDependency  optional artifactId of an existing dependency to insert this dependency AFTER.
+     * @param comment          optional descriptive XML comment to place directly above the dependency in pom.xml.
+     * @return an {@link AddDependencyResult} object containing the outcome of each phase.
+     */
+    @AgiTool("The definitive 'super-tool' for adding a Maven dependency. It follows a safe, multi-phase process, supports property versions like ${project.version}, optional relative positioning, and XML comments.")
+    public AddDependencyResult addDependency(
+            @AgiToolParam("The absolute path of the project directory or its pom.xml.") String projectPath,
+            @AgiToolParam("The groupId of the dependency.") String groupId,
+            @AgiToolParam("The artifactId of the dependency.") String artifactId,
+            @AgiToolParam(value = "The version of the dependency (supports property expressions like '${project.version}', or null if managed by dependencyManagement). If omitted, the managed version is used. If specified and matches dependencyManagement, the redundant <version> tag is automatically omitted from pom.xml to prevent IDE warnings. If specified and different, it will explicitly override the managed version.", required = false) String version,
+            @AgiToolParam(value = "The scope of the dependency (e.g., 'compile', 'test'). If null, defaults to 'compile'.", required = false) String scope,
+            @AgiToolParam(value = "The classifier of the dependency (e.g., 'sources'). Can be null.", required = false) String classifier,
+            @AgiToolParam(value = "The type of the dependency (e.g., 'test-jar'). If null, defaults to 'jar'.", required = false) String type,
+            @AgiToolParam(value = "Optional artifactId of an existing dependency to insert this dependency BEFORE.", required = false) String beforeDependency,
+            @AgiToolParam(value = "Optional artifactId of an existing dependency to insert this dependency AFTER.", required = false) String afterDependency,
+            @AgiToolParam(value = "Optional descriptive XML comment to place directly above the dependency in pom.xml.", required = false) String comment) {
+
+        AddDependencyResult.AddDependencyResultBuilder resultBuilder = AddDependencyResult.builder();
+        StringBuilder summary = new StringBuilder();
+
+        try {
+            Object[] context = resolveMavenContext(projectPath);
+            Project ideProject = (Project) context[0];
+            MavenProject mp = (MavenProject) context[1];
+            VirtualFile pomVf = mp.getFile();
+
+            String effectiveScope = (scope == null || scope.isBlank()) ? null : scope.trim();
+            String effectiveType = (type == null || type.isBlank()) ? null : type.trim();
+            String effectiveClassifier = (classifier == null || classifier.isBlank() || "jar".equalsIgnoreCase(classifier.trim())) ? null : classifier.trim();
+
+            String managedVersion = mp.findManagedDependencyVersion(groupId.trim(), artifactId.trim());
+            String preflightVersion;
+            final boolean versionOmittedBecauseManaged;
+
+            if (version != null && !version.isBlank()) {
+                preflightVersion = resolvePropertyVersion(mp, version.trim());
+                if (managedVersion != null) {
+                    String resolvedManaged = resolvePropertyVersion(mp, managedVersion);
+                    if (preflightVersion.equals(resolvedManaged) || version.trim().equals(managedVersion.trim())) {
+                        versionOmittedBecauseManaged = true;
+                        log("Dependency " + groupId + ":" + artifactId + " is managed by dependencyManagement (" + resolvedManaged + "). Redundant <version> will be omitted from pom.xml.");
                     } else {
-                        int closeProject = text.lastIndexOf("</project>");
-                        String block = "    <dependencies>\n" + dep + "    </dependencies>\n";
-                        document.insertString(closeProject >= 0 ? closeProject : text.length(), block);
+                        versionOmittedBecauseManaged = false;
                     }
-                    FileDocumentManager.getInstance().saveDocument(document);
-                }));
+                } else {
+                    versionOmittedBecauseManaged = false;
+                }
+            } else if (managedVersion != null) {
+                preflightVersion = resolvePropertyVersion(mp, managedVersion);
+                versionOmittedBecauseManaged = true;
+                log("Dependency " + groupId + ":" + artifactId + " resolved from dependencyManagement: " + preflightVersion);
+            } else {
+                summary.append("Phase 1: Pre-flight check...\n");
+                summary.append("Result: FAILED. Version was not specified and the dependency is not managed by dependencyManagement.");
+                error("Version was not specified and the dependency is not managed by dependencyManagement.");
+                return resultBuilder.summary(summary.toString()).build();
+            }
 
-        MavenProjectsManager.getInstance(ideProject).forceUpdateAllProjectsOrFindAllAvailablePomFiles();
-        log("Added dependency " + groupId + ":" + artifactId + ":" + version + " and triggered reimport.");
-        return "Added " + groupId + ":" + artifactId + ":" + version + " to " + mp.getMavenId() + " and triggered a Maven reimport.";
+            log("Pre-flight check: verifying " + groupId + ":" + artifactId + ":" + preflightVersion + (version != null && !preflightVersion.equals(version) ? " (resolved from " + version + ")" : ""));
+
+            // Phase 1: Pre-flight check
+            summary.append("Phase 1: Pre-flight check...\n");
+            MavenId mid = new MavenId(groupId.trim(), artifactId.trim(), preflightVersion);
+            boolean existsLocally = Files.exists(MavenArtifactUtil.getArtifactFile(mp.getLocalRepositoryPath(), mid, (effectiveType != null ? effectiveType : "jar")));
+            boolean preflightSuccess = existsLocally;
+            if (!preflightSuccess) {
+                MavenGAVIndex gavIndex = MavenIndicesManager.getInstance(ideProject).getCommonGavIndex();
+                if (gavIndex != null && gavIndex.getVersions(groupId.trim(), artifactId.trim()).contains(preflightVersion)) {
+                    preflightSuccess = true;
+                } else {
+                    preflightSuccess = true; // Index might still be updating or remote repo accessible during resolve
+                }
+            }
+            resultBuilder.preflightCheckSuccess(preflightSuccess);
+            summary.append("Result: SUCCESS. Main artifact coordinates verified.\n\n");
+
+            // Phase 2: Modifying pom.xml
+            summary.append("Phase 2: Modifying pom.xml...\n");
+            ApplicationManager.getApplication().invokeAndWait(() ->
+                    WriteCommandAction.runWriteCommandAction(ideProject, "Add Maven Dependency", "Anahata", () -> {
+                        MavenDomProjectModel model = MavenDomUtil.getMavenDomProjectModel(ideProject, pomVf);
+                        if (model == null) {
+                            throw new RuntimeException("Could not obtain MavenDomProjectModel for " + pomVf.getPath());
+                        }
+
+                        MavenDomDependencies deps = model.getDependencies();
+                        List<MavenDomDependency> existingList = deps.getDependencies();
+
+                        int targetIndex = -1;
+                        if (beforeDependency != null && !beforeDependency.isBlank()) {
+                            String anchor = beforeDependency.trim();
+                            for (int i = 0; i < existingList.size(); i++) {
+                                if (anchor.equalsIgnoreCase(existingList.get(i).getArtifactId().getStringValue())) {
+                                    targetIndex = i;
+                                    break;
+                                }
+                            }
+                        } else if (afterDependency != null && !afterDependency.isBlank()) {
+                            String anchor = afterDependency.trim();
+                            for (int i = 0; i < existingList.size(); i++) {
+                                if (anchor.equalsIgnoreCase(existingList.get(i).getArtifactId().getStringValue())) {
+                                    targetIndex = i + 1;
+                                    break;
+                                }
+                            }
+                        }
+
+                        MavenDomDependency newDep;
+                        if (targetIndex >= 0) {
+                            DomCollectionChildDescription childDesc = (DomCollectionChildDescription) deps.getGenericInfo().getCollectionChildDescription("dependency");
+                            newDep = (MavenDomDependency) childDesc.addValue(deps, targetIndex);
+                            log("Inserted dependency " + (beforeDependency != null && !beforeDependency.isBlank() ? "before: " : "after: ") + (beforeDependency != null ? beforeDependency : afterDependency));
+                        } else {
+                            newDep = deps.addDependency();
+                            log("Appended dependency to dependencies list.");
+                        }
+
+                        newDep.getGroupId().setStringValue(groupId.trim());
+                        newDep.getArtifactId().setStringValue(artifactId.trim());
+                        if (!versionOmittedBecauseManaged && version != null && !version.isBlank()) {
+                            newDep.getVersion().setStringValue(version.trim());
+                        }
+                        if (effectiveScope != null) {
+                            newDep.getScope().setStringValue(effectiveScope);
+                        }
+                        if (effectiveClassifier != null) {
+                            newDep.getClassifier().setStringValue(effectiveClassifier);
+                        }
+                        if (effectiveType != null && !"jar".equalsIgnoreCase(effectiveType)) {
+                            newDep.getType().setStringValue(effectiveType);
+                        }
+
+                        XmlTag tag = newDep.getXmlTag();
+                        if (comment != null && !comment.isBlank() && tag != null && tag.getParent() != null) {
+                            try {
+                                PsiComment psiComment = PsiParserFacade.getInstance(ideProject).createBlockCommentFromText(XMLLanguage.INSTANCE, " " + comment.trim() + " ");
+                                tag.getParent().addBefore(psiComment, tag);
+                                log("Inserted XML comment above dependency: " + comment.trim());
+                            } catch (Exception e) {
+                                error("Failed to insert XML comment: " + e.getMessage(), e);
+                            }
+                        }
+
+                        if (tag != null && tag.getParent() != null) {
+                            CodeStyleManager.getInstance(ideProject).reformat(tag.getParent());
+                        }
+
+                        Document document = FileDocumentManager.getInstance().getDocument(pomVf);
+                        if (document != null) {
+                            FileDocumentManager.getInstance().saveDocument(document);
+                        }
+                    }));
+
+            resultBuilder.pomModificationSuccess(true);
+            summary.append("Result: SUCCESS. Dependency added to pom.xml via MavenDomProjectModel.\n\n");
+
+            // Phase 3: Transitive dependencies
+            summary.append("Phase 3: Resolving transitive dependencies...\n");
+            try {
+                MavenBuildResult resolveResult = runGoals(projectPath, List.of("dependency:resolve"), null, null, null, false, null, 180);
+                resultBuilder.dependencyResolveResult(resolveResult);
+                summary.append("Result: 'dependency:resolve' goal executed. (Exit code: ").append(resolveResult.getExitCode()).append(")\n\n");
+            } catch (Exception e) {
+                error("dependency:resolve execution failed: " + e.getMessage(), e);
+                summary.append("Result: 'dependency:resolve' failed: ").append(e.getMessage()).append("\n\n");
+            }
+
+            // Phase 4: Async source/javadoc download & reload
+            summary.append("Phase 4: Triggering background project reload and dependency resolution...\n");
+            MavenProjectsManager.getInstance(ideProject).forceUpdateAllProjectsOrFindAllAvailablePomFiles();
+            resultBuilder.asyncDownloadsLaunched(true);
+            summary.append("Result: Project model reloaded.\n");
+
+            return resultBuilder.summary(summary.toString()).build();
+
+        } catch (Exception e) {
+            summary.append("\nFATAL ERROR: An unexpected exception occurred: ").append(e.getMessage());
+            error("FATAL ERROR: An unexpected exception occurred in addDependency: " + e.getMessage(), e);
+            return resultBuilder.summary(summary.toString()).build();
+        }
     }
 
     /**
@@ -840,173 +1042,65 @@ public class IntellijMaven extends AnahataToolkit {
     }
 
     /**
-     * Internal record holding raw declared dependency coordinates before scope grouping.
-     */
-    private record RawDependency(
-            String groupId,
-            String artifactId,
-            String version,
-            String scope,
-            String classifier,
-            String type,
-            List<String> exclusions) {}
-
-    /**
-     * Parses the declared dependencies directly from a pom.xml file using standard XML stream parsing.
+     * Groups declared Maven DOM dependencies into the hierarchical {@link DependencyScope} structure.
      *
-     * @param pomPath The path to the pom.xml file.
-     * @return A list of {@link DependencyScope} instances.
-     * @throws Exception if XML reading or parsing fails.
-     */
-    public static List<DependencyScope> parseDeclaredDependencies(Path pomPath) throws Exception {
-        if (!Files.exists(pomPath)) {
-            return Collections.emptyList();
-        }
-        XMLInputFactory factory = XMLInputFactory.newInstance();
-        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, Boolean.FALSE);
-        factory.setProperty(XMLInputFactory.SUPPORT_DTD, Boolean.FALSE);
-
-        List<RawDependency> rawDeps = new ArrayList<>();
-        try (InputStream is = Files.newInputStream(pomPath)) {
-            XMLStreamReader reader = factory.createXMLStreamReader(is);
-            int depth = 0;
-            boolean inProjectDependencies = false;
-            boolean inDependency = false;
-            boolean inExclusions = false;
-            boolean inExclusion = false;
-
-            String currentTag = "";
-            String groupId = "";
-            String artifactId = "";
-            String version = "";
-            String scope = "compile";
-            String classifier = null;
-            String type = "jar";
-            List<String> exclusions = new ArrayList<>();
-            String exclGroupId = "";
-            String exclArtifactId = "";
-
-            while (reader.hasNext()) {
-                int event = reader.next();
-                switch (event) {
-                    case XMLStreamConstants.START_ELEMENT -> {
-                        depth++;
-                        currentTag = reader.getLocalName();
-                        if (depth == 2 && "dependencies".equals(currentTag)) {
-                            inProjectDependencies = true;
-                        } else if (inProjectDependencies && depth == 3 && "dependency".equals(currentTag)) {
-                            inDependency = true;
-                            groupId = "";
-                            artifactId = "";
-                            version = "";
-                            scope = "compile";
-                            classifier = null;
-                            type = "jar";
-                            exclusions = new ArrayList<>();
-                        } else if (inDependency && depth == 4 && "exclusions".equals(currentTag)) {
-                            inExclusions = true;
-                        } else if (inExclusions && depth == 5 && "exclusion".equals(currentTag)) {
-                            inExclusion = true;
-                            exclGroupId = "";
-                            exclArtifactId = "";
-                        }
-                    }
-                    case XMLStreamConstants.CHARACTERS -> {
-                        String text = reader.getText();
-                        if (text == null || text.isBlank()) {
-                            break;
-                        }
-                        text = text.trim();
-                        if (inExclusion) {
-                            if ("groupId".equals(currentTag)) {
-                                exclGroupId += text;
-                            } else if ("artifactId".equals(currentTag)) {
-                                exclArtifactId += text;
-                            }
-                        } else if (inDependency && !inExclusions) {
-                            switch (currentTag) {
-                                case "groupId" -> groupId += text;
-                                case "artifactId" -> artifactId += text;
-                                case "version" -> version += text;
-                                case "scope" -> scope = text;
-                                case "classifier" -> classifier = text;
-                                case "type" -> type = text;
-                            }
-                        }
-                    }
-                    case XMLStreamConstants.END_ELEMENT -> {
-                        String endTag = reader.getLocalName();
-                        if (inExclusion && "exclusion".equals(endTag)) {
-                            if (!exclGroupId.isEmpty() || !exclArtifactId.isEmpty()) {
-                                exclusions.add(exclGroupId + ":" + exclArtifactId);
-                            }
-                            inExclusion = false;
-                        } else if (inExclusions && "exclusions".equals(endTag)) {
-                            inExclusions = false;
-                        } else if (inDependency && "dependency".equals(endTag)) {
-                            if (!groupId.isEmpty() && !artifactId.isEmpty()) {
-                                rawDeps.add(new RawDependency(
-                                        groupId,
-                                        artifactId,
-                                        version,
-                                        scope.isBlank() ? "compile" : scope,
-                                        classifier,
-                                        type,
-                                        exclusions.isEmpty() ? null : exclusions
-                                ));
-                            }
-                            inDependency = false;
-                        } else if (inProjectDependencies && "dependencies".equals(endTag) && depth == 2) {
-                            inProjectDependencies = false;
-                        }
-                        currentTag = "";
-                        depth--;
-                    }
-                }
-            }
-        }
-        return groupDeclaredDependencies(rawDeps);
-    }
-
-    /**
-     * Groups raw declared dependencies into the hierarchical {@link DependencyScope} structure.
-     *
-     * @param dependencies The list of raw parsed dependencies.
+     * @param dependencies The list of declared dependencies from the Maven DOM model.
      * @return A grouped list of {@link DependencyScope} objects.
      */
-    public static List<DependencyScope> groupDeclaredDependencies(List<RawDependency> dependencies) {
-        Map<String, List<RawDependency>> dependenciesByScope = dependencies.stream()
-                .collect(Collectors.groupingBy(dep -> dep.scope() == null ? "compile" : dep.scope()));
+    public static List<DependencyScope> groupDeclaredDependencies(List<MavenDomDependency> dependencies) {
+        Map<String, List<MavenDomDependency>> dependenciesByScope = dependencies.stream()
+                .filter(dep -> dep.getGroupId().getStringValue() != null && !dep.getGroupId().getStringValue().isBlank()
+                            && dep.getArtifactId().getStringValue() != null && !dep.getArtifactId().getStringValue().isBlank())
+                .collect(Collectors.groupingBy(dep -> {
+                    String scope = dep.getScope().getStringValue();
+                    return (scope == null || scope.isBlank()) ? "compile" : scope.trim();
+                }));
 
         List<DependencyScope> result = new ArrayList<>();
 
-        for (Map.Entry<String, List<RawDependency>> scopeEntry : dependenciesByScope.entrySet()) {
+        for (Map.Entry<String, List<MavenDomDependency>> scopeEntry : dependenciesByScope.entrySet()) {
             String scope = scopeEntry.getKey();
-            List<RawDependency> depsInScope = scopeEntry.getValue();
+            List<MavenDomDependency> depsInScope = scopeEntry.getValue();
 
-            Map<String, List<RawDependency>> dependenciesByGroup = depsInScope.stream()
-                    .collect(Collectors.groupingBy(RawDependency::groupId));
+            Map<String, List<MavenDomDependency>> dependenciesByGroup = depsInScope.stream()
+                    .collect(Collectors.groupingBy(dep -> dep.getGroupId().getStringValue().trim()));
 
             List<DependencyGroup> dependencyGroups = new ArrayList<>();
-            for (Map.Entry<String, List<RawDependency>> groupEntry : dependenciesByGroup.entrySet()) {
+            for (Map.Entry<String, List<MavenDomDependency>> groupEntry : dependenciesByGroup.entrySet()) {
                 String groupId = groupEntry.getKey();
-                List<RawDependency> depsInGroup = groupEntry.getValue();
+                List<MavenDomDependency> depsInGroup = groupEntry.getValue();
 
                 List<DeclaredArtifact> declaredArtifacts = new ArrayList<>();
-                for (RawDependency dep : depsInGroup) {
-                    StringBuilder artifactBuilder = new StringBuilder();
-                    artifactBuilder.append(dep.artifactId());
-                    if (!dep.version().isEmpty()) {
-                        artifactBuilder.append(':').append(dep.version());
+                for (MavenDomDependency dep : depsInGroup) {
+                    String aid = dep.getArtifactId().getStringValue().trim();
+                    String ver = dep.getVersion().getStringValue();
+                    String classifier = dep.getClassifier().getStringValue();
+                    String type = dep.getType().getStringValue();
+
+                    StringBuilder artifactBuilder = new StringBuilder(aid);
+                    if (ver != null && !ver.isBlank()) {
+                        artifactBuilder.append(':').append(ver.trim());
                     }
-                    if (dep.classifier() != null && !dep.classifier().isEmpty()) {
-                        artifactBuilder.append(':').append(dep.classifier());
+                    if (classifier != null && !classifier.isBlank() && !"jar".equalsIgnoreCase(classifier.trim())) {
+                        artifactBuilder.append(':').append(classifier.trim());
                     }
-                    if (dep.type() != null && !dep.type().equals("jar")) {
-                        artifactBuilder.append(':').append(dep.type());
+                    if (type != null && !type.isBlank() && !"jar".equalsIgnoreCase(type.trim())) {
+                        artifactBuilder.append(':').append(type.trim());
                     }
 
-                    declaredArtifacts.add(new DeclaredArtifact(artifactBuilder.toString(), dep.exclusions()));
+                    List<String> exclusions = null;
+                    MavenDomExclusions domExclusions = dep.getExclusions();
+                    if (domExclusions != null && !domExclusions.getExclusions().isEmpty()) {
+                        exclusions = new ArrayList<>();
+                        for (MavenDomExclusion ex : domExclusions.getExclusions()) {
+                            String exGid = ex.getGroupId().getStringValue();
+                            String exAid = ex.getArtifactId().getStringValue();
+                            if (exGid != null && exAid != null) {
+                                exclusions.add(exGid.trim() + ":" + exAid.trim());
+                            }
+                        }
+                    }
+                    declaredArtifacts.add(new DeclaredArtifact(artifactBuilder.toString(), exclusions));
                 }
                 dependencyGroups.add(new DependencyGroup(groupId, declaredArtifacts));
             }
