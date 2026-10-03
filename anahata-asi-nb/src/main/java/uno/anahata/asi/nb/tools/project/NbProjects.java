@@ -18,8 +18,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.tools.Diagnostic;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.maven.project.MavenProject;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.queries.SourceLevelQuery;
 import org.netbeans.api.java.source.JavaSource;
@@ -36,11 +38,18 @@ import org.netbeans.modules.parsing.spi.indexing.ErrorsCache;
 import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.SubprojectProvider;
 import org.netbeans.spi.project.ui.ProjectProblemsProvider;
+import org.netbeans.spi.project.ui.support.ProjectChooser;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.filesystems.URLMapper;
+import org.openide.loaders.DataObject;
+import org.openide.nodes.Node;
 import org.openide.util.Lookup;
+import org.openide.xml.XMLUtil;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.context.NbProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.Maven;
 import uno.anahata.asi.toolkit.project.AbstractProjects;
@@ -159,7 +168,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
      * @param ragMessage The target RAG message.
      */
     @Override
-    public void populateMessage(uno.anahata.asi.agi.message.RagMessage ragMessage) {
+    public void populateMessage(RagMessage ragMessage) {
         String projectsFolder = getNetBeansProjectsFolder();
         StringBuilder sb = new StringBuilder();
         sb.append("## IDE Project Environment\n");
@@ -233,7 +242,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
                 return Arrays.stream(subDirs)
                         .map(File::getName)
                         .sorted()
-                        .collect(java.util.stream.Collectors.toList());
+                        .collect(Collectors.toList());
             }
         }
         return Collections.emptyList();
@@ -488,7 +497,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
                 mavenDeclaredDependencies = temp;
             }
 
-            org.apache.maven.project.MavenProject rawMvnProject = nbMavenProject.getMavenProject();
+            MavenProject rawMvnProject = nbMavenProject.getMavenProject();
             packaging = rawMvnProject.getPackaging();
             javaSourceLevel = rawMvnProject.getProperties().getProperty("maven.compiler.release");
             if (javaSourceLevel == null) {
@@ -507,7 +516,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
 
         String htmlDisplayName = null;
         try {
-            org.openide.nodes.Node node = org.openide.loaders.DataObject.find(root).getNodeDelegate();
+            Node node = DataObject.find(root).getNodeDelegate();
             htmlDisplayName = node.getHtmlDisplayName();
         } catch (Exception e) {
             log.warn("Failed to get HTML display name for project root", e);
@@ -555,9 +564,9 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
         // 1. Priority 1: Auxiliary Configuration (nb-configuration.xml)
         AuxiliaryConfiguration aux = project.getLookup().lookup(AuxiliaryConfiguration.class);
         if (aux != null) {
-            org.w3c.dom.Element el = aux.getConfigurationFragment("properties", "http://www.netbeans.org/ns/maven-properties-data/1", true);
+            Element el = aux.getConfigurationFragment("properties", "http://www.netbeans.org/ns/maven-properties-data/1", true);
             if (el != null) {
-                org.w3c.dom.NodeList nodeList = el.getElementsByTagName("netbeans.compile.on.save");
+                NodeList nodeList = el.getElementsByTagName("netbeans.compile.on.save");
                 if (nodeList.getLength() > 0) {
                     return nodeList.item(0).getTextContent().trim() + " (IDE Override)";
                 }
@@ -600,16 +609,16 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
         AuxiliaryConfiguration aux = project.getLookup().lookup(AuxiliaryConfiguration.class);
         if (aux != null) {
             String ns = "http://www.netbeans.org/ns/maven-properties-data/1";
-            org.w3c.dom.Element props = aux.getConfigurationFragment("properties", ns, true);
+            Element props = aux.getConfigurationFragment("properties", ns, true);
 
             if (props == null) {
-                props = org.openide.xml.XMLUtil.createDocument("properties", ns, null, null).getDocumentElement();
+                props = XMLUtil.createDocument("properties", ns, null, null).getDocumentElement();
             }
 
-            org.w3c.dom.NodeList nl = props.getElementsByTagName("netbeans.compile.on.save");
-            org.w3c.dom.Element cosElem;
+            NodeList nl = props.getElementsByTagName("netbeans.compile.on.save");
+            Element cosElem;
             if (nl.getLength() > 0) {
-                cosElem = (org.w3c.dom.Element) nl.item(0);
+                cosElem = (Element) nl.item(0);
             } else {
                 cosElem = props.getOwnerDocument().createElementNS(ns, "netbeans.compile.on.save");
                 props.appendChild(cosElem);
@@ -900,7 +909,7 @@ public class NbProjects extends AbstractProjects implements PropertyChangeListen
      * @return Absolute path to the projects folder.
      */
     private String getNetBeansProjectsFolder() {
-        File f = org.netbeans.spi.project.ui.support.ProjectChooser.getProjectsFolder();
+        File f = ProjectChooser.getProjectsFolder();
         return f != null ? f.getAbsolutePath() : System.getProperty("user.home") + File.separator + "NetBeansProjects";
     }
 }

@@ -1,11 +1,15 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.project.context;
 
+import java.io.File;
 import java.nio.file.Path;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.netbeans.api.project.Project;
+import org.netbeans.api.project.ProjectManager;
 import org.netbeans.api.project.ProjectUtils;
+import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.NbProjects;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
@@ -31,24 +35,27 @@ import uno.anahata.asi.toolkit.project.ProjectStructureScope;
 public class NbProjectContextProvider extends AbstractProjectContextProvider {
 
     /**
-     * The NetBeans project instance.
-     */
-    protected transient Project project;
-
-    /**
-     * Resolves the NetBeans Project instance, restoring it from the path if needed after deserialization.
+     * Resolves the NetBeans Project instance dynamically from disk via {@link ProjectManager}.
+     * <p>
+     * Avoids caching the instance in a field so we never hold stale references or uninitialized
+     * {@code LazyProject} proxies across IDE restarts.
+     * </p>
      *
-     * @return The Project instance, or null if the project is no longer open.
+     * @return The Project instance, or null if the directory is missing or not a NetBeans project.
      */
     public Project getProject() {
-        if (project == null && projectPath != null) {
-            try {
-                project = NbProjects.findOpenProject(projectPath);
-            } catch (Exception e) {
-                log.warn("Project no longer open or resolvable at path: {}", projectPath);
-            }
+        if (projectPath == null) {
+            return null;
         }
-        return project;
+        try {
+            FileObject dir = FileUtil.toFileObject(new File(projectPath));
+            if (dir != null) {
+                return ProjectManager.getDefault().findProject(dir);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to resolve project at path: {}", projectPath, e);
+        }
+        return null;
     }
 
     /**
@@ -64,8 +71,6 @@ public class NbProjectContextProvider extends AbstractProjectContextProvider {
                 projectsToolkit,
                 NbProjects.getCanonicalPath(project.getProjectDirectory())
         );
-        this.project = project;
-
         syncMdResource();
     }
 
