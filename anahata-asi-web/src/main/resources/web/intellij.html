@@ -54,6 +54,7 @@
             <div class="sidebar-nav">
                 <h4>Application</h4>
                 <ul>
+                    <li><a href="#update-centers">Downloads & Updates</a></li>
                     <li><a href="#overview">Overview</a></li>
                     <li><a href="#features">Architecture & Highlights</a></li>
                     <li><a href="#installation">Installation Guide</a></li>
@@ -92,15 +93,90 @@
                     The <code>IntellijAsiContainer</code> and its native IntelliJ toolkits are currently in <strong>Beta</strong> stage. Curious enthusiasts are encouraged to check out the sources, try the latest snapshot builds, and share their enthusiasm with Arslan on the <a href="https://discord.gg/gwGWWxPUXE" target="_blank" rel="noopener noreferrer" style="color: var(--barca-gold); font-weight: 700; text-decoration: underline;">Anahata Discord</a>.
                 </div>
                 
-                <!-- Dynamic Download Badges -->
-                <div style="margin-top: 1.5rem; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-                    <a id="intellij-dl-stable" href="https://github.com/anahata-os/anahata-asi/releases/latest" class="btn-primary" target="_blank" style="text-decoration: none; font-weight: bold;">
-                        <i class="fas fa-download" style="margin-right: 8px;"></i> Download Stable Plugin (.zip) <span id="intellij-stable-ver" class="badge" style="font-size: 0.75rem; background: var(--barca-gold); color: black; margin-left: 6px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">v1.0.0</span>
-                    </a>
-                    <a id="intellij-dl-snapshot" href="https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-intellij-1.1.0-SNAPSHOT.zip" class="btn-secondary" style="text-decoration: none; font-weight: bold; border-color: var(--primary-light);">
-                        <i class="fas fa-bolt" style="color: var(--primary-light); margin-right: 8px;"></i> Download Latest Snapshot (.zip) <span id="intellij-snapshot-ver" class="badge" style="font-size: 0.75rem; background: var(--primary-light); color: white; margin-left: 6px; padding: 2px 6px; border-radius: 4px; font-weight: 800;">v1.1.0-SN</span>
-                    </a>
-                </div>
+                <!-- Row: Downloads & Official Update Repositories Section -->
+                <section id="update-centers" class="toolkit-section" style="margin-top: 1rem; margin-bottom: 3.5rem;">
+                    <div class="toolkit-header"><i class="fas fa-cloud-download-alt"></i><h2>Downloads & Official Update Repositories</h2></div>
+                    <p>Choose your preferred channel: configure our <b>Custom Plugin Repository</b> in IntelliJ IDEA to receive 1-click automatic updates, or download standalone <code>.zip</code> distribution archives.</p>
+                    
+                    <div class="nb-card" style="margin-top: 1.5rem; border-top: 2px solid var(--barca-gold); border-radius: 8px; padding: 1.8rem; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.06);">
+                        <!-- Channel Toggle Buttons -->
+                        <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" id="btn-ij-stable" onclick="selectIjChannel('stable')" style="background: rgba(49, 151, 149, 0.2); border: 1px solid var(--primary-light); color: var(--white); padding: 8px 18px; border-radius: 6px; font-weight: 800; font-size: 0.9rem; cursor: pointer; transition: var(--transition);">
+                                    <i class="fas fa-certificate" style="color: var(--barca-gold); margin-right: 6px;"></i> Official Stable
+                                </button>
+                                <button type="button" id="btn-ij-snapshot" onclick="selectIjChannel('snapshot')" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: var(--text-muted); padding: 8px 18px; border-radius: 6px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: var(--transition);">
+                                    <i class="fas fa-bolt" style="margin-right: 6px;"></i> Dev (Snapshots)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                            <!-- Line 1: Custom Plugin Repository URL (TOP) -->
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;">
+                                    <i class="fas fa-link" style="color: var(--primary-light); margin-right: 6px;"></i> Custom Plugin Repository URL:
+                                </div>
+                                <div style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); border-radius: 6px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                                    <code id="ij-catalog-url" style="font-size: 0.9rem; color: var(--primary-light); overflow-x: auto; white-space: nowrap;">https://asi.anahata.uno/intellij/plugins.xml</code>
+                                    <button onclick="navigator.clipboard.writeText(document.getElementById('ij-catalog-url').textContent); this.innerHTML='<i class=\'fas fa-check\'></i>'; setTimeout(() => this.innerHTML='<i class=\'fas fa-copy\'></i>', 2000);" style="background: none; border: none; color: var(--barca-gold); cursor: pointer; font-size: 1.1rem; padding: 4px 6px;" title="Copy Repository URL">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Line 2: Direct Plugin Binary Download (BOTTOM) -->
+                            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 1.2rem;">
+                                <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.6rem; font-weight: 600;">
+                                    <i class="fas fa-file-download" style="color: var(--barca-gold); margin-right: 6px;"></i> Direct Plugin Distribution (.zip):
+                                </div>
+                                <a id="ij-dynamic-dl-btn" href="https://github.com/anahata-os/anahata-asi/releases/latest" target="_blank" class="btn-primary" style="display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; width: 100%; padding: 12px 20px;">
+                                    <i class="fas fa-download"></i> <span id="ij-dynamic-dl-text">Download Stable Plugin (.zip)</span> <span id="ij-dynamic-dl-badge" class="badge" style="background: var(--barca-gold); color: black; font-weight: 800; padding: 2px 7px; border-radius: 4px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;"><i class="fab fa-github"></i> GitHub Releases</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        let currentIjChannel = 'stable';
+
+                        function selectIjChannel(ch) {
+                            currentIjChannel = ch;
+                            const isStable = ch === 'stable';
+
+                            document.getElementById('btn-ij-stable').style.background = isStable ? 'rgba(49, 151, 149, 0.2)' : 'rgba(255, 255, 255, 0.05)';
+                            document.getElementById('btn-ij-stable').style.borderColor = isStable ? 'var(--primary-light)' : 'rgba(255, 255, 255, 0.15)';
+                            document.getElementById('btn-ij-stable').style.color = isStable ? 'var(--white)' : 'var(--text-muted)';
+                            document.getElementById('btn-ij-stable').style.fontWeight = isStable ? '800' : '600';
+
+                            document.getElementById('btn-ij-snapshot').style.background = !isStable ? 'rgba(49, 151, 149, 0.2)' : 'rgba(255, 255, 255, 0.05)';
+                            document.getElementById('btn-ij-snapshot').style.borderColor = !isStable ? 'var(--primary-light)' : 'rgba(255, 255, 255, 0.15)';
+                            document.getElementById('btn-ij-snapshot').style.color = !isStable ? 'var(--white)' : 'var(--text-muted)';
+                            document.getElementById('btn-ij-snapshot').style.fontWeight = !isStable ? '800' : '600';
+
+                            const catalogUrl = isStable ? 'https://asi.anahata.uno/intellij/plugins.xml' : 'https://asi.anahata.uno/intellij/dev-plugins.xml';
+                            document.getElementById('ij-catalog-url').textContent = catalogUrl;
+
+                            const dlBtn = document.getElementById('ij-dynamic-dl-btn');
+                            const dlText = document.getElementById('ij-dynamic-dl-text');
+                            const dlBadge = document.getElementById('ij-dynamic-dl-badge');
+
+                            if (isStable) {
+                                dlBtn.href = window.intellijStableDownloadUrl || 'https://github.com/anahata-os/anahata-asi/releases/latest';
+                                dlText.textContent = window.intellijStableVer ? `Download Stable Plugin (${window.intellijStableVer})` : 'Download Stable Plugin (.zip)';
+                                dlBadge.innerHTML = '<i class="fab fa-github"></i> GitHub Releases';
+                                dlBadge.style.background = 'var(--barca-gold)';
+                                dlBadge.style.color = 'black';
+                            } else {
+                                dlBtn.href = window.intellijSnapshotDownloadUrl || 'https://github.com/anahata-os/anahata-asi/releases/tag/latest-snapshot';
+                                dlText.textContent = window.intellijSnapshotVer ? `Download Snapshot Plugin (${window.intellijSnapshotVer})` : 'Download Snapshot Plugin (.zip)';
+                                dlBadge.innerHTML = '<i class="fas fa-bolt"></i> Latest Snapshot';
+                                dlBadge.style.background = 'var(--primary-light)';
+                                dlBadge.style.color = 'white';
+                            }
+                        }
+                    </script>
+                </section>
 
                 <div class="tag-row">
                     <span class="tag">Apache Licensed</span>
@@ -138,13 +214,21 @@
             <!-- Installation Guide -->
             <section id="installation" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-download"></i><h2>How to Install the IntelliJ Plugin</h2></div>
-                <p>Installing Anahata ASI in IntelliJ IDEA, Android Studio, or any JetBrains IDE takes less than 30 seconds:</p>
+                <p>You can install Anahata ASI in IntelliJ IDEA, Android Studio, or any JetBrains IDE via our Custom Repository (recommended for 1-click updates) or directly from disk:</p>
                 
-                <div class="integration-grid">
-                    <div class="integration-item"><i class="fas fa-file-archive"></i> <div><b>1. Download the Plugin Distribution</b>: Click the <b>Download Snapshot (.zip)</b> button above to get the latest <code>anahata-asi-intellij-*.zip</code> distribution archive.</div></div>
-                    <div class="integration-item"><i class="fas fa-cog"></i> <div><b>2. Open IntelliJ Settings</b>: Go to <b>Settings</b> (or <b>Preferences</b> on macOS) &rarr; <b>Plugins</b>.</div></div>
-                    <div class="integration-item"><i class="fas fa-sliders-h"></i> <div><b>3. Install from Disk</b>: Click the gear icon (⚙️) at the top right of the Plugins dialog and choose <b>Install Plugin from Disk...</b></div></div>
-                    <div class="integration-item"><i class="fas fa-check-double"></i> <div><b>4. Select File & Restart</b>: Select the downloaded <code>.zip</code> file, click <b>OK</b>, and restart the IDE. The <b>Anahata ASI</b> tool window will appear in your right-hand sidebar!</div></div>
+                <h3 style="color: var(--barca-gold); font-size: 1.1rem; margin-top: 1.5rem;"><i class="fas fa-sync-alt" style="margin-right: 6px;"></i> Method A: Via Custom Plugin Repository (Recommended)</h3>
+                <div class="integration-grid" style="margin-top: 1rem;">
+                    <div class="integration-item"><i class="fas fa-cog"></i> <div><b>1. Open Plugins Settings</b>: Go to <b>Settings</b> (or <b>Preferences</b> on macOS) &rarr; <b>Plugins</b>.</div></div>
+                    <div class="integration-item"><i class="fas fa-sliders-h"></i> <div><b>2. Manage Repositories</b>: Click the gear icon (⚙️) at the top right and choose <b>Manage Plugin Repositories...</b></div></div>
+                    <div class="integration-item"><i class="fas fa-plus"></i> <div><b>3. Add Repository URL</b>: Click <b>+</b> and paste the catalog URL: <code>https://asi.anahata.uno/intellij/plugins.xml</code> (or <code>dev-plugins.xml</code> for dev snapshots), then click <b>OK</b>.</div></div>
+                    <div class="integration-item"><i class="fas fa-check-circle"></i> <div><b>4. Install & Auto-Update</b>: Search for <b>Anahata ASI</b> in the <b>Marketplace</b> tab, click <b>Install</b>, and restart. IntelliJ will now check for updates automatically!</div></div>
+                </div>
+
+                <h3 style="color: var(--text-muted); font-size: 1.1rem; margin-top: 2rem;"><i class="fas fa-file-archive" style="margin-right: 6px;"></i> Method B: Manual Install from Disk (.zip)</h3>
+                <div class="integration-grid" style="margin-top: 1rem;">
+                    <div class="integration-item"><i class="fas fa-file-archive"></i> <div><b>1. Download Distribution Archive</b>: Click the <b>Download Plugin (.zip)</b> button above.</div></div>
+                    <div class="integration-item"><i class="fas fa-sliders-h"></i> <div><b>2. Install from Disk</b>: In <b>Settings &rarr; Plugins</b>, click ⚙️ &rarr; <b>Install Plugin from Disk...</b></div></div>
+                    <div class="integration-item"><i class="fas fa-check-double"></i> <div><b>3. Select File & Restart</b>: Select the downloaded <code>.zip</code> file, click <b>OK</b>, and restart the IDE. The <b>Anahata ASI</b> tool window will appear in your right-hand sidebar!</div></div>
                 </div>
             </section>
 
