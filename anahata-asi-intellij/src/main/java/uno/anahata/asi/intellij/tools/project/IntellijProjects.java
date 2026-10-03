@@ -2,34 +2,44 @@
 package uno.anahata.asi.intellij.tools.project;
 
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.compiler.CompileContext;
 import com.intellij.openapi.compiler.CompileScope;
+import com.intellij.openapi.compiler.CompileStatusNotification;
 import com.intellij.openapi.compiler.CompilerManager;
+import com.intellij.openapi.compiler.CompilerMessage;
+import com.intellij.openapi.compiler.CompilerMessageCategory;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.projectRoots.JavaSdk;
 import com.intellij.openapi.projectRoots.ProjectJdkTable;
 import com.intellij.openapi.projectRoots.Sdk;
 import com.intellij.openapi.roots.ProjectRootManager;
-import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.agi.context.ContextProvider;
-import uno.anahata.asi.intellij.tools.project.context.IntellijProjectContextProvider;
-import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.agi.tool.AgiToolkit;
-import uno.anahata.asi.toolkit.project.AbstractProjects;
-import uno.anahata.asi.toolkit.project.ProjectOverview;
-import uno.anahata.asi.agi.tool.AgiTool;
-import uno.anahata.asi.agi.tool.AgiToolException;
-import uno.anahata.asi.agi.tool.AgiToolParam;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import com.intellij.openapi.vfs.VirtualFile;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.swing.SwingUtilities;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.context.ContextProvider;
+import uno.anahata.asi.agi.message.RagMessage;
+import uno.anahata.asi.agi.tool.AgiTool;
+import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.agi.tool.AgiToolParam;
+import uno.anahata.asi.agi.tool.AgiToolkit;
+import uno.anahata.asi.agi.tool.ToolContext;
+import uno.anahata.asi.intellij.tools.project.context.IntellijProjectContextProvider;
+import uno.anahata.asi.toolkit.project.AbstractProjects;
+import uno.anahata.asi.toolkit.project.ProjectOverview;
 
 /**
  * A toolkit for interacting with the IntelliJ IDEA Project APIs.
@@ -110,7 +120,7 @@ public class IntellijProjects extends AbstractProjects {
      * @return An Optional containing the matching provider.
      */
     @Override
-    public java.util.Optional<IntellijProjectContextProvider> getProjectProvider(String projectPath) {
+    public Optional<IntellijProjectContextProvider> getProjectProvider(String projectPath) {
         return childrenProviders.stream()
                 .filter(cp -> cp instanceof IntellijProjectContextProvider)
                 .map(cp -> (IntellijProjectContextProvider) cp)
@@ -234,11 +244,11 @@ public class IntellijProjects extends AbstractProjects {
 
         final List<String> result = new ArrayList<>();
         try {
-            javax.swing.SwingUtilities.invokeAndWait(() -> {
+            SwingUtilities.invokeAndWait(() -> {
                 try {
                     // Try the modern ProjectUtil.openOrImport
                     try {
-                        java.lang.reflect.Method m = Class.forName("com.intellij.ide.impl.ProjectUtil")
+                        Method m = Class.forName("com.intellij.ide.impl.ProjectUtil")
                                 .getMethod("openOrImport", Path.class);
                         Object proj = m.invoke(null, path);
                         if (proj != null) {
@@ -250,22 +260,22 @@ public class IntellijProjects extends AbstractProjects {
                         // Fallback to ProjectManager
                         ProjectManager pm = ProjectManager.getInstance();
                         try {
-                            java.lang.reflect.Method m = pm.getClass().getMethod("openProject", Path.class);
+                            Method m = pm.getClass().getMethod("openProject", Path.class);
                             m.invoke(pm, path);
                             result.add("Success: Opened project via ProjectManager at " + projectPath);
                         } catch (Exception ex2) {
-                            java.lang.reflect.Method m = pm.getClass().getMethod("loadAndOpenProject", String.class);
+                            Method m = pm.getClass().getMethod("loadAndOpenProject", String.class);
                             m.invoke(pm, projectPath);
                             result.add("Success: Opened project via loadAndOpenProject at " + projectPath);
                         }
                     }
                 } catch (Exception e) {
-                    log.error("Failed to open project in EDT: " + projectPath, e);
+                    error("Failed to open project in EDT: " + projectPath, e);
                     result.add("Error: Failed to open project: " + e.getMessage());
                 }
             });
         } catch (Exception e) {
-            log.error("EDT execution failed during project open: " + projectPath, e);
+            error("EDT execution failed during project open: " + projectPath, e);
             result.add("Error: Thread execution failed: " + e.getMessage());
         }
 
@@ -301,14 +311,51 @@ public class IntellijProjects extends AbstractProjects {
         // Auto-configure SDK if not set
         ensureProjectSdkConfigured(project);
 
+        final ToolContext ctx = getToolContext();
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<String> summary = new AtomicReference<>("Build did not report a result.");
         ApplicationManager.getApplication().invokeLater(() -> {
             CompilerManager compilerManager = CompilerManager.getInstance(project);
             CompileScope scope = compilerManager.createProjectCompileScope(project);
-            com.intellij.openapi.compiler.CompileStatusNotification callback = (aborted, errors, warnings, context) -> {
-                summary.set((aborted ? "Build aborted. " : "Build finished. ")
-                        + "Errors: " + errors + ", Warnings: " + warnings + ".");
+            CompileStatusNotification callback = (aborted, errors, warnings, compileContext) -> {
+                CompilerMessage[] errorMessages = compileContext != null ? compileContext.getMessages(CompilerMessageCategory.ERROR) : new CompilerMessage[0];
+                CompilerMessage[] warningMessages = compileContext != null ? compileContext.getMessages(CompilerMessageCategory.WARNING) : new CompilerMessage[0];
+
+                for (CompilerMessage err : errorMessages) {
+                    if (ctx != null) {
+                        ctx.error(formatCompilerMessage(err));
+                    }
+                }
+
+                for (CompilerMessage warn : warningMessages) {
+                    if (ctx != null) {
+                        ctx.log("WARNING: " + formatCompilerMessage(warn));
+                    }
+                }
+
+                StringBuilder sb = new StringBuilder();
+                if (aborted) {
+                    sb.append("Build aborted. ");
+                } else {
+                    sb.append("Build finished. ");
+                }
+                sb.append("Errors: ").append(errors).append(", Warnings: ").append(warnings).append(".");
+
+                if (errorMessages.length > 0) {
+                    sb.append("\n\n### Compiler Errors (").append(errorMessages.length).append("):\n");
+                    for (CompilerMessage err : errorMessages) {
+                        sb.append("- ").append(formatCompilerMessage(err)).append("\n");
+                    }
+                }
+
+                if (warningMessages.length > 0) {
+                    sb.append("\n### Compiler Warnings (").append(warningMessages.length).append("):\n");
+                    for (CompilerMessage warn : warningMessages) {
+                        sb.append("- ").append(formatCompilerMessage(warn)).append("\n");
+                    }
+                }
+
+                summary.set(sb.toString().trim());
                 latch.countDown();
             };
             if (rebuild) {
@@ -328,6 +375,33 @@ public class IntellijProjects extends AbstractProjects {
         }
         log(summary.get());
         return summary.get();
+    }
+
+    /**
+     * Formats a compiler message with file path, line number, and column if available.
+     *
+     * @param msg the compiler message.
+     * @return a formatted diagnostic string.
+     */
+    private static String formatCompilerMessage(CompilerMessage msg) {
+        StringBuilder sb = new StringBuilder();
+        VirtualFile vf = msg.getVirtualFile();
+        if (vf != null) {
+            sb.append(vf.getPath());
+            if (msg.getNavigatable() instanceof OpenFileDescriptor ofd) {
+                int line = ofd.getLine();
+                if (line >= 0) {
+                    sb.append(":").append(line + 1);
+                    int col = ofd.getColumn();
+                    if (col >= 0) {
+                        sb.append(":").append(col + 1);
+                    }
+                }
+            }
+            sb.append(": ");
+        }
+        sb.append(msg.getMessage());
+        return sb.toString();
     }
 
     /**
@@ -351,7 +425,7 @@ public class IntellijProjects extends AbstractProjects {
      * @param projectPath the absolute base path.
      * @return the matching open project, or {@code null} if none is open at that path.
      */
-    private Project findProjectByPath(String projectPath) {
+    private static Project findProjectByPath(String projectPath) {
         String target = Path.of(projectPath).toAbsolutePath().toString();
         for (Project project : ProjectManager.getInstance().getOpenProjects()) {
             String basePath = project.getBasePath();
@@ -414,7 +488,7 @@ public class IntellijProjects extends AbstractProjects {
         sb.append("\n## Detected System JDK Home Paths\n");
         try {
             JavaSdk javaSdk = JavaSdk.getInstance();
-            java.util.Collection<String> suggested = javaSdk.suggestHomePaths((Project) null);
+            Collection<String> suggested = javaSdk.suggestHomePaths((Project) null);
             if (suggested.isEmpty()) {
                 sb.append("- None auto-detected by JavaSdk.\n");
             } else {
@@ -591,7 +665,7 @@ public class IntellijProjects extends AbstractProjects {
 
         // 2. Look for suggested home paths
         try {
-            java.util.Collection<String> suggested = javaSdk.suggestHomePaths(project);
+            Collection<String> suggested = javaSdk.suggestHomePaths(project);
             for (String homePath : suggested) {
                 if (Files.exists(Path.of(homePath))) {
                     String name = javaSdk.suggestSdkName(null, homePath);
