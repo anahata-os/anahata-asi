@@ -237,13 +237,34 @@ jobs:
           fi
 
       # ---------------------------------------------------------------------
-      # 4. INTELLIJ IDEA PLUGIN PACKAGE (.zip)
+      # 4. INTELLIJ IDEA PLUGIN PACKAGE (.zip) & UPDATE CATALOGS
       # ---------------------------------------------------------------------
       - name: Package IntelliJ IDEA Plugin (.zip)
         run: |
+          BASE_VER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           mvn package -pl :anahata-asi-intellij -DskipTests -ntp
-          mkdir -p staging-binaries
+          mkdir -p staging-binaries staging-catalogs/intellij
           cp anahata-asi-intellij/target/*.zip staging-binaries/ || true
+
+          # Generate IntelliJ Custom Plugin Repository XML catalogs from version-controlled template
+          generate_intellij_catalog() {
+            local catalog_file="$1"
+            local download_url="$2"
+            sed -e "s|@VERSION@|${BASE_VER}|g" \
+                -e "s|@DOWNLOAD_URL@|${download_url}|g" \
+                anahata-asi-intellij/src/main/resources/plugins-template.xml > "$catalog_file"
+            echo "[INFO] Generated IntelliJ catalog from template: $catalog_file ($download_url)"
+          }
+
+          if [ "$IS_RELEASE" == "true" ]; then
+            if [ "${{ inputs.release_intellij }}" == "true" ]; then
+              generate_intellij_catalog "staging-catalogs/intellij/plugins.xml" \
+                "https://github.com/anahata-os/anahata-asi/releases/download/v${BASE_VER}/anahata-asi-intellij-${BASE_VER}.zip"
+            fi
+          else
+            generate_intellij_catalog "staging-catalogs/intellij/dev-plugins.xml" \
+              "https://github.com/anahata-os/anahata-asi/releases/download/latest-snapshot/anahata-asi-intellij-${BASE_VER}.zip"
+          fi
 
       # ---------------------------------------------------------------------
       # 5. LINUX DESKTOP (AppImage, .deb, .tar.gz & Canonical Snap Store)
@@ -401,12 +422,20 @@ jobs:
           if [ -d "temp-gh-pages/nb" ]; then
             cp -r temp-gh-pages/nb _site/
           fi
+          if [ -d "temp-gh-pages/intellij" ]; then
+            cp -r temp-gh-pages/intellij _site/
+          fi
 
           # 4. Merge newly generated catalogs from staging-catalogs
           if [ -d "staging-catalogs/nb" ]; then
             mkdir -p _site/nb
             cp -r staging-catalogs/nb/* _site/nb/
             find _site/nb -name "*.xml" -exec gzip -9 -f -k {} \;
+          fi
+          if [ -d "staging-catalogs/intellij" ]; then
+            mkdir -p _site/intellij
+            cp -r staging-catalogs/intellij/* _site/intellij/
+            find _site/intellij -name "*.xml" -exec gzip -9 -f -k {} \;
           fi
 
           # 5. Prune obsolete development snapshot Javadocs and auto-index version list
@@ -470,12 +499,15 @@ jobs:
         run: |
           cd temp-gh-pages
           rm -rf apidocs/*
-          mkdir -p apidocs nb
+          mkdir -p apidocs nb intellij
           cp -r ../_site/apidocs/* apidocs/
           cp -r ../_site/nb/* nb/
+          if [ -d "../_site/intellij" ]; then
+            cp -r ../_site/intellij/* intellij/
+          fi
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add apidocs/ nb/
+          git add apidocs/ nb/ intellij/
           if ! git diff --cached --quiet; then
             git commit -m "chore: persist versioned Javadocs & update catalogs from run ${{ github.run_id }} 📚"
             for i in {1..5}; do
