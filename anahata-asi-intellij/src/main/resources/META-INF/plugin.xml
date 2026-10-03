@@ -2,6 +2,7 @@
     <id>uno.anahata.asi.intellij</id>
     <name>Anahata ASI</name>
     <vendor email="anahata@anahata.uno" url="https://asi.anahata.uno">Anahata</vendor>
+    <idea-version since-build="262" until-build="262.*"/>
 
     <description><![CDATA[
       Anahata ASI Studio for IntelliJ IDEA.<br>
