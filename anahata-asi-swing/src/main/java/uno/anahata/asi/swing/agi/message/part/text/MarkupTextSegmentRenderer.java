@@ -13,6 +13,7 @@ import com.vladsch.flexmark.ext.media.tags.MediaTagsExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
 import com.vladsch.flexmark.ext.typographic.TypographicExtension;
 import com.vladsch.flexmark.html.HtmlRenderer;
+import uno.anahata.asi.swing.agi.render.flexmark.MathArrowExtension;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.data.MutableDataSet;
@@ -64,7 +65,8 @@ public class MarkupTextSegmentRenderer extends AbstractTextSegmentRenderer {
                 TaskListExtension.create(),
                 EmojiExtension.create(),
                 TypographicExtension.create(),
-                AttributesExtension.create()
+                AttributesExtension.create(),
+                MathArrowExtension.create()
                 //AdmonitionExtension.create()
         ));
         options.set(HtmlRenderer.SOFT_BREAK, "<br />");
