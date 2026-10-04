@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import javax.lang.model.element.Element;
@@ -96,6 +97,17 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     @JsonIgnore
     @Schema(hidden = true)
     private List<LineComment> calculatedComments = new ArrayList<>();
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns calculated comments from the AST refinement pipeline.
+     * </p>
+     */
+    @Override
+    public List<LineComment> calculateLineComments(Agi agi) {
+        return calculatedComments != null ? calculatedComments : Collections.emptyList();
+    }
 
     /**
      * {@inheritDoc}

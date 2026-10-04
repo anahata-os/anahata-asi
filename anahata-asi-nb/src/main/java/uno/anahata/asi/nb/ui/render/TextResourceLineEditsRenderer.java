@@ -1,5 +1,6 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.ui.render;
+import uno.anahata.asi.toolkit.resources.text.DiffCommentUtils;
 import java.awt.Component;
 import java.awt.Color;
 import java.awt.Font;
@@ -77,41 +78,7 @@ public class TextResourceLineEditsRenderer extends AbstractTextResourceWriteRend
     /** {@inheritDoc} */
     @Override
     protected List<LineComment> getLineComments() {
-        List<LineComment> comments = new ArrayList<>();
-        String content = update.getOriginalContent();
-        if (content == null) {
-            return comments;
-        }
-        
-        // 1. Aggregate and sort edits by their original start line
-        List<AbstractLineEdit> allEdits = new ArrayList<>();
-        if (update.getInsertions() != null) allEdits.addAll(update.getInsertions());
-        if (update.getReplacements() != null) allEdits.addAll(update.getReplacements());
-        if (update.getDeletions() != null) allEdits.addAll(update.getDeletions());
-        
-        allEdits.sort(Comparator.comparingInt(AbstractLineEdit::getSortLine));
-
-        int cumulativeShift = 0;
-        for (AbstractLineEdit edit : allEdits) {
-            if (edit.getReason() != null && !edit.getReason().isBlank()) {
-                // The comment should point to the line in the "Proposed" view
-                int proposedLine = edit.getSortLine() + cumulativeShift;
-                comments.add(new LineComment(proposedLine, edit.getReason()));
-            }
-
-            // Update cumulative shift based on edit type
-            if (edit instanceof LineInsertion ins) {
-                cumulativeShift += DiffCommentUtils.getLineCount(ins.getContent());
-            } else if (edit instanceof LineReplacement rep) {
-                int added = DiffCommentUtils.getLineCount(rep.getContent());
-                int removed = (rep.getEndLine() - rep.getStartLine()) + 1;
-                cumulativeShift += (added - removed);
-            } else if (edit instanceof LineDeletion del) {
-                int removed = (del.getEndLine() - del.getStartLine()) + 1;
-                cumulativeShift -= removed;
-            }
-        }
-        return comments;
+        return update.calculateLineComments(agiPanel.getAgi());
     }
 
     /** {@inheritDoc} */

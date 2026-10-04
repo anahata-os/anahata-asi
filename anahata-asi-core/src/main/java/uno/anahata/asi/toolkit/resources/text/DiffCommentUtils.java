@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.nb.ui.render;
+package uno.anahata.asi.toolkit.resources.text;
 
 /**
  * Shared utility for calculating line numbers and mappings in agentic diff renderers.

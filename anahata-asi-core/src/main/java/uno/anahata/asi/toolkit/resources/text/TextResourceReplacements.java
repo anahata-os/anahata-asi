@@ -2,6 +2,8 @@
 package uno.anahata.asi.toolkit.resources.text;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -15,6 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import lombok.NonNull;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.resource.view.TextView;
@@ -32,11 +36,13 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 @Getter
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "Represents a set of text replacement operations for a specific resource.")
+@Slf4j
 public class TextResourceReplacements extends AbstractTextResourceWrite {
 
     /**
      * The list of replacements to perform in this file.
      */
+    @NonNull
     @Schema(description = "The list of replacements to perform in this file.", requiredMode = Schema.RequiredMode.REQUIRED)
     private List<TextReplacement> replacements;
 
@@ -55,6 +61,75 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
 
     /**
      * {@inheritDoc}
+     * <p>
+     * Calculates line comments for each surgical replacement by locating target occurrences
+     * and applying cumulative line-shift offsets to map to the proposed line numbers.
+     * </p>
+     */
+    @Override
+    public List<LineComment> calculateLineComments(Agi agi) {
+        List<LineComment> comments = new ArrayList<>();
+        if (originalContent == null) {
+            try {
+                captureOriginalContent(agi);
+            } catch (Exception e) {
+                log.error("Failed to capture original content while calculating line comments for {}: {}", resourceUuid, e.getMessage(), e);
+                return comments;
+            }
+        }
+
+        List<ReplacementEvent> events = new ArrayList<>();
+        for (TextReplacement tr : replacements) {
+            String target = tr.getTarget();
+            List<Integer> targetIndexes = tr.getOccurrenceIndexes();
+            int currentOccurrence = 0;
+            int idx = originalContent.indexOf(target);
+            while (idx != -1) {
+                currentOccurrence++;
+                if (targetIndexes == null || targetIndexes.isEmpty() || targetIndexes.contains(currentOccurrence)) {
+                    events.add(new ReplacementEvent(tr, idx));
+                }
+                idx = originalContent.indexOf(target, idx + target.length());
+                if (tr.getReplacement() != null && tr.getReplacement().contains(target)) {
+                    break;
+                }
+            }
+        }
+
+        events.sort(Comparator.comparingInt(ReplacementEvent::index));
+
+        int cumulativeLineShift = 0;
+        for (ReplacementEvent event : events) {
+            TextReplacement tr = event.tr();
+            String target = tr.getTarget();
+            String replacement = tr.getReplacement();
+
+            int commonPrefixLen = 0;
+            if (replacement != null) {
+                int maxLen = Math.min(target.length(), replacement.length());
+                while (commonPrefixLen < maxLen && target.charAt(commonPrefixLen) == replacement.charAt(commonPrefixLen)) {
+                    commonPrefixLen++;
+                }
+            }
+
+            int changeOffset = event.index() + commonPrefixLen;
+            int originalLine = DiffCommentUtils.getLineAt(originalContent, changeOffset);
+            int proposedLine = originalLine + cumulativeLineShift;
+
+            if (tr.getReason() != null && !tr.getReason().isBlank()) {
+                comments.add(new LineComment(proposedLine, tr.getReason()));
+            }
+
+            int removed = DiffCommentUtils.getLineCount(target);
+            int added = DiffCommentUtils.getLineCount(replacement != null ? replacement : "");
+            cumulativeLineShift += (added - removed);
+        }
+
+        return comments;
+    }
+
+    /**
+     * {@inheritDoc}
      */
     @Override
     protected String doCalculateResultingContent(Agi agi) throws Exception {
@@ -66,9 +141,6 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
         // per replacement, we'll just iterate. Note: overlapping replacements are not supported.
         for (TextReplacement replacement : replacements) {
             String target = replacement.getTarget();
-            if (target == null || target.isEmpty()) {
-                continue;
-            }
 
             // Normalize target to LF for regex building
             String targetLF = target.replace("\r\n", "\n").replace("\r", "\n");
@@ -211,4 +283,12 @@ public class TextResourceReplacements extends AbstractTextResourceWrite {
                 .map(str -> StringUtils.stripEnd(str, null))
                 .collect(Collectors.joining("\n"));
     }
+
+    /**
+     * Coordinate mapping event pairing a replacement intent with its character offset in the original document.
+     *
+     * @param tr the text replacement descriptor.
+     * @param index the character offset in originalContent where this replacement begins.
+     */
+    private static record ReplacementEvent(TextReplacement tr, int index) {}
 }

@@ -3,6 +3,8 @@ package uno.anahata.asi.toolkit.resources.text;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -146,6 +148,20 @@ public abstract class AbstractTextResourceWrite {
      * @throws Exception if the calculation logic fails.
      */
     protected abstract String doCalculateResultingContent(Agi agi) throws Exception;
+
+    /**
+     * Calculates the line-level comments for this write operation.
+     * <p>
+     * Subclasses override this method to map semantic replacement or edit reasons
+     * to line numbers in the proposed content.
+     * </p>
+     *
+     * @param agi the parent AGI session.
+     * @return a list of line comments, or an empty list if none are present.
+     */
+    public List<LineComment> calculateLineComments(Agi agi) {
+        return Collections.emptyList();
+    }
 
     /**
      * Generates a unified diff of the proposed changes against the captured

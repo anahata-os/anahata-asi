@@ -8,9 +8,13 @@ import lombok.NoArgsConstructor;
 import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
+import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.tool.AgiToolException;
+import uno.anahata.asi.toolkit.resources.text.DiffCommentUtils;
+import uno.anahata.asi.toolkit.resources.text.LineComment;
 
 /**
  * The next-generation surgical line editor for AGI.
@@ -25,6 +29,7 @@ import uno.anahata.asi.agi.tool.AgiToolException;
 @NoArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 @Schema(description = "A set of semantic line edits (insertions, replacements, deletions) targeting 1-based line numbers on a resource in the RAG message.")
+@Slf4j
 public class TextResourceLineEdits extends AbstractTextResourceWrite {
 
     /**
@@ -70,9 +75,66 @@ public class TextResourceLineEdits extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
+     * Aggregates insertions, replacements, and deletions, sorting them by coordinate and
+     * applying cumulative line-shift offsets to calculate line comments for the proposed view.
+     * </p>
+     */
+    @Override
+    public List<LineComment> calculateLineComments(Agi agi) {
+        List<LineComment> comments = new ArrayList<>();
+        if (originalContent == null) {
+            try {
+                captureOriginalContent(agi);
+            } catch (Exception e) {
+                log.error("Failed to capture original content while calculating line comments for {}: {}", resourceUuid, e.getMessage(), e);
+                return comments;
+            }
+        }
+        String content = originalContent;
+        if (content == null) {
+            return comments;
+        }
+
+        List<AbstractLineEdit> allEdits = new ArrayList<>();
+        if (insertions != null) {
+            allEdits.addAll(insertions);
+        }
+        if (replacements != null) {
+            allEdits.addAll(replacements);
+        }
+        if (deletions != null) {
+            allEdits.addAll(deletions);
+        }
+
+        allEdits.sort(Comparator.comparingInt(AbstractLineEdit::getSortLine));
+
+        int cumulativeShift = 0;
+        for (AbstractLineEdit edit : allEdits) {
+            if (edit.getReason() != null && !edit.getReason().isBlank()) {
+                int proposedLine = edit.getSortLine() + cumulativeShift;
+                comments.add(new LineComment(proposedLine, edit.getReason()));
+            }
+
+            if (edit instanceof LineInsertion ins) {
+                cumulativeShift += DiffCommentUtils.getLineCount(ins.getContent());
+            } else if (edit instanceof LineReplacement rep) {
+                int added = DiffCommentUtils.getLineCount(rep.getContent());
+                int removed = (rep.getEndLine() - rep.getStartLine()) + 1;
+                cumulativeShift += (added - removed);
+            } else if (edit instanceof LineDeletion del) {
+                int removed = (del.getEndLine() - del.getStartLine()) + 1;
+                cumulativeShift -= removed;
+            }
+        }
+        return comments;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Implementation details: Aggregates all edits, performs a stable
      * descending sort, and applies mutations to the line list to generate
-     *  the final resulting content.
+     * the final resulting content.
      * </p>
      */
     @Override

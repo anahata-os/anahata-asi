@@ -2,6 +2,7 @@
 package uno.anahata.asi.toolkit.resources.text;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.util.Collections;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -50,6 +51,17 @@ public class FullTextResourceUpdate extends AbstractTextResourceWrite {
         super(resourceUuid, lastModified);
         this.newContent = newContent;
         this.lineComments = lineComments;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Returns the explicit line comments supplied in the update DTO.
+     * </p>
+     */
+    @Override
+    public List<LineComment> calculateLineComments(Agi agi) {
+        return lineComments != null ? lineComments : Collections.emptyList();
     }
 
     /** {@inheritDoc} */

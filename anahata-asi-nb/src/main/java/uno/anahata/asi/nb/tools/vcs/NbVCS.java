@@ -428,26 +428,38 @@ public class NbVCS extends AbstractVCS {
 
     /**
      * Stages one or more files into the Git index.
+     * <p>
+     * Automatically differentiates between existing files (staged via {@code GitClient.add})
+     * and deleted files (staged via {@code GitClient.remove}).
+     * </p>
      *
-     * @param filePaths List of file paths to stage into the Git index.
+     * @param filePaths List of file paths to stage into the Git index (supports newly created, modified, and deleted files).
      * @return Confirmation message of staged files.
      * @throws Exception if staging fails.
      */
-    @AgiTool("Stages one or more files into the Git index.")
+    @AgiTool("Stages one or more files into the Git index (supports created, modified, and deleted files).")
     public String gitAdd(
-            @AgiToolParam(value = "List of file paths to stage into the Git index.", rendererId = "path") List<String> filePaths) throws Exception {
+            @AgiToolParam(value = "List of file paths to stage into the Git index (supports created, modified, and deleted files).", rendererId = "path") List<String> filePaths) throws Exception {
 
         if (filePaths == null || filePaths.isEmpty()) {
             throw new AgiToolException("No files specified to stage.");
         }
 
-        List<File> files = new ArrayList<>();
+        List<File> toAdd = new ArrayList<>();
+        List<File> toRemove = new ArrayList<>();
         File repoRoot = null;
         for (String p : filePaths) {
-            File f = resolveFile(p);
-            files.add(f);
+            if (p == null || p.isBlank()) {
+                throw new AgiToolException("File path cannot be empty.");
+            }
+            File f = FileUtil.normalizeFile(new File(p));
             if (repoRoot == null) {
-                repoRoot = findRepoRoot(f);
+                repoRoot = findRepoRoot(f.exists() ? f : f.getParentFile());
+            }
+            if (f.exists()) {
+                toAdd.add(f);
+            } else {
+                toRemove.add(f);
             }
         }
 
@@ -458,32 +470,42 @@ public class NbVCS extends AbstractVCS {
         GitClient client = Git.getInstance().getClient(repoRoot);
         ToolProgressMonitor monitor = new ToolProgressMonitor();
         try {
-            client.add(files.toArray(File[]::new), monitor);
+            if (!toAdd.isEmpty()) {
+                client.add(toAdd.toArray(File[]::new), monitor);
+            }
+            if (!toRemove.isEmpty()) {
+                client.remove(toRemove.toArray(File[]::new), false, monitor);
+            }
         } finally {
             client.release();
         }
 
         refreshVfs(repoRoot);
 
-        log("Staged " + files.size() + " files into Git index.");
-        return "Successfully staged " + files.size() + " file(s) into Git index.";
+        int totalStaged = toAdd.size() + toRemove.size();
+        log("Staged " + totalStaged + " files into Git index.");
+        return "Successfully staged " + totalStaged + " file(s) into Git index.";
     }
 
     /**
-     * Commits changes headlessly in a single shot (automatically staging files if specified) using NetBeans GitClient.
+     * Commits changes headlessly in a single shot (automatically staging added, modified, or deleted files if specified) using NetBeans GitClient.
+     * <p>
+     * Differentiates between existing files (staged via {@code GitClient.add}) and deleted files
+     * (verified against repository tracking and staged via {@code GitClient.remove}).
+     * </p>
      *
      * @param repoPath Path of the repository or any contained file.
-     * @param filePaths Optional list of specific files to stage and commit. If omitted, commits all staged files in repository.
+     * @param filePaths Optional list of specific files to stage and commit (supports added, modified, and deleted files). If omitted, commits all staged files in the repository.
      * @param message The commit message.
      * @param authorName Optional author name. If omitted, uses repository gitconfig or system user.
      * @param authorEmail Optional author email. If omitted, uses repository gitconfig.
      * @return Details of the created commit revision.
      * @throws Exception if commit fails.
      */
-    @AgiTool("Commits changes headlessly in a single shot (auto-stages files if specified).")
+    @AgiTool("Commits changes headlessly in a single shot (automatically staging added, modified, or deleted files if specified).")
     public String gitCommit(
             @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
-            @AgiToolParam(value = "Optional list of specific files to stage and commit. If omitted, commits all staged files.", required = false, rendererId = "path") List<String> filePaths,
+            @AgiToolParam(value = "Optional list of specific files to stage and commit (supports added, modified, and deleted files). If omitted, commits all staged files.", required = false, rendererId = "path") List<String> filePaths,
             @AgiToolParam(value = "The commit message.") String message,
             @AgiToolParam(value = "Optional author name.", required = false) String authorName,
             @AgiToolParam(value = "Optional author email.", required = false) String authorEmail) throws Exception {
@@ -501,16 +523,34 @@ public class NbVCS extends AbstractVCS {
 
             File[] filesToCommit;
             if (filePaths != null && !filePaths.isEmpty()) {
-                List<File> list = new ArrayList<>();
+                List<File> toAdd = new ArrayList<>();
+                List<File> toRemove = new ArrayList<>();
+                List<File> allFiles = new ArrayList<>();
                 for (String p : filePaths) {
-                    File f = resolveRepoFile(repoRoot, p);
-                    if (!f.exists()) {
-                        throw new AgiToolException("File does not exist: " + f.getAbsolutePath());
+                    File f = FileUtil.normalizeFile(resolveRepoFile(repoRoot, p));
+                    if (f.exists()) {
+                        toAdd.add(f);
+                        allFiles.add(f);
+                    } else {
+                        Map<File, GitStatus> statusMap = client.getStatus(new File[]{f}, monitor);
+                        GitStatus s = statusMap.get(f);
+                        if (s != null && (s.getStatusHeadWC() == GitStatus.Status.STATUS_REMOVED
+                                || s.getStatusIndexWC() == GitStatus.Status.STATUS_REMOVED
+                                || s.isTracked())) {
+                            toRemove.add(f);
+                            allFiles.add(f);
+                        } else {
+                            throw new AgiToolException("File does not exist and is not tracked in repository: " + f.getAbsolutePath());
+                        }
                     }
-                    list.add(f);
                 }
-                filesToCommit = list.toArray(File[]::new);
-                client.add(filesToCommit, monitor);
+                if (!toAdd.isEmpty()) {
+                    client.add(toAdd.toArray(File[]::new), monitor);
+                }
+                if (!toRemove.isEmpty()) {
+                    client.remove(toRemove.toArray(File[]::new), false, monitor);
+                }
+                filesToCommit = allFiles.toArray(File[]::new);
             } else {
                 filesToCommit = new File[]{repoRoot};
             }
