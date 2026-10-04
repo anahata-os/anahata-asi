@@ -27,7 +27,7 @@ import uno.anahata.asi.persistence.Rebindable;
  * prompt augmentation via {@link #getAnnex()}.
  * </p>
  * <p>
- * <b>VCS & Local History Integration:</b> Dynamically queries the session's active
+ * <b>VCS and Local History Integration:</b> Dynamically queries the session's active
  * {@link AbstractVCS} toolkit to supply live working-copy diffs and chronological
  * history snapshots directly to the prompt annex without coupling the core framework.
  * </p>
