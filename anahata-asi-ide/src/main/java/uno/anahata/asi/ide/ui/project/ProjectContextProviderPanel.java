@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.swing.agi.project;
+package uno.anahata.asi.ide.ui.project;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
@@ -10,8 +10,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.agi.context.AbstractContextProviderRenderer;
-import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * Specialized context provider renderer for {@link AbstractProjectContextProvider}.

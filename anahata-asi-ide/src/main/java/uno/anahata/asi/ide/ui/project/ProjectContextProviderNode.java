@@ -1,13 +1,16 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.swing.agi.context;
+package uno.anahata.asi.ide.ui.project;
 
 import java.util.List;
 import javax.swing.tree.TreePath;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.context.AbstractContextNode;
+import uno.anahata.asi.swing.agi.context.ContextProviderNode;
+import uno.anahata.asi.swing.agi.context.ContextTreeTableModel;
 import uno.anahata.asi.swing.internal.EdtPropertyChangeListener;
 import uno.anahata.asi.swing.internal.SwingTask;
-import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
+import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
 
 /**
  * A specialized context tree node for {@link AbstractProjectContextProvider} instances.
@@ -36,6 +39,11 @@ public class ProjectContextProviderNode extends ContextProviderNode {
     public ProjectContextProviderNode(AgiPanel agiPanel, AbstractProjectContextProvider userObject) {
         super(agiPanel, userObject);
         this.scopeListener = new EdtPropertyChangeListener(agiPanel, userObject, "projectStructureScope", evt -> onProjectScopeChanged());
+        new EdtPropertyChangeListener(agiPanel, userObject.getProjectsToolkit(), "defaultScope", evt -> {
+            if (userObject.getScope() == null) {
+                onProjectScopeChanged();
+            }
+        });
     }
 
     /**

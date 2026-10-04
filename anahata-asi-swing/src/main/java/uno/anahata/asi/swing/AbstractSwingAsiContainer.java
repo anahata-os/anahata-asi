@@ -41,10 +41,6 @@ import uno.anahata.asi.openai.OpenAiResponsesProvider;
 import uno.anahata.asi.openai.compatible.OpenAiChatCompletionsProvider;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.context.ContextProviderUiRegistry;
-import uno.anahata.asi.swing.agi.project.ProjectContextProviderPanel;
-import uno.anahata.asi.swing.agi.project.ProjectsPanel;
-import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
-import uno.anahata.asi.toolkit.project.AbstractProjects;
 import uno.anahata.asi.swing.agi.message.part.tool.param.AgiClassSourceParameterRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.FullTextFileCreateRenderer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
@@ -67,6 +63,7 @@ import uno.anahata.asi.swing.provider.OpenAiChatCompletionsProviderPanel;
 import uno.anahata.asi.swing.provider.OpenAiResponsesProviderPanel;
 import uno.anahata.asi.swing.settings.AsiContainerSettingsFrame;
 import uno.anahata.asi.swing.toolkit.radio.RadioRenderer;
+import uno.anahata.asi.swing.toolkit.radio.RadioUI;
 import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
 import uno.anahata.asi.toolkit.java.AgiClassSource;
 import uno.anahata.asi.toolkit.resources.text.FullTextFileCreate;
@@ -89,10 +86,8 @@ public abstract class AbstractSwingAsiContainer extends AbstractAsiContainer {
 
     static {
         //Legengary Radio toolkit
-        ToolkitUiRegistry.getInstance().register(Radio.class, RadioRenderer.class);
-        ToolkitUiRegistry.getInstance().register(AbstractProjects.class, ProjectsPanel.class);
-        ContextProviderUiRegistry.getInstance().register(AbstractProjectContextProvider.class, ProjectContextProviderPanel.class);
-        
+        ToolkitUiRegistry.getInstance().register(Radio.class, new RadioUI());
+
         //Default parameter renderers
         ParameterRendererFactory.register(FullTextFileCreate.class, FullTextFileCreateRenderer.class);
         ParameterRendererFactory.register(AgiClassSource.class, AgiClassSourceParameterRenderer.class);

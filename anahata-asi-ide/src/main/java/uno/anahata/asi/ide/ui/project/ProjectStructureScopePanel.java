@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.swing.agi.project;
+package uno.anahata.asi.ide.ui.project;
 
 import java.awt.GridLayout;
 import java.awt.event.ActionListener;
@@ -9,7 +9,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import lombok.Getter;
 import lombok.Setter;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * A dedicated Swing panel for configuring a {@link ProjectStructureScope}.

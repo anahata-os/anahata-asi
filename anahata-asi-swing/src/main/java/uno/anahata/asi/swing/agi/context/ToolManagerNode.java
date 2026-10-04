@@ -9,7 +9,9 @@ import uno.anahata.asi.agi.provider.AbstractModel;
 import uno.anahata.asi.agi.tool.ToolManager;
 import uno.anahata.asi.agi.tool.spi.AbstractTool;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
+import uno.anahata.asi.agi.tool.spi.java.JavaObjectToolkit;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
 
 /**
  * A specialized context tree node representing the {@link ToolManager}.
@@ -68,7 +70,13 @@ public class ToolManagerNode extends AbstractContextNode<ToolManager> {
      */
     @Override
     protected AbstractContextNode<?> createChildNode(Object obj) {
-        if (obj instanceof AbstractToolkit<?> tk) {
+        if (obj instanceof JavaObjectToolkit jot) {
+            AbstractContextNode<?> custom = ToolkitUiRegistry.getInstance().createNode(agiPanel, jot);
+            if (custom != null) {
+                return custom;
+            }
+            return new ToolkitNode(agiPanel, jot);
+        } else if (obj instanceof AbstractToolkit<?> tk) {
             return new ToolkitNode(agiPanel, tk);
         }
         return null;

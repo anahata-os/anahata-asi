@@ -39,7 +39,6 @@ import org.jdesktop.swingx.decorator.AbstractHighlighter;
 import org.jdesktop.swingx.decorator.ComponentAdapter;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.context.ContextProvider;
-import uno.anahata.asi.toolkit.project.AbstractProjects;
 import uno.anahata.asi.swing.internal.SwingTask;
 import uno.anahata.asi.agi.resource.Resource;
 import uno.anahata.asi.agi.status.AgiStatus;
@@ -162,10 +161,7 @@ public class ContextPanel extends JPanel {
      */
     private EdtPropertyChangeListener statusListener;
 
-    /**
-     * Listener for workspace-wide project structure scope changes on AbstractProjects toolkit.
-     */
-    private EdtPropertyChangeListener projectsScopeListener;
+
     /**
      * Flag to ensure initComponents is only called once.
      */
@@ -283,9 +279,7 @@ public class ContextPanel extends JPanel {
         if (statusListener != null) {
             statusListener.unbind();
         }
-        if (projectsScopeListener != null) {
-            projectsScopeListener.unbind();
-        }
+
 
         this.historyListener = new EdtPropertyChangeListener(this, agi.getContextManager(), "history", evt -> refreshHistoryBranch());
         this.resourcesListener = new EdtPropertyChangeListener(this, agi.getResourceManager(), "resources", evt -> refreshResourcesBranch());
@@ -299,27 +293,7 @@ public class ContextPanel extends JPanel {
             }
         });
 
-        Optional<AbstractProjects> projectsTk = agi.getToolManager().getToolkitInstance(AbstractProjects.class);
-        if (projectsTk.isPresent()) {
-            this.projectsScopeListener = new EdtPropertyChangeListener(this, projectsTk.get(), "projectStructureScope", evt -> {
-                log.info("Workspace-wide projectStructureScope changed, recalculating project provider tokens...");
-                providerPanel.refreshCurrentPreviews();
-                new SwingTask<Void>(agiPanel, "Refreshing Project Tokens", () -> {
-                    AbstractContextNode<?> projectsNode = treeTableModel.findNode(projectsTk.get());
-                    if (projectsNode != null) {
-                        for (AbstractContextNode<?> child : projectsNode.getChildren()) {
-                            child.refreshData();
-                        }
-                        projectsNode.bubbleUpTotals();
-                    } else {
-                        refreshTokens(null);
-                    }
-                    return null;
-                }, v -> {
-                    treeTable.repaint();
-                }, null, false).start();
-            });
-        }
+
     }
 
     /**

@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.swing.agi.project;
+package uno.anahata.asi.ide.ui.project;
 
 import java.awt.BorderLayout;
 import javax.swing.BorderFactory;
@@ -7,7 +7,7 @@ import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.toolkit.render.AbstractToolkitRenderer;
-import uno.anahata.asi.toolkit.project.AbstractProjects;
+import uno.anahata.asi.ide.tools.project.AbstractProjects;
 
 /**
  * Custom toolkit UI renderer for {@link AbstractProjects}.
@@ -49,7 +49,7 @@ public class ProjectsPanel extends AbstractToolkitRenderer<AbstractProjects> {
 
     @Override
     public void propertyChange(java.beans.PropertyChangeEvent evt) {
-        if ("projectStructureScope".equals(evt.getPropertyName()) && scopePanel != null) {
+        if ("defaultScope".equals(evt.getPropertyName()) && scopePanel != null) {
             AbstractProjects toolkit = getAnahataToolkit();
             scopePanel.setScope(toolkit.getDefaultScope());
         }
