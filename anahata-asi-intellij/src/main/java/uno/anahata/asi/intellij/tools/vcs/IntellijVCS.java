@@ -31,9 +31,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.ide.vcs.HistoryEntry;
-import uno.anahata.asi.ide.vcs.VcsDiff;
-import uno.anahata.asi.ide.vcs.VcsFileStatus;
+import uno.anahata.asi.ide.tools.vcs.HistoryEntry;
+import uno.anahata.asi.ide.tools.vcs.VcsDiff;
+import uno.anahata.asi.ide.tools.vcs.VcsFileStatus;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -53,11 +53,11 @@ import git4idea.repo.GitRemote;
 import git4idea.repo.GitRepository;
 import git4idea.repo.GitRepositoryManager;
 import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.ide.vcs.FastForwardPolicy;
+import uno.anahata.asi.ide.tools.vcs.FastForwardPolicy;
 import uno.anahata.asi.internal.AnahataDiffUtils;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.swing.internal.SwingUtils;
-import uno.anahata.asi.ide.vcs.AbstractVCS;
+import uno.anahata.asi.ide.tools.vcs.AbstractVCS;
 
 /**
  * A toolkit for inspecting version-control status through IntelliJ's generic VCS layer.

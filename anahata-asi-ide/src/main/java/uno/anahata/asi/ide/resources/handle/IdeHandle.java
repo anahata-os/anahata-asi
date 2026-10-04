@@ -12,9 +12,11 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.handle.ResourceHandle;
-import uno.anahata.asi.ide.vcs.AbstractVCS;
-import uno.anahata.asi.ide.vcs.HistoryEntry;
-import uno.anahata.asi.ide.vcs.VcsDiff;
+import uno.anahata.asi.ide.tools.hints.AbstractHints;
+import uno.anahata.asi.ide.tools.hints.HintInfo;
+import uno.anahata.asi.ide.tools.vcs.AbstractVCS;
+import uno.anahata.asi.ide.tools.vcs.HistoryEntry;
+import uno.anahata.asi.ide.tools.vcs.VcsDiff;
 import uno.anahata.asi.persistence.Rebindable;
 
 /**
@@ -185,10 +187,31 @@ public abstract class IdeHandle extends ResourceHandle implements Rebindable {
     }
 
     /**
+     * Queries the session's active {@link AbstractHints} toolkit to retrieve
+     * live code inspection diagnostics, warnings, and hints for this file.
+     *
+     * @return A list of {@link HintInfo} diagnostics, or empty if none or unsupported.
+     */
+    public List<HintInfo> getHints() {
+        if (path == null) {
+            return Collections.emptyList();
+        }
+        Optional<AbstractHints> hintsOpt = owner.getAgi().getToolkit(AbstractHints.class);
+        if (hintsOpt.isPresent()) {
+            try {
+                return hintsOpt.get().getFileHints(path);
+            } catch (Exception e) {
+                log.debug("Failed to get hints for {}: {}", path, e.getMessage());
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Aggregates live VCS diff to pristine base and
-     * recent commit/local history into the resource prompt annex.
+     * Implementation details: Aggregates live VCS diff to pristine base,
+     * live code inspection hints, and recent commit/local history into the resource prompt annex.
      * </p>
      */
     @Override
@@ -198,6 +221,13 @@ public abstract class IdeHandle extends ResourceHandle implements Rebindable {
             VcsDiff diff = getDiffToHead();
             if (diff != null && diff.hasChanges() && !diff.isNewFile()) {
                 annex.add(diff.toMarkdown());
+            }
+            List<HintInfo> hints = getHints();
+            if (!hints.isEmpty()) {
+                String hintsMd = HintInfo.toMarkdown(hints);
+                if (hintsMd != null && !hintsMd.isBlank()) {
+                    annex.add(hintsMd);
+                }
             }
         }
         List<HistoryEntry> history = getHistory(5);

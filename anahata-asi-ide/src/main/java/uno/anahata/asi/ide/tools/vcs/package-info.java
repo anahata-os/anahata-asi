@@ -5,4 +5,4 @@
  *
  * @author anahata
  */
-package uno.anahata.asi.ide.vcs;
+package uno.anahata.asi.ide.tools.vcs;
