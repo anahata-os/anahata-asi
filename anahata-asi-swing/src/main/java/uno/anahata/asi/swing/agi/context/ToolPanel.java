@@ -77,9 +77,21 @@ public class ToolPanel extends ScrollablePanel {
      */
     private JSpinner maxDepthSpinner;
     /**
+     * Label showing effective max depth when inheriting (-1).
+     */
+    private JLabel maxDepthInheritLabel;
+    /**
      * The active tool listener.
      */
     private EdtPropertyChangeListener permissionListener;
+    /**
+     * The tool currently being inspected.
+     */
+    private AbstractTool<?, ?> currentTool;
+    /**
+     * Reentrancy guard preventing circular event feedback during programmatic UI synchronization.
+     */
+    private boolean adjusting = false;
 
     /**
      * Constructs a new ToolPanel.
@@ -108,12 +120,12 @@ public class ToolPanel extends ScrollablePanel {
         permissionCombo = new JComboBox<>(ToolPermission.values());
         permissionCombo.setRenderer(new ToolPermissionRenderer());
         permissionCombo.addActionListener(e -> {
-            AbstractTool<?, ?> tool = (AbstractTool<?, ?>) permissionCombo.getClientProperty("tool");
-            if (tool != null) {
-                ToolPermission tp = (ToolPermission) permissionCombo.getSelectedItem();
-                tool.setPermission(tp);
-                permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
+            if (adjusting || currentTool == null) {
+                return;
             }
+            ToolPermission tp = (ToolPermission) permissionCombo.getSelectedItem();
+            currentTool.setPermission(tp);
+            permissionCombo.setForeground(parentPanel.getAgiPanel().getAgiConfig().getToolPermissionColor(tp));
         });
 
         permissionPanel.add(new JLabel("Permission: "));
@@ -121,17 +133,21 @@ public class ToolPanel extends ScrollablePanel {
 
         headerPanel.add(permissionPanel, "wrap");
 
-        JPanel maxDepthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel maxDepthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
         maxDepthPanel.setOpaque(false);
-        maxDepthPanel.add(new JLabel("Max Depth: "));
+        maxDepthPanel.add(new JLabel("Max Depth:"));
         maxDepthSpinner = new JSpinner(new SpinnerNumberModel(-1, -1, 100, 1));
+        maxDepthInheritLabel = new JLabel();
+        maxDepthInheritLabel.setFont(maxDepthInheritLabel.getFont().deriveFont(Font.ITALIC));
         maxDepthSpinner.addChangeListener(e -> {
-            AbstractTool<?, ?> tool = (AbstractTool<?, ?>) permissionCombo.getClientProperty("tool");
-            if (tool != null) {
-                tool.setMaxDepth((Integer) maxDepthSpinner.getValue());
+            if (adjusting || currentTool == null) {
+                return;
             }
+            currentTool.setMaxDepth((Integer) maxDepthSpinner.getValue());
+            updateMaxDepthLabel(currentTool);
         });
         maxDepthPanel.add(maxDepthSpinner);
+        maxDepthPanel.add(maxDepthInheritLabel);
 
         headerPanel.add(maxDepthPanel, "wrap");
 
@@ -151,25 +167,36 @@ public class ToolPanel extends ScrollablePanel {
      * @param tool The selected tool.
      */
     public void setTool(AbstractTool<?, ?> tool) {
-        nameLabel.setText(tool.getName());
-        descLabel.setText("<html>" + tool.getDescription().replace("\n", "<br>") + "</html>");
+        this.currentTool = tool;
+        this.adjusting = true;
+        try {
+            nameLabel.setText(tool.getName());
+            descLabel.setText("<html>" + tool.getDescription().replace("\n", "<br>") + "</html>");
 
-        // Update Permissions
-        if (permissionListener != null) {
-            permissionListener.unbind();
+            // Update Permissions
+            if (permissionListener != null) {
+                permissionListener.unbind();
+            }
+            ToolPermission tp = tool.getPermission();
+            permissionCombo.setSelectedItem(tp);
+            permissionCombo.setForeground(parentPanel.getAgiPanel().getAgiConfig().getToolPermissionColor(tp));
+
+            permissionListener = new EdtPropertyChangeListener(this, tool, "permission", evt -> {
+                ToolPermission newTp = (ToolPermission) evt.getNewValue();
+                adjusting = true;
+                try {
+                    permissionCombo.setSelectedItem(newTp);
+                    permissionCombo.setForeground(parentPanel.getAgiPanel().getAgiConfig().getToolPermissionColor(newTp));
+                } finally {
+                    adjusting = false;
+                }
+            });
+
+            maxDepthSpinner.setValue(tool.getMaxDepth());
+            updateMaxDepthLabel(tool);
+        } finally {
+            this.adjusting = false;
         }
-        permissionCombo.putClientProperty("tool", tool);
-        ToolPermission tp = tool.getPermission();
-        permissionCombo.setSelectedItem(tp);
-        permissionCombo.setForeground(SwingAgiConfig.getColor(tp));
-
-        permissionListener = new EdtPropertyChangeListener(this, tool, "permission", evt -> {
-            ToolPermission newTp = (ToolPermission) evt.getNewValue();
-            permissionCombo.setSelectedItem(newTp);
-            permissionCombo.setForeground(SwingAgiConfig.getColor(newTp));
-        });
-
-        maxDepthSpinner.setValue(tool.getMaxDepth());
 
         // Rebuild Tabs
         tabbedPane.removeAll();
@@ -236,6 +263,26 @@ public class ToolPanel extends ScrollablePanel {
         wrapper.add(viewer, BorderLayout.CENTER);
 
         return wrapper;
+    }
+
+    /**
+     * Updates the inheritance label based on the tool's max depth setting.
+     *
+     * @param tool The active tool.
+     */
+    private void updateMaxDepthLabel(AbstractTool<?, ?> tool) {
+        int depth = tool.getMaxDepth();
+        if (depth == -1) {
+            int tkDepth = tool.getToolkit().getDefaultMaxDepth();
+            if (tkDepth != -1) {
+                maxDepthInheritLabel.setText("(inherit from toolkit: " + tkDepth + ")");
+            } else {
+                int configDepth = parentPanel.getAgiPanel().getAgi().getConfig().getDefaultToolMaxDepth();
+                maxDepthInheritLabel.setText("(inherit from agi config: " + configDepth + ")");
+            }
+        } else {
+            maxDepthInheritLabel.setText("(explicit: " + depth + ")");
+        }
     }
 
 }

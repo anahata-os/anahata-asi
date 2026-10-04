@@ -5,6 +5,8 @@ package uno.anahata.asi.swing.agi.context;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -15,6 +17,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeListener;
 import uno.anahata.asi.agi.tool.spi.AbstractToolkit;
 import uno.anahata.asi.swing.components.ScrollablePanel;
 import uno.anahata.asi.swing.toolkit.render.ToolkitUiRegistry;
@@ -52,6 +55,18 @@ public class ToolkitPanel extends ScrollablePanel {
      */
     private final JSpinner maxDepthSpinner;
     /**
+     * Label showing effective max depth when inheriting (-1).
+     */
+    private final JLabel maxDepthInheritLabel;
+    /**
+     * The toolkit currently being inspected.
+     */
+    private AbstractToolkit<?> currentToolkit;
+    /**
+     * Reentrancy guard preventing circular event feedback during programmatic UI synchronization.
+     */
+    private boolean adjusting = false;
+    /**
      * Wrapper container for specialized toolkit UI components.
      */
     private final JPanel rendererContainer;
@@ -88,15 +103,34 @@ public class ToolkitPanel extends ScrollablePanel {
         gbc.gridy++;
 
         enabledCheckbox = new JCheckBox("Toolkit Enabled");
+        enabledCheckbox.addActionListener(e -> {
+            if (adjusting || currentToolkit == null) {
+                return;
+            }
+            currentToolkit.setEnabled(enabledCheckbox.isSelected());
+            parentPanel.refresh(false);
+        });
         gbc.fill = GridBagConstraints.NONE;
         gbc.anchor = GridBagConstraints.WEST;
         detailsPanel.add(enabledCheckbox, gbc);
         gbc.gridy++;
 
-        JPanel maxDepthPanel = new JPanel(new BorderLayout(5, 0));
-        maxDepthPanel.add(new JLabel("Default Max Depth:"), BorderLayout.WEST);
+        JPanel maxDepthPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
+        maxDepthPanel.setOpaque(false);
+        maxDepthPanel.add(new JLabel("Default Max Depth:"));
         maxDepthSpinner = new JSpinner(new SpinnerNumberModel(-1, -1, 100, 1));
-        maxDepthPanel.add(maxDepthSpinner, BorderLayout.CENTER);
+        maxDepthSpinner.addChangeListener(e -> {
+            if (adjusting || currentToolkit == null) {
+                return;
+            }
+            int newDepth = (Integer) maxDepthSpinner.getValue();
+            currentToolkit.setDefaultMaxDepth(newDepth);
+            updateMaxDepthLabel(currentToolkit);
+        });
+        maxDepthPanel.add(maxDepthSpinner);
+        maxDepthInheritLabel = new JLabel();
+        maxDepthInheritLabel.setFont(maxDepthInheritLabel.getFont().deriveFont(Font.ITALIC));
+        maxDepthPanel.add(maxDepthInheritLabel);
         detailsPanel.add(maxDepthPanel, gbc);
 
         rendererContainer = new JPanel(new BorderLayout());
@@ -117,19 +151,18 @@ public class ToolkitPanel extends ScrollablePanel {
      * @param tk The toolkit to display.
      */
     public void setToolkit(AbstractToolkit<?> tk) {
-        nameLabel.setText("Toolkit: " + tk.getName());
-        descLabel.setText("<html>" + tk.getDescription().replace("\n", "<br>") + "</html>");
+        this.currentToolkit = tk;
+        this.adjusting = true;
+        try {
+            nameLabel.setText("Toolkit: " + tk.getName());
+            descLabel.setText("<html>" + tk.getDescription().replace("\n", "<br>") + "</html>");
 
-        for (java.awt.event.ActionListener al : enabledCheckbox.getActionListeners()) {
-            enabledCheckbox.removeActionListener(al);
+            enabledCheckbox.setSelected(tk.isEnabled());
+            maxDepthSpinner.setValue(tk.getDefaultMaxDepth());
+            updateMaxDepthLabel(tk);
+        } finally {
+            this.adjusting = false;
         }
-        enabledCheckbox.setSelected(tk.isEnabled());
-        enabledCheckbox.addActionListener(e -> {
-            tk.setEnabled(enabledCheckbox.isSelected());
-            parentPanel.refresh(false);
-        });
-
-        maxDepthSpinner.setValue(tk.getDefaultMaxDepth());
 
         // Custom Toolkit UI Injection
         rendererContainer.removeAll();
@@ -143,5 +176,20 @@ public class ToolkitPanel extends ScrollablePanel {
 
         revalidate();
         repaint();
+    }
+
+    /**
+     * Updates the inheritance label based on the current toolkit max depth.
+     *
+     * @param tk The active toolkit.
+     */
+    private void updateMaxDepthLabel(AbstractToolkit<?> tk) {
+        int depth = tk.getDefaultMaxDepth();
+        if (depth == -1) {
+            int effective = parentPanel.getAgiPanel().getAgi().getConfig().getDefaultToolMaxDepth();
+            maxDepthInheritLabel.setText("(inherit from agi config: " + effective + ")");
+        } else {
+            maxDepthInheritLabel.setText("(explicit: " + depth + ")");
+        }
     }
 }

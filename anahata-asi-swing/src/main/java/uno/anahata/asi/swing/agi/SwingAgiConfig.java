@@ -226,7 +226,9 @@ public class SwingAgiConfig extends AgiConfig {
      *
      * @param permission The permission level.
      * @return The color representing that permission.
+     * @deprecated Use {@link #getToolPermissionColor(ToolPermission)} on the active {@code SwingAgiConfig} instance instead.
      */
+    @Deprecated
     public static Color getColor(ToolPermission permission) {
         if (permission == null) {
             return Color.GRAY;
@@ -239,6 +241,20 @@ public class SwingAgiConfig extends AgiConfig {
             case DENY ->
                 new Color(220, 53, 69);     // Red
         };
+    }
+
+    /**
+     * Resolves the theme-adaptive color for a given tool permission setting.
+     * <p>
+     * Subclasses (such as {@code IntellijAgiConfig}) override this method to provide
+     * platform-native colors (e.g. JBColor).
+     * </p>
+     *
+     * @param permission The tool permission.
+     * @return The theme color for the permission.
+     */
+    public Color getToolPermissionColor(ToolPermission permission) {
+        return getColor(permission);
     }
 
     /**

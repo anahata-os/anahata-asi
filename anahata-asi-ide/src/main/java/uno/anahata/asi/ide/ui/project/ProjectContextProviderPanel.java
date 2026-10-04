@@ -2,13 +2,16 @@
 package uno.anahata.asi.ide.ui.project;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.beans.PropertyChangeEvent;
 import javax.swing.BorderFactory;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.swing.agi.context.AbstractContextProviderRenderer;
 import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
 import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
@@ -30,17 +33,22 @@ public class ProjectContextProviderPanel extends AbstractContextProviderRenderer
     /**
      * Display label for the inherited scope mode.
      */
-    private static final String MODE_INHERITED = "Inherit from Default Scope";
+    private static final String MODE_INHERITED = "Inherit";
 
     /**
      * Display label for the custom scope override mode.
      */
-    private static final String MODE_CUSTOM = "Custom Scope Override";
+    private static final String MODE_CUSTOM = "Custom";
 
     /**
      * Combo box for switching between inherited and custom structure scope modes.
      */
     private final JComboBox<String> modeCombo;
+
+    /**
+     * Label displaying the inheritance source when in inherited mode.
+     */
+    private final JLabel inheritanceSourceLabel;
 
     /**
      * Embedded panel rendering the checkboxes for configuring individual scope switches.
@@ -61,10 +69,15 @@ public class ProjectContextProviderPanel extends AbstractContextProviderRenderer
 
         JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 2));
         topBar.setOpaque(false);
-        topBar.add(new JLabel("Scope Mode:"));
+        topBar.add(new JLabel("Scope:"));
 
         modeCombo = new JComboBox<>(new String[]{MODE_INHERITED, MODE_CUSTOM});
         topBar.add(modeCombo);
+
+        inheritanceSourceLabel = new JLabel();
+        inheritanceSourceLabel.setFont(inheritanceSourceLabel.getFont().deriveFont(Font.ITALIC));
+        inheritanceSourceLabel.setForeground(new Color(0, 128, 0));
+        topBar.add(inheritanceSourceLabel);
 
         scopePanel = new ProjectStructureScopePanel();
 
@@ -120,9 +133,33 @@ public class ProjectContextProviderPanel extends AbstractContextProviderRenderer
             modeCombo.setSelectedItem(isCustom ? MODE_CUSTOM : MODE_INHERITED);
             scopePanel.setScope(contextProvider.getEffectiveScope());
             scopePanel.setEditable(isCustom);
+
+            if (!isCustom) {
+                inheritanceSourceLabel.setVisible(true);
+                inheritanceSourceLabel.setText("Inheriting from: " + resolveInheritanceSource(contextProvider));
+            } else {
+                inheritanceSourceLabel.setVisible(false);
+            }
         } finally {
             adjusting = false;
         }
+    }
+
+    /**
+     * Resolves the descriptive name of the ancestor providing the effective scope.
+     *
+     * @param pcp The project context provider to inspect.
+     * @return The simple name of the parent project with custom scope, or "Projects toolkit default".
+     */
+    private String resolveInheritanceSource(AbstractProjectContextProvider pcp) {
+        ContextProvider curr = pcp.getParentProvider();
+        while (curr instanceof AbstractProjectContextProvider ancestor) {
+            if (ancestor.getScope() != null) {
+                return ancestor.getName();
+            }
+            curr = ancestor.getParentProvider();
+        }
+        return "Projects toolkit default";
     }
 
     /**

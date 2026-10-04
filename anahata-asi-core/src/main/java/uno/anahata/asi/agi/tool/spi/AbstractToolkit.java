@@ -31,6 +31,7 @@ public abstract class AbstractToolkit<T extends AbstractTool<?,?>> {
     protected String description;
     
     /** The default maximum depth policy for tools in this toolkit. */
+    @Setter
     protected int defaultMaxDepth = -1;
 
     /** Whether the toolkit is currently enabled. */
