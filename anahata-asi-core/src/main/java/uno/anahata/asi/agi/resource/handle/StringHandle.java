@@ -22,7 +22,7 @@ import lombok.SneakyThrows;
  * 
  * @author anahata
  */
-public class StringHandle extends AbstractResourceHandle {
+public class StringHandle extends ResourceHandle {
 
     /** The memory URI of the snippet. */
     @Getter

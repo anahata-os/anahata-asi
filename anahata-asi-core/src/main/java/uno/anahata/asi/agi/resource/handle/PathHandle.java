@@ -26,7 +26,7 @@ import uno.anahata.asi.internal.TikaUtils;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class PathHandle extends AbstractResourceHandle {
+public class PathHandle extends ResourceHandle {
 
     /** The absolute path to the local file. */
     @NonNull

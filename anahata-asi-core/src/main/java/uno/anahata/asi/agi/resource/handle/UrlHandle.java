@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class UrlHandle extends AbstractResourceHandle {
+public class UrlHandle extends ResourceHandle {
 
     /**
      * The full URL string for the resource.

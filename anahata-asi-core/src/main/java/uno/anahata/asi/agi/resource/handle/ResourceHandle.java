@@ -8,14 +8,15 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
-import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.agi.resource.Resource;
 
 /**
- * A strategy interface for physical or virtual connectivity to resource data.
+ * Abstract base class for physical or virtual connectivity to resource data.
  * <p>
  * Handles encapsulate the details of how to read, write, and identify the 
  * source content (e.g., local files, IDE objects, or memory strings).
@@ -27,25 +28,51 @@ import uno.anahata.asi.agi.resource.Resource;
  * 
  * @author anahata
  */
-public interface ResourceHandle extends Rebindable {
+@Slf4j
+public abstract class ResourceHandle implements Rebindable {
+
+    /** 
+     * The parent resource orchestrator. 
+     * We don't mark this transient because Kryo handles circular references 
+     * automatically, preserving the bidirectional link during persistence.
+     */
+    @Getter
+    @Setter
+    protected Resource owner;
+
+    /** {@inheritDoc} */
+    @Override
+    public void rebind() {
+        log.debug("Rebinding resource handle: {}", getUri());
+    }
+
+    /**
+     * Returns supplementary contextual blocks (e.g. live VCS diff, recent history table, file diagnostics)
+     * to augment this resource in the model prompt.
+     *
+     * @return A list of Markdown strings, or an empty list if no annex is provided.
+     */
+    public List<String> getAnnex() {
+        return Collections.emptyList();
+    }
     /** 
      * Gets the unique URI for this resource. 
      * @return The identifier URI.
      */
-    URI getUri();
+    public abstract URI getUri();
 
     /**
      * Returns a user-friendly name for the source.
      * @return The source name.
      */
-    String getName();
+    public abstract String getName();
 
     /**
      * Returns an optional HTML-formatted display name.
      * Used by IDE environments to show status (e.g. Git colors).
      * @return The HTML display name, or null.
      */
-    default String getHtmlDisplayName() { 
+    public String getHtmlDisplayName() { 
         return null; 
     }
 
@@ -53,26 +80,26 @@ public interface ResourceHandle extends Rebindable {
      * Returns the detected MIME type of the resource. 
      * @return The MIME type string (e.g., "text/plain", "image/png").
      */
-    String getMimeType();
+    public abstract String getMimeType();
 
     /** 
      * Returns the last modified timestamp in milliseconds. 
      * @return The timestamp, or 0 if unknown.
      */
-    long getLastModified();
+    public abstract long getLastModified();
 
     /** 
      * Checks if the resource physically or virtually exists. 
      * @return true if the source is available.
      */
-    boolean exists();
+    public abstract boolean exists();
 
     /** 
      * Opens a fresh input stream to the resource content. 
      * @return A new InputStream instance.
      * @throws IOException if the stream cannot be opened.
      */
-    InputStream openStream() throws IOException;
+    public abstract InputStream openStream() throws IOException;
     
     /**
      * Returns the full content of the resource as a String.
@@ -83,7 +110,7 @@ public interface ResourceHandle extends Rebindable {
      * @return The text content.
      * @throws IOException if reading fails.
      */
-    default String asText() throws IOException {
+    public String asText() throws IOException {
         try (InputStream is = openStream()) {
             return IOUtils.toString(is, getCharset());
         }
@@ -94,7 +121,7 @@ public interface ResourceHandle extends Rebindable {
      * @return The binary content.
      * @throws IOException if reading fails.
      */
-    default byte[] asBytes() throws IOException {
+    public byte[] asBytes() throws IOException {
         try (InputStream is = openStream()) {
             return IOUtils.toByteArray(is);
         }
@@ -104,7 +131,7 @@ public interface ResourceHandle extends Rebindable {
      * Determines if the resource is writable in the current environment.
      * @return true if the handle supports the {@link #write(String, String)} operation.
      */
-    default boolean isWritable() {
+    public boolean isWritable() {
         return false;
     }
 
@@ -118,7 +145,7 @@ public interface ResourceHandle extends Rebindable {
      * @param reason The reason or explanation for this modification, used for version control or local history labels.
      * @throws IOException if the write fails.
      */
-    default void write(String content, String reason) throws IOException {
+    public void write(String content, String reason) throws IOException {
         throw new UnsupportedOperationException("Resource handle is read-only: " + getUri());
     }
 
@@ -131,13 +158,13 @@ public interface ResourceHandle extends Rebindable {
      * </p>
      * @return true if virtual (in-memory content).
      */
-    boolean isVirtual();
+    public abstract boolean isVirtual();
 
     /** 
      * Returns the detected or configured charset. Defaults to UTF-8. 
      * @return The Charset to use for text interpretation.
      */
-    default Charset getCharset() { 
+    public Charset getCharset() { 
         return StandardCharsets.UTF_8; 
     }
 
@@ -146,7 +173,7 @@ public interface ResourceHandle extends Rebindable {
      * @param lastLoadTimestamp The timestamp of the last successful load.
      * @return true if the source is newer than the timestamp.
      */
-    default boolean isStale(long lastLoadTimestamp) {
+    public boolean isStale(long lastLoadTimestamp) {
         return getLastModified() > lastLoadTimestamp;
     }
 
@@ -156,28 +183,8 @@ public interface ResourceHandle extends Rebindable {
      *
      * @return true if the resource has unsaved modifications in memory, false otherwise.
      */
-    default boolean isModified() {
+    public boolean isModified() {
         return false;
-    }
-
-    /**
-     * Returns the structured diff between the current working state of this resource
-     * and the repository HEAD or pristine base revision.
-     *
-     * @return A {@link VcsDiff} DTO, or null if clean, untracked, or unsupported.
-     */
-    default VcsDiff getDiffToHead() {
-        return null;
-    }
-
-    /**
-     * Returns the recent version control and local history entries for this resource.
-     *
-     * @param maxEntries Maximum number of history entries to return.
-     * @return A list of {@link HistoryEntry} DTOs, or an empty list if unsupported.
-     */
-    default List<HistoryEntry> getHistory(int maxEntries) {
-        return Collections.emptyList();
     }
 
     /**
@@ -189,7 +196,7 @@ public interface ResourceHandle extends Rebindable {
      * </p>
      * @return true if the resource should be handled by a TextView.
      */
-    default boolean isTextual() {
+    public boolean isTextual() {
         String mime = getMimeType();
         if (mime == null) {
             return false;
@@ -221,7 +228,7 @@ public interface ResourceHandle extends Rebindable {
      * </p>
      * @return The header string.
      */
-    default String getHeader() {
+    public String getHeader() {
         return "Handler : lastModified=" + getLastModified() +
                ", uri=" + getUri() + 
                ", mime=" + getMimeType() + 
@@ -232,27 +239,15 @@ public interface ResourceHandle extends Rebindable {
     }
 
     /** 
-     * Associates this handle with its parent Resource. 
-     * @param owner The owning Resource orchestrator.
-     */
-    void setOwner(Resource owner);
-
-    /**
-     * Gets the parent resource orchestrator for this handle.
-     * @return The owning Resource instance.
-     */
-    Resource getOwner();
-    
-    /** 
      * Performs any necessary cleanup (e.g., removing listeners). 
      */
-    default void dispose() {}
+    public void dispose() {}
 
     /**
      * Returns the total length of the resource content in characters/bytes.
      * @return The length, or -1 if the length is unknown or streaming.
      */
-    default long length() {
+    public long length() {
         return -1L;
     }
 }

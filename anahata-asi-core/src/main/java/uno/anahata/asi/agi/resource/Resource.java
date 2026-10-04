@@ -20,8 +20,7 @@ import uno.anahata.asi.agi.context.ContextPosition;
 import uno.anahata.asi.agi.event.BasicPropertyChangeSource;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.agi.provider.AbstractModel;
-import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
-import uno.anahata.asi.agi.resource.vcs.VcsDiff;
+import java.util.ArrayList;
 import uno.anahata.asi.persistence.Rebindable;
 import uno.anahata.asi.internal.TimeUtils;
 
@@ -305,18 +304,9 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
             view.populateRag(ragMessage);
 
             if (handle != null) {
-                if (handle.isTextual()) {
-                    VcsDiff diff = handle.getDiffToHead();
-                    if (diff != null && diff.hasChanges() && !diff.isNewFile()) {
-                        ragMessage.addTextPart(diff.toMarkdown());
-                    }
-                }
-
-                List<HistoryEntry> history = handle.getHistory(5);
-                if (history != null && !history.isEmpty()) {
-                    String md = HistoryEntry.toMarkdownTable(getName(), history);
-                    if (md != null && !md.isBlank()) {
-                        ragMessage.addTextPart("### Recent History (`" + getName() + "`):\n" + md);
+                for (String part : handle.getAnnex()) {
+                    if (part != null && !part.isBlank()) {
+                        ragMessage.addTextPart(part);
                     }
                 }
             }
@@ -333,9 +323,16 @@ public class Resource extends BasicPropertyChangeSource implements Rebindable, C
     @Override
     public List<String> getSystemInstructions() throws Exception {
         if (contextPosition == ContextPosition.SYSTEM_INSTRUCTIONS) {
-            List<String> instructions = view.getInstructions();
+            List<String> instructions = new ArrayList<>(view.getInstructions());
             if (instructions.isEmpty()) {
                 return Collections.singletonList("**WARNING**: Managed resource '" + getName() + "' (" + getMimeType() + ") cannot be used as SYSTEM_INSTRUCTIONS because it is a binary resource. Please move it to PROMPT_AUGMENTATION.");
+            }
+            if (handle != null) {
+                for (String part : handle.getAnnex()) {
+                    if (part != null && !part.isBlank()) {
+                        instructions.add(part);
+                    }
+                }
             }
             return instructions;
         }
