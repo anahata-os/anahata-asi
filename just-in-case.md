@@ -206,3 +206,124 @@ Through root-cause profiling, architecture redesign, and clean implementation, p
   `  "org.jetbrains.idea.maven.project.MavenProject",`
   `  "org.jetbrains.idea.maven.utils.MavenArtifactUtil"`
   `])`
+
+---
+
+## 9. Session Handover & Achievements (2026-10-03: Maven Parity, Clipboard Image Pasting, UI Diff Header & Line Comments Push-Down, BatchCodeRefiner Deduplication)
+
+### A. IntelliJ Maven DOM Migration (`IntellijMaven.java`)
+- **Native Maven DOM Migration in `getDeclaredDependencies`**:
+  * Replaced 120 lines of raw StAX XML stream parsing with IntelliJ's native DOM API:
+    ```java
+    MavenDomProjectModel domModel = MavenDomUtil.getMavenDomProjectModel(project, pomVf);
+    List<MavenDomDependency> deps = domModel.getDependencies().getDependencies();
+    ```
+  * Grouped directly via `groupDeclaredDependencies(List<MavenDomDependency>)`, completely eliminating the temporary `RawDependency` intermediate class.
+- **Native Maven DOM Migration in `addDependency`**:
+  * Replaced raw string concatenation with `MavenDomDependencies.addDependency()` executed inside `WriteCommandAction`.
+  * **Managed Version Resolution**: Queries `mp.findManagedDependencyVersion(groupId, artifactId)`. If the version matches `dependencyManagement`, the redundant `<version>` tag is automatically omitted from `pom.xml` to prevent IDE warnings.
+  * **XML Comment Support**: Inserts descriptive XML comments (`<!-- comment -->`) directly above the `<dependency>` tag in the DOM.
+  * **Formatting**: Automatically reformats the added DOM block using IntelliJ's `CodeStyleManager`.
+  * **Transitive Resolution & Return DTO**: Synchronously executes `runGoals('dependency:resolve')` and returns `AddDependencyResult` (moved to `uno.anahata.asi.toolkit.maven` in `core` for full parity with NetBeans).
+  * **Deprecation Fix**: Replaced deprecated `MavenArtifactUtil.getArtifactFile` with `resolveLocalArtifactPath` helper.
+  * **Live Verification**: Verified on `anahata-asi-web` with `org.slf4j:slf4j-api` — created `<dependencies>` section, omitted managed `<version>`, added comment, reformatted XML, and resolved dependencies in 701 ms with `BUILD SUCCESS`.
+
+### B. OS Clipboard Image Pasting Fix in IntelliJ
+- **Root Cause Identified**:
+  * In NetBeans and Desktop, `Ctrl+V` routes directly through Swing `InputMap` to `inputTextArea.paste()` -> `AgiTransferHandler`.
+  * In IntelliJ, `IdeEventQueue` intercepts `Ctrl+V` globally for `$Paste` (`EditorPaste`). Because standard Swing components lack IntelliJ's `PasteProvider`, IntelliJ deemed paste disabled, consumed the keystroke, and dropped binary `DataFlavor.imageFlavor` data.
+- **Clean Architectural Solution (No Subclassing of Agi or AgiPanel)**:
+  * In `anahata-asi-swing`: Added `public void onAgiPanelInitialized(AgiPanel agiPanel)` lifecycle hook to `SwingAgiConfig`, invoked at the very end of `AgiPanel.initComponents()`.
+  * In `anahata-asi-intellij`: `IntellijAgiConfig` overrides `onAgiPanelInitialized` to register a component-scoped `AnAction` for `Ctrl+V` / `Cmd+V` on `inputTextArea` using `CustomShortcutSet`.
+  * **Verification**: Component-scoped action takes precedence over global keymap actions. Pressing `Ctrl+V` with an image on the clipboard immediately invokes `inputTextArea.paste()`, creating a temporary PNG and attaching it to the chat preview.
+
+### C. Session Nickname & ToolWindow Tab Synchronization
+- Added `IntellijAsiContainer.updateToolWindowTabTitle(Agi agi)`.
+- Invoked inside `IntellijAsiContainer.onSessionContextChanged` on the EDT whenever `"nickname"` property changes, dynamically updating the Anahata ToolWindow tab header to match the session nickname.
+
+### D. IntelliJ Projects Toolkit & Compiler Diagnostics (`IntellijProjects.java`)
+- **Rich Diagnostic Return Value**:
+  * Upgraded `buildProject` callback to extract `compileContext.getMessages(CompilerMessageCategory.ERROR)` and `WARNING`.
+  * Resolves file path, line number, and column offset via `msg.getNavigatable() instanceof OpenFileDescriptor`.
+  * Returns formatted multi-line summary with categorized error/warning lists instead of just counts.
+- **ToolContext Error Logging**:
+  * Captured `final ToolContext ctx = getToolContext();` before launching async build.
+  * Dispatches every compiler error to `ctx.error(...)` and warning to `ctx.log(...)` so diagnostics appear in the tool response tabs.
+- **Coding Standards Cleanups**:
+  * Eliminated all 8 FQN violations in method bodies (imported `Optional`, `SwingUtilities`, `Method`, `CompileStatusNotification`, `Collection`).
+  * Removed redundant `compileContext != null` and `ctx != null` checks.
+
+### E. IDE Navigation & Selection (`IDE.java` and `SelectInTarget.java`)
+- Created outer enum `SelectInTarget` (`PROJECTS`, `STRUCTURE`, `FILES`).
+- Upgraded `IDE.selectIn(String path, SelectInTarget target)`:
+  * EDT-safe execution: checks `Application.isDispatchThread()` to run directly if already on EDT (fixing the `invokeAndWait` deadlock when clicking from UI buttons), otherwise uses `invokeAndWait`.
+  * `PROJECTS`: Activates Project tool window and executes `ProjectView.select(null, vf, true)`.
+  * `STRUCTURE`: Opens file and activates Structure tool window.
+  * `FILES`: Reveals file in OS file manager via `RevealFileAction`.
+- Added `IDE.selectInProjects(String path)` alias for full NetBeans parity.
+
+### F. Diff Viewer UI Header & Actions (`IntellijTextResourceWriteRenderer.java`)
+- **Rich Header Panel**:
+  * Built `createHeaderPanel` placed at `BorderLayout.NORTH` above `diffPanel.getComponent()`.
+  * Status label: `Proposed Changes:` / `Applied Changes:` / `Changes (Declined):`.
+  * Authentic File Icon: Resolved via `agiPanel.getAgiConfig().getIconProvider().getIconFor(resource)`.
+  * Action Buttons: Calls `ResourceUiRegistry.populateActions(...)` to inject **`Open in Editor`** and **`Select in Project`** buttons directly into the diff header.
+  * AI Comments List: Renders formatted line comments summary aligned to the top right.
+- **Authentic Gutter Commentary Icon**:
+  * Replaced `AllIcons.General.Balloon` with authentic 16x16 Anahata logo (`AnahataFileIconProvider.getFileIcon()`) in `CommentGutterRenderer`. Hovering displays the AI comment tooltip.
+
+### G. Line Comments Push-Down to Core (`core`, `intellij`, `nb`)
+- Moved `DiffCommentUtils` from `anahata-asi-nb` to `uno.anahata.asi.toolkit.resources.text` in `anahata-asi-core`.
+- Pushed down `public List<LineComment> calculateLineComments(Agi agi)` to `AbstractTextResourceWrite`:
+  * `FullTextResourceUpdate`: returns explicit `lineComments`.
+  * `TextResourceReplacements`: locates target occurrences, maps to proposed line numbers via cumulative line-shift math, and returns `List<LineComment>`. Extracted `ReplacementEvent` as a javadocced private static record.
+  * `TextResourceLineEdits`: aggregates insertions, replacements, deletions with cumulative line shifts.
+  * `CodeRefinementBatch`: returns `calculatedComments` from AST surgery.
+- Updated NetBeans (`TextResourceReplacementsRenderer`, `TextResourceLineEditsRenderer`) and IntelliJ (`IntellijTextResourceWriteRenderer`) to delegate directly to `update.calculateLineComments(agi)`.
+- Enforced fail-fast non-null validation on `TextResourceReplacements.replacements` (`@NonNull`).
+- Upgraded fallback exception logging to `log.error("Failed to capture original content...", e)` with full stack trace.
+- Eliminated all double Javadoc blocks and defensive null checks across all DTOs and handles.
+
+### H. Deduplication of `BatchCodeRefiner` (IntelliJ)
+- Centralized all PSI AST mutation logic inside `CodeRefinementBatch.applyIntentToPsi(...)`.
+- Removed ~145 lines of copy-pasted duplicate methods (`parseMember`, `insertMember`, `requireAnchor`, `requireMember`) from `BatchCodeRefiner.java`.
+- Registered `CodeRefinementBatch.class` in `ParameterRendererFactory` in `IntellijAsiContainer.initEnvironment()`, connecting it to `IntellijTextResourceWriteRenderer`.
+- Added `SmallTestClass.java` to `uno.anahata.asi.intellij.tools.java.coderefiner` mirroring NetBeans test coverage.
+
+### I. Active Tasks & Roadmap (`tasks.md`)
+- Deleted obsolete `ROADMAP.md` and created clean `tasks.md` in `anahata-asi-intellij`.
+- **Next Priority**: Task 4 — Structured Test Results in `RunConfigurations` (`SMTRunnerEventsListener` / `AbstractTestProxy`).
+
+---
+
+## 10. Active Working Tree & Modified Files Summary
+- **`anahata-asi-core`**:
+  * `AbstractTextResourceWrite.java` (added `calculateLineComments(Agi)`)
+  * `DiffCommentUtils.java` (moved from NetBeans to core)
+  * `FullTextResourceUpdate.java` (implements `calculateLineComments`)
+  * `TextResourceReplacements.java` (implements `calculateLineComments`, extracted `ReplacementEvent` record, `@NonNull replacements`, `log.error` with stack trace)
+  * `TextResourceLineEdits.java` (implements `calculateLineComments`, `log.error` with stack trace)
+  * `AddDependencyResult.java` (moved from NetBeans to core)
+- **`anahata-asi-intellij`**:
+  * `IntellijMaven.java` (native Maven DOM, `addDependency`, `AddDependencyResult`, no deprecations)
+  * `IntellijProjects.java` (rich compiler diagnostic extraction, ToolContext logging, no FQNs)
+  * `IDE.java` (EDT-safe `selectIn`, `SelectInTarget` enum)
+  * `SelectInTarget.java` (added enum)
+  * `IntellijResourceUI.java` (uses `SelectInTarget.PROJECTS`)
+  * `IntellijTextResourceWriteRenderer.java` (header panel, actions, comments list, Anahata gutter icon, delegates to `calculateLineComments`)
+  * `BatchCodeRefiner.java` (deduplicated, delegates to `CodeRefinementBatch`)
+  * `CodeRefinementBatch.java` (centralized PSI AST mutation helpers, `calculateLineComments`)
+  * `SmallTestClass.java` (added for AST test coverage)
+  * `IntellijHandle.java` (cleaned defensive null checks)
+  * `IntellijAgiConfig.java` (wired `onAgiPanelInitialized` for `Ctrl+V` paste action)
+  * `IntellijAsiContainer.java` (registered `CodeRefinementBatch` renderer, tab title sync)
+  * `tasks.md` (active roadmap)
+- **`anahata-asi-nb`**:
+  * `CodeRefinementBatch.java` (implements `calculateLineComments`)
+  * `TextResourceReplacementsRenderer.java` (delegates to `update.calculateLineComments()`)
+  * `TextResourceLineEditsRenderer.java` (delegates to `update.calculateLineComments()`)
+  * `TeeInputOutput.java` (cleaned deprecated call)
+- **`anahata-asi-swing`**:
+  * `SwingAgiConfig.java` (added `onAgiPanelInitialized(AgiPanel)`)
+  * `AgiPanel.java` (invokes `agiConfig.onAgiPanelInitialized(this)`)
+

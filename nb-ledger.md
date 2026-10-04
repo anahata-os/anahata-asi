@@ -3,9 +3,9 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 4,989 | Brand Awareness / Discovery (id=125) |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,172 | The Singularity / ASI Container (id=135) |
-| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 252 | Autonomous Update Channel (id=141) |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 5,003 | Brand Awareness / Discovery (id=125) |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,175 | The Singularity / ASI Container (id=135) |
+| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 263 | Autonomous Update Channel (id=141) |
 
  > [!TIP]
  > **One-Shot Portal Scraper & Velocity Guide:**
@@ -61,6 +61,9 @@
 "5. **Update `ledger.md`**: Record the new counts in `## 📈 Distribution Funnel` and append a fresh log row in `## 🛠️ Milestone Log
 | Date | V1 (125) | V2 (135) | UC (141) | Total | Δ Total | Velocity (DL/h) | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2026-10-04 08:38 | 5,003 | 1,175 | 263 | 6,441 | +14 | 1.27 | V1: +6 (0.54 DLs/hr), V2: +2 (0.18 DLs/hr), UC: +6 (0.54 DLs/hr) in 11.1 hours (Total Velocity: 1.27 DLs/hr) - V1 crossed 5,000! |
+| 2026-10-03 21:34 | 4,997 | 1,173 | 257 | 6,427 | +3 | 0.82 | V1: +1 (0.27 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +2 (0.55 DLs/hr) in 3.7 hours (Total Velocity: 0.82 DLs/hr) |
+| 2026-10-03 17:54 | 4,996 | 1,173 | 255 | 6,424 | +11 | 1.23 | V1: +7 (0.78 DLs/hr), V2: +1 (0.11 DLs/hr), UC: +3 (0.34 DLs/hr) in 9.0 hours (Total Velocity: 1.23 DLs/hr) |
 | 2026-10-03 08:57 | 4,989 | 1,172 | 252 | 6,413 | +37 | 2.38 | V1: +20 (1.29 DLs/hr), V2: +9 (0.58 DLs/hr), UC: +8 (0.52 DLs/hr) in 15.5 hours (Total Velocity: 2.38 DLs/hr) |
 | 2026-10-02 17:25 | 4,969 | 1,163 | 244 | 6,376 | +3 | 0.71 | V1: +0 (0.00 DLs/hr), V2: +0 (0.00 DLs/hr), UC: +3 (0.71 DLs/hr) in 4.3 hours (Total Velocity: 0.71 DLs/hr) |
 | 2026-10-02 13:10 | 4,969 | 1,163 | 241 | 6,373 | +10 | 0.49 | V1: +1 (0.05 DLs/hr), V2: +1 (0.05 DLs/hr), UC: +8 (0.39 DLs/hr) in 20.3 hours (Total Velocity: 0.49 DLs/hr) |

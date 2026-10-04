@@ -67,13 +67,20 @@
                     <li><a href="#coderefiner"><i class="fas fa-atom"></i> CodeRefiner</a></li>
                     <li><a href="#codemodel"><i class="fas fa-sitemap"></i> CodeModel</a></li>
                     <li><a href="#refactor"><i class="fas fa-magic"></i> Refactor</a></li>
+                    <li><a href="#debugger"><i class="fas fa-bug"></i> Debugger</a></li>
+                    <li><a href="#gradle"><i class="fas fa-cubes"></i> Gradle</a></li>
                     <li><a href="#hints"><i class="fas fa-lightbulb"></i> Hints</a></li>
-                    <li><a href="#maven"><i class="fas fa-hammer"></i> Maven</a></li>
-                    <li><a href="#projects"><i class="fas fa-project-diagram"></i> Projects</a></li>
+                    <li><a href="#maven"><i class="fas fa-hammer"></i> IntellijMaven</a></li>
+                    <li><a href="#projects"><i class="fas fa-project-diagram"></i> IntellijProjects</a></li>
                     <li><a href="#runconfigurations"><i class="fas fa-play"></i> RunConfigurations</a></li>
-                    <li><a href="#vcs"><i class="fas fa-code-branch"></i> Vcs</a></li>
+                    <li><a href="#vcs"><i class="fas fa-code-branch"></i> IntellijVCS</a></li>
                     <li><a href="#terminals"><i class="fas fa-terminal"></i> Terminals</a></li>
                     <li><a href="#editor-ide"><i class="fas fa-edit"></i> Editor & IDE</a></li>
+                </ul>
+
+                <h4>Shared Core & Platform</h4>
+                <ul>
+                    <li><a href="#core-toolkits"><i class="fas fa-microchip"></i> Core & Swing Toolkits</a></li>
                 </ul>
 
                 <h4>Sensory Context</h4>
@@ -308,6 +315,37 @@
                 </div>
             </section>
 
+            <!-- Debugger Toolkit -->
+            <section id="debugger" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-bug"></i><h2>Debugger Toolkit (13 Tools)</h2></div>
+                <p>Platform-agnostic debugger automation built on IntelliJ's <code>XDebuggerManager</code>. Manages line breakpoints, drives debug sessions, steps through code, inspects frame variables, and evaluates expressions asynchronously with bounded synchronous waits.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">listBreakpoints() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all line breakpoints configured across open projects (file, line, enabled state, condition).</p></div>
+                    <div class="tool-card"><span class="tool-sig">setLineBreakpoint(filePath, line) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Sets a line breakpoint at the specified 1-based line number for any JVM language.</p></div>
+                    <div class="tool-card"><span class="tool-sig">removeLineBreakpoint(filePath, line) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Removes any line breakpoint at the given file and 1-based line number.</p></div>
+                    <div class="tool-card"><span class="tool-sig">clearAllBreakpoints() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Removes all line breakpoints across all open projects in a single shot.</p></div>
+                    <div class="tool-card"><span class="tool-sig">listDebugSessions() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists active debug sessions and their current state (running, stopped, paused at location).</p></div>
+                    <div class="tool-card"><span class="tool-sig">debugRunConfiguration(name, timeoutSeconds) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Launches a run configuration under the debugger; optionally awaits breakpoint hit or termination.</p></div>
+                    <div class="tool-card"><span class="tool-sig">resumeDebugSession() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Resumes execution in the current paused debug session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">stepOver() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Steps over the current line in the active debug session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">stepInto() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Steps into the call at the current line in the active debug session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">stepOut() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Steps out of the current method in the active debug session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">stopDebugSession() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Terminates the active debug session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">evaluateExpression(expression, timeoutSeconds) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Evaluates an expression in the top frame of the paused debug session.</p></div>
+                    <div class="tool-card"><span class="tool-sig">listFrameVariables(timeoutSeconds) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists visible variables (name and evaluated value) in the top frame of the paused session.</p></div>
+                </div>
+            </section>
+
+            <!-- Gradle Toolkit -->
+            <section id="gradle" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-cubes"></i><h2>Gradle Toolkit (2 Tools)</h2></div>
+                <p>Interacts with Gradle projects linked to IntelliJ's external-system framework. Discovers linked Gradle project structures and executes Gradle tasks with bounded latch waits and streaming output in the IDE Run window.</p>
+                <div class="tool-grid">
+                    <div class="tool-card"><span class="tool-sig">getGradleProjects() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all Gradle projects linked to open IntelliJ projects.</p></div>
+                    <div class="tool-card"><span class="tool-sig">runGradleTask(projectPath, tasks, scriptParameters, timeoutSeconds) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Runs one or more Gradle tasks (e.g. ['clean','build']) and waits synchronously for completion.</p></div>
+                </div>
+            </section>
+
             <!-- Hints Toolkit -->
             <section id="hints" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-lightbulb"></i><h2>Hints Toolkit (2 Tools)</h2></div>
@@ -320,47 +358,72 @@
 
             <!-- Maven Toolkit -->
             <section id="maven" class="toolkit-section">
-                <div class="toolkit-header"><i class="fas fa-hammer"></i><h2>Maven Toolkit (5 Tools)</h2></div>
-                <p>Deep Maven integration via <code>MavenProjectsManager</code> and <code>MavenRunner</code>.</p>
+                <div class="toolkit-header"><i class="fas fa-hammer"></i><h2>IntellijMaven Toolkit (5 Tools)</h2></div>
+                <p>Deep Maven integration via <code>MavenProjectsManager</code>, <code>MavenRunner</code>, and native <code>MavenDomProjectModel</code>. Features atomic XML dependency manipulation, synchronous goal execution with EventSpy telemetry, and unified repository index searches.</p>
                 <div class="tool-grid">
-                    <div class="tool-card"><span class="tool-sig">getMavenProjects() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all imported Maven projects across open workspaces.</p></div>
-                    <div class="tool-card"><span class="tool-sig">getDependencies(projectPath) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists resolved dependencies grouped by scope.</p></div>
-                    <div class="tool-card"><span class="tool-sig">runGoals(projectPath, goals, profiles) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes Maven goals synchronously with latch wait.</p></div>
-                    <div class="tool-card"><span class="tool-sig">addDependency(projectPath, g, a, v, scope) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Splices dependency into pom.xml and triggers reimport.</p></div>
-                    <div class="tool-card"><span class="tool-sig">searchMavenIndex(query, maxResults) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Searches the configured Maven repository index.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getDependencies(projectPath) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists resolved dependencies grouped by scope representing the actual runtime classpath.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getDeclaredDependencies(projectPath) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Ultra-compact list of dependencies directly declared in pom.xml grouped by scope and groupId.</p></div>
+                    <div class="tool-card"><span class="tool-sig">runGoals(projectPath, goals, profiles, properties, options, skipTests, vmOptions, timeoutSeconds) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Executes Maven goals synchronously, streaming stdout/stderr to tool logs and saving full log to disk.</p></div>
+                    <div class="tool-card"><span class="tool-sig">addDependency(projectPath, groupId, artifactId, version, scope, classifier, type, beforeDependency, afterDependency, comment) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">The definitive super-tool for adding dependencies with relative positioning and dependencyManagement support.</p></div>
+                    <div class="tool-card"><span class="tool-sig">searchMaven(query, groupId, artifactId, includeAllVersions, stableOnly, startIndex, pageSize) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Unified Maven repository index search supporting exact coordinate lookup, groupId navigation, and keyword matching.</p></div>
                 </div>
             </section>
 
             <!-- Projects Toolkit -->
             <section id="projects" class="toolkit-section">
-                <div class="toolkit-header"><i class="fas fa-project-diagram"></i><h2>Projects Toolkit (6 Tools)</h2></div>
-                <p>Workspace and lifecycle management for IntelliJ projects.</p>
+                <div class="toolkit-header"><i class="fas fa-project-diagram"></i><h2>IntellijProjects Toolkit (10 Tools)</h2></div>
+                <p>Workspace and lifecycle management for IntelliJ projects. Provides open/close controls, synchronous project compilation via <code>CompilerManager</code>, and comprehensive Project SDK detection and configuration.</p>
                 <div class="tool-grid">
-                    <div class="tool-card"><span class="tool-sig">getOpenProjects() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns absolute paths of all currently open projects.</p></div>
-                    <div class="tool-card"><span class="tool-sig">openProject(projectPath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens a project directory programmatically.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getOpenProjects() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns absolute paths of all currently open projects in the IDE.</p></div>
+                    <div class="tool-card"><span class="tool-sig">openProject(projectPath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens a project directory programmatically in the IntelliJ IDE.</p></div>
                     <div class="tool-card"><span class="tool-sig">closeProjects(projectPaths) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes specified open projects in the IDE.</p></div>
-                    <div class="tool-card"><span class="tool-sig">buildProject(projectPath, rebuild) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Compiles (make) or rebuilds a project with synchronous results.</p></div>
+                    <div class="tool-card"><span class="tool-sig">buildProject(projectPath, rebuild) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Compiles (make) or rebuilds a project synchronously and returns error/warning diagnostics.</p></div>
                     <div class="tool-card"><span class="tool-sig">saveAllDocuments() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Saves all unsaved editor documents across the IDE to disk.</p></div>
-                    <div class="tool-card"><span class="tool-sig">setProjectProviderEnabled(path, enabled) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Toggles project-level context provider in prompt.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getProjectSdk(projectPath) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns the currently configured Project SDK name, version, and home path.</p></div>
+                    <div class="tool-card"><span class="tool-sig">listAvailableSdks() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all configured SDKs in IntelliJ and available system JDK home paths.</p></div>
+                    <div class="tool-card"><span class="tool-sig">setProjectSdk(projectPath, sdkNameOrHomePath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Configures the project SDK by registered name or by JDK home directory path.</p></div>
+                    <div class="tool-card"><span class="tool-sig">autoConfigureProjectSdk(projectPath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Automatically detects and configures the best available JDK for the project.</p></div>
+                    <div class="tool-card"><span class="tool-sig">setProjectProviderEnabled(projectPath, enabled) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Enables or disables the project context provider in the prompt.</p></div>
                 </div>
             </section>
 
             <!-- RunConfigurations Toolkit -->
             <section id="runconfigurations" class="toolkit-section">
                 <div class="toolkit-header"><i class="fas fa-play"></i><h2>RunConfigurations Toolkit (2 Tools)</h2></div>
-                <p>Discovers and launches IntelliJ run, debug, and test configurations directly.</p>
+                <p>Discovers and launches IntelliJ run, debug, and test configurations directly. When executed with a timeout, captures structured test results (passed/failed/ignored) via the platform test-event bus.</p>
                 <div class="tool-grid">
-                    <div class="tool-card"><span class="tool-sig">listRunConfigurations() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all configured run/debug/test configurations.</p></div>
-                    <div class="tool-card"><span class="tool-sig">runConfiguration(name) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Launches a run/test configuration by name via ProgramRunnerUtil.</p></div>
+                    <div class="tool-card"><span class="tool-sig">listRunConfigurations() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all configured run/debug/test configurations across open projects.</p></div>
+                    <div class="tool-card"><span class="tool-sig">runConfiguration(name, timeoutSeconds) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Launches a run/test configuration by name with optional synchronous execution wait.</p></div>
                 </div>
             </section>
 
             <!-- Vcs Toolkit -->
             <section id="vcs" class="toolkit-section">
-                <div class="toolkit-header"><i class="fas fa-code-branch"></i><h2>Vcs Toolkit (1 Tool)</h2></div>
-                <p>Provider-agnostic version-control status inspector powered by <code>ChangeListManager</code>.</p>
+                <div class="toolkit-header"><i class="fas fa-code-branch"></i><h2>IntellijVCS Toolkit (22 Tools)</h2></div>
+                <p>Universal Version Control and Local History automation suite powered by IntelliJ's Git4Idea and <code>ChangeListManager</code>. Full repository lifecycle management from status inspection and diffing to branching, stashing, and commit dialog activation.</p>
                 <div class="tool-grid">
-                    <div class="tool-card"><span class="tool-sig">getVcsStatus() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Reports changed, added, deleted, and unversioned files grouped by change list.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitStatus(path) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Gets fine-grained Git status (branch, tracking, modified/untracked files) for a repository or file.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getVcsStatus() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Provider-agnostic VCS status reporting all local changes grouped by change list.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getDiff(filePath, revision) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Generates a unified diff for a file against repository base or a specific revision.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitDiff(repoPath, baseRevision, targetRevision, filePath, summaryOnly) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Generates a Git diff between two branches or revisions, optionally comparing against working copy.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitLog(repoPath, branchOrRevision, maxEntries, filePath, author, noMerges, grep) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Retrieves the commit history log for a Git repository, branch, or revision.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitShow(repoPath, branchOrRevision, filePath) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Reads and returns the content of a file from a specific Git revision without switching branches.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitBlame(filePath, startLine, endLine, revision) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Retrieves line-by-line authorship and commit history (Git Blame) for a file.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getInfo(path) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Gets the Version Control metadata and repository root for a file or directory.</p></div>
+                    <div class="tool-card"><span class="tool-sig">getHistory(filePath, maxEntries) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Queries unified chronological history combining VCS commits and IntelliJ Local History.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitBranches(repoPath, includeRemote) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists local and remote tracking branches in a Git repository.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitInit(directoryPath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Initializes a new Git repository in the specified directory.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitAdd(filePaths) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Stages one or more files into the Git index.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitCommit(repoPath, filePaths, message, authorName, authorEmail) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Commits changes headlessly in a single shot (auto-stages files if specified).</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitOpenCommitDialog(repoPath, filePaths, message, authorName, authorEmail) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Opens the native IntelliJ Commit tool window with pre-filled message and selected files.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitPush(repoPath, remote, branch, force) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Pushes committed revisions to a remote Git repository.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitFetch(repoPath, remote) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Fetches updates from a remote repository into local tracking branches without modifying working files.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitPull(repoPath, remote) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Pulls changes from a remote repository into the active branch (fetch and merge).</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitCheckout(repoPath, branchOrRevision, createIfMissing) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Checks out a Git branch or revision, optionally creating the branch if missing.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitCreateBranch(repoPath, branchName, startRevision) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Creates a new Git branch at a specified revision or current HEAD.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitDeleteBranch(repoPath, branchName, force) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Deletes a local Git branch.</p></div>
+                    <div class="tool-card"><span class="tool-sig">gitMerge(repoPath, branchOrRevision, fastForwardPolicy) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Merges a branch or revision into the current active branch.</p></div>
+                    <div class="tool-card"><span class="tool-sig">revert(filePath) <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Discards unstaged modifications in a file, reverting to the pristine base revision.</p></div>
                 </div>
             </section>
 
@@ -384,8 +447,48 @@
                     <div class="tool-card"><span class="tool-sig">Editor.getOpenFiles() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Lists all open editor tabs and their modification state.</p></div>
                     <div class="tool-card"><span class="tool-sig">Editor.closeAllFiles() <span class="badge-perm perm-prompt">Prompt</span></span><p class="tool-desc">Closes all files currently open in the editor.</p></div>
                     <div class="tool-card"><span class="tool-sig">IDE.monitorLogs(grepPattern, tailLines) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Tails the idea.log stream with optional grep filtering.</p></div>
-                    <div class="tool-card"><span class="tool-sig">IDE.selectIn(path) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Reveals and selects a file/folder in the Project view.</p></div>
+                    <div class="tool-card"><span class="tool-sig">IDE.selectIn(path, target) <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Reveals and selects a file/folder in the Project view, Structure view, or OS file manager.</p></div>
                     <div class="tool-card"><span class="tool-sig">IDE.getToolWindowsMarkdown() <span class="badge-perm perm-always">Always</span></span><p class="tool-desc">Returns a Markdown report of all registered tool windows.</p></div>
+                </div>
+            </section>
+
+            <!-- Shared Core & Platform Toolkits -->
+            <section id="core-toolkits" class="toolkit-section">
+                <div class="toolkit-header"><i class="fas fa-microchip"></i><h2>Shared Core & Platform Toolkits</h2></div>
+                <p>Every IntelliJ AGI session inherits the full suite of foundation toolkits from <code>anahata-asi-core</code> and <code>anahata-asi-swing</code>:</p>
+                <div class="provider-grid">
+                    <div class="provider-card">
+                        <h4><i class="fas fa-cubes"></i> AsiContainer</h4>
+                        <p>Manages sub-AGI sessions, active model registries, and executes single-shot multimodal media generation (images, audio, video).</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-folder-open"></i> Resources</h4>
+                        <p>URI-centric resource management, surgical text replacements with byte-level checksums, and optimistic locking validation.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-tasks"></i> Session</h4>
+                        <p>Maintains the active session task dashboard/summary, toggles toolkits dynamically, and manages context provider prompt inclusion.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-history"></i> History</h4>
+                        <p>Controls the revolutionary Context Window Garbage Collector (CwGC), bulk-pins critical code blocks, and prunes stale turns.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-terminal"></i> Shell</h4>
+                        <p>Cross-platform headless process execution across Bash, PowerShell, and CMD with separate stdout and stderr streaming.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-desktop"></i> Screens</h4>
+                        <p>High-resolution screen captures and live rectangular region sharing streamed directly to multimodal model turns.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-volume-up"></i> Audio</h4>
+                        <p>Audio recording from selected host input devices and audio playback across local output lines.</p>
+                    </div>
+                    <div class="provider-card">
+                        <h4><i class="fas fa-server"></i> Host</h4>
+                        <p>OS-level process management, active PID inspection, and process termination controls.</p>
+                    </div>
                 </div>
             </section>
 

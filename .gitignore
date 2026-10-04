@@ -65,3 +65,8 @@ target/site/apidocs/
 
 # macOS
 .DS_Store
+
+# Editor temporary / backup / lock files
+*.LCK*
+*~
+*.swp
