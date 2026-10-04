@@ -54,11 +54,11 @@ import org.netbeans.modules.versioning.util.common.VCSCommitOptions;
 import org.openide.util.HelpCtx;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.agi.message.RagMessage;
-import uno.anahata.asi.agi.resource.vcs.FastForwardPolicy;
-import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
-import uno.anahata.asi.agi.resource.vcs.VcsDiff;
-import uno.anahata.asi.agi.resource.vcs.VcsFileStatus;
-import uno.anahata.asi.toolkit.vcs.AbstractVCS;
+import uno.anahata.asi.ide.vcs.FastForwardPolicy;
+import uno.anahata.asi.ide.vcs.HistoryEntry;
+import uno.anahata.asi.ide.vcs.VcsDiff;
+import uno.anahata.asi.ide.vcs.VcsFileStatus;
+import uno.anahata.asi.ide.vcs.AbstractVCS;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -130,6 +130,7 @@ public class NbVCS extends AbstractVCS {
      * @throws Exception if path resolution fails.
      */
     @AgiTool(value = "Gets the Version Control metadata and repository root for a file or directory.", permission = ToolPermission.APPROVE_ALWAYS)
+    @Override
     public String getInfo(
             @AgiToolParam(value = "The absolute path of the file or directory.", rendererId = "path") String path) throws Exception {
 

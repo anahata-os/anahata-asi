@@ -1,12 +1,12 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.toolkit.vcs;
+package uno.anahata.asi.ide.vcs;
 
 import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.agi.resource.vcs.FastForwardPolicy;
-import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
-import uno.anahata.asi.agi.resource.vcs.VcsDiff;
+import uno.anahata.asi.ide.vcs.FastForwardPolicy;
+import uno.anahata.asi.ide.vcs.HistoryEntry;
+import uno.anahata.asi.ide.vcs.VcsDiff;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**

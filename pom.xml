@@ -85,6 +85,7 @@
         <module>anahata-asi-openai-compatible</module>
         <module>anahata-asi-anthropic</module>
         <module>anahata-asi-intellij</module>
+        <module>anahata-asi-ide</module>
     </modules>
 
     <properties>

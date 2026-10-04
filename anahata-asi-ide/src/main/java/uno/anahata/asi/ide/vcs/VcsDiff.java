@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.agi.resource.vcs;
+package uno.anahata.asi.ide.vcs;
 
 import java.io.File;
 import java.io.Serializable;
