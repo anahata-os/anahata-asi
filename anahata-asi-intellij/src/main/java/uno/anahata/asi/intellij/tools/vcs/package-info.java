@@ -3,7 +3,7 @@
 /**
  * Version Control System (VCS) and Git4Idea automation toolkit for IntelliJ IDEA.
  * <p>
- * Implements the universal {@link uno.anahata.asi.toolkit.vcs.AbstractVCS} contract using IntelliJ's native VCS framework:
+ * Implements the universal {@link uno.anahata.asi.ide.vcs.AbstractVCS} contract using IntelliJ's native VCS framework:
  * </p>
  * <ul>
  *   <li>{@link uno.anahata.asi.intellij.tools.vcs.IntellijVCS}: Full-featured VCS toolkit supporting provider-agnostic change

@@ -21,7 +21,7 @@
  *   <li><b>Document Synchronization</b>: {@link uno.anahata.asi.nb.ui.render.DiffStreamSource} 
  *       ensures that "Merge" actions and manual user edits are reflected back 
  *       into the live AI model state.</li>
- *   <li><b>Surgical Mapping</b>: {@link uno.anahata.asi.nb.ui.render.DiffCommentUtils} 
+ *   <li><b>Surgical Mapping</b>: {@link uno.anahata.asi.toolkit.resources.text.DiffCommentUtils} 
  *       provides consistent coordinate shifting to keep AI comments aligned 
  *       with proposed line changes.</li>
  * </ul>

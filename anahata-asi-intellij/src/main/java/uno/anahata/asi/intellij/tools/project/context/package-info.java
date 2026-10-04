@@ -7,7 +7,7 @@
  * </p>
  * <ul>
  *   <li>{@link uno.anahata.asi.intellij.tools.project.context.IntellijProjectContextProvider}: A unified, polymorphic project and
- *       submodule context provider extending {@link uno.anahata.asi.toolkit.project.AbstractProjectContextProvider}, consolidating
+ *       submodule context provider extending {@link uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider}, consolidating
  *       structured project overviews, compiler alerts via {@link com.intellij.problems.WolfTheProblemSolver}, and PSI AST source tree
  *       hierarchies with scoping controls.</li>
  * </ul>

@@ -6,7 +6,7 @@
  * Bridges the Anahata core framework with IntelliJ's project and SDK subsystems:
  * </p>
  * <ul>
- *   <li>{@link uno.anahata.asi.intellij.tools.project.IntellijProjects}: Toolkit extending {@link uno.anahata.asi.toolkit.project.AbstractProjects},
+ *   <li>{@link uno.anahata.asi.intellij.tools.project.IntellijProjects}: Toolkit extending {@link uno.anahata.asi.ide.tools.project.AbstractProjects},
  *       providing tools to open and close projects, trigger incremental builds and rebuilds via {@link com.intellij.openapi.compiler.CompilerManager},
  *       save documents, inspect configured Project SDKs, auto-detect system JDKs, and manage project context provider hierarchies.</li>
  * </ul>
