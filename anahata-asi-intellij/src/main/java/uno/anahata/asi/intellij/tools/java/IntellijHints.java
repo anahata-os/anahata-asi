@@ -51,12 +51,12 @@ import java.util.List;
  */
 @Slf4j
 @AgiToolkit("A toolkit for reporting IntelliJ inspection warnings and errors for a file.")
-public class Hints extends AnahataToolkit {
+public class IntellijHints extends AnahataToolkit {
 
     /**
      * Constructs the Hints toolkit (instantiated reflectively via its public no-arg constructor).
      */
-    public Hints() {
+    public IntellijHints() {
     }
 
     /**

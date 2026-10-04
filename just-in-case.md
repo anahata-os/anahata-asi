@@ -327,3 +327,150 @@ Through root-cause profiling, architecture redesign, and clean implementation, p
   * `SwingAgiConfig.java` (added `onAgiPanelInitialized(AgiPanel)`)
   * `AgiPanel.java` (invokes `agiConfig.onAgiPanelInitialized(this)`)
 
+---
+
+## 11. Session Handover & Architecture Achievements (2026-10-04: The `anahata-asi-ide` Extraction, Handle & UI Strategy Unification, and 1.4.0-SNAPSHOT Bump)
+
+### A. Strategic Extraction of `anahata-asi-ide`
+- **Module Creation**: Created `anahata-asi-ide` inheriting from `anahata-asi-parent` and depending on `anahata-asi-swing` (which transitively brings in `anahata-asi-core`).
+- **Core Decoupling**: Completely purged `anahata-asi-core` from IDE-specific concerns:
+  * Zero VCS imports/classes in core.
+  * Zero Maven imports/classes in core.
+  * Zero Project model/scoping imports/classes in core.
+- **Dependency Hierarchy**:
+  ```text
+                 anahata-asi-core (Pure AI Engine, Agi, Context, Tools SPI, Resource)
+                         │
+                 anahata-asi-swing (AgiPanel, ParameterRenderer, UI Controls, RSyntaxTextArea)
+                         │
+                 anahata-asi-ide (Universal IDE Abstractions, Contracts, DTOs & IdeHandle)
+                 ┌───────┴──────────────┬─────────────────────────┐
+                 ▼                      ▼                         ▼
+          anahata-asi-nb      anahata-asi-intellij      anahata-asi-eclipse (Future)
+  ```
+
+### B. Elimination of "Interfacetitis" on Resource Handles
+- **Collapsed Handle Hierarchy**: Converted `interface ResourceHandle` into a single canonical `public abstract class ResourceHandle implements Rebindable`.
+- **Deleted `AbstractResourceHandle`**: Moved `protected Resource owner;`, getters/setters, and `rebind()` directly into `ResourceHandle`.
+- **Decoupled Annex (`handle.getAnnex()`)**: Replaced hardwired `getDiffToHead()` and `getHistory()` with `public List<String> getAnnex() { return Collections.emptyList(); }`.
+- **System Instructions Fix**: Updated `Resource.java` so that both `PROMPT_AUGMENTATION` and `SYSTEM_INSTRUCTIONS` resources (such as `anahata.md`) append the annex, guaranteeing that uncommitted diffs and commit history are visible for instructions files!
+
+### C. Universal `IdeHandle` in `anahata-asi-ide`
+- Created `uno.anahata.asi.ide.resources.handle.IdeHandle extends ResourceHandle`:
+  * Consolidated common fields (`uri`, `path`).
+  * Unified physical filesystem checks (`isVirtual() -> false`, `length()`, `exists()`, `openStream()`, `isWritable()`).
+  * Unified `getAnnex()` returning working-copy VCS diff markdown and recent commit/local history markdown table.
+- **Deduplication in `NbHandle` & `IntellijHandle`**:
+  * Both updated to `extends IdeHandle`.
+  * Deleted ~200 lines of duplicated VCS and field code across both plugins.
+
+### D. Migration of VCS Layer
+- Moved to `uno.anahata.asi.ide.vcs` in a single atomic refactoring session:
+  * `AbstractVCS.java`
+  * `VcsDiff.java`
+  * `VcsFileStatus.java`
+  * `HistoryEntry.java`
+  * `FastForwardPolicy.java`
+- Both `NbVCS` and `IntellijVCS` now extend `uno.anahata.asi.ide.vcs.AbstractVCS`.
+
+### E. Migration of Maven Layer
+- Moved to `uno.anahata.asi.ide.tools.maven`:
+  * `DependencyScope.java`
+  * `DependencyGroup.java`
+  * `DeclaredArtifact.java`
+  * `MavenBuildResult.java`
+  * `AddDependencyResult.java`
+- `NbMaven` and `IntellijMaven` share identical Maven DTO models.
+
+### F. Migration of Projects Layer & UI Components
+- **Domain Models** (`uno.anahata.asi.ide.tools.project`):
+  * `AbstractProjects.java`
+  * `ProjectOverview.java`
+  * `ProjectStructureScope.java`
+  * `AbstractProjectContextProvider.java` (in `...project.context`)
+- **UI Components** (`uno.anahata.asi.ide.ui.project`):
+  * `ProjectsPanel.java`: Swing panel configuring default scope.
+  * `ProjectStructureScopePanel.java`: 9-switch scope grid.
+  * `ProjectContextProviderPanel.java`: Scope mode dropdown and dynamic inheritance label.
+  * `ProjectContextProviderNode.java`: Reactive tree node listening to `"projectStructureScope"` on provider and `"defaultScope"` on toolkit (unconditional fail-fast binding).
+  * `ProjectsToolkitNode.java`: Specialized tree node representing `AbstractProjects`.
+
+### G. UI Architecture Modernization (`*UI` Strategy Pattern)
+- **Eliminated UI Interfacetitis**: Replaced disparate renderer interfaces and lambda factories with lightweight UI strategies mirroring `ResourceUI`:
+  * `ToolkitUI<T>`: provides `createNode(agiPanel, toolkit, jot)` and `createPanel(toolkit, agiPanel)`
+  * `ContextProviderUI<T>`: provides `createNode(agiPanel, provider)` and `createPanel(provider, contextPanel)`
+- **ClassHierarchyMap**: Extracted thread-safe generic `ClassHierarchyMap<B, V>` to eliminate duplicate while-loop hierarchy traversals across registries.
+- **AbstractIdeAsiContainer**: Universal container base class registering `ProjectsUI` and `ProjectContextProviderUI` automatically.
+- **Decoupled ContextPanel**: Removed `AbstractProjects` import and hardwired project scope listeners from `ContextPanel.java`.
+
+### H. UI Polish, Reentrancy Guards & Diagnostics
+- **Dynamic Scope Source Resolver**: `ProjectContextProviderPanel` renders clean "Inherit" vs "Custom" dropdown and a dynamic italic label (`Inheriting from: <ancestor>` or `Inheriting from: Projects toolkit default`).
+- **Max Depth Labels**: Added `maxDepthInheritLabel` to both `ToolPanel` and `ToolkitPanel` showing effective depth when inheriting (`-1`).
+- **Reentrancy Protection**: Installed `private boolean adjusting = false;` guards on `ToolPanel` and `ToolkitPanel` listeners.
+- **Color Method**: Added instance method `getToolPermissionColor` on `SwingAgiConfig`, deprecating the static `getColor`.
+- **Fixed Javadoc Plugin Failures**: Fixed 5 outdated package-info Javadoc `@link` references across `intellij` and `nb`.
+
+### I. Version Bump to 1.4.0-SNAPSHOT
+- Executed `mvn -o -DnewVersion=1.4.0-SNAPSHOT -DgenerateBackupPoms=false versions:set`.
+- All 15 reactor POMs bumped to `1.4.0-SNAPSHOT`.
+- All changes reviewed, verified with 0 compiler alerts, and committed/pushed to `origin/main`.
+
+---
+
+## 12. Stage 2 Post-Reload Roadmap
+
+1. **Java AST & Code Model DTO Deduplication** (`uno.anahata.asi.ide.tools.java`):
+   - Move keychain DTOs: `JavaType`, `JavaMember`, `JavaMemberPage`, `JavaHierarchyNode`.
+   - Move refinement DTOs: `CodeRefinementBatch` (base class), `CodeRefinementIntent`, `RelativePosition`, `JavadocIntent`.
+   - Update both `nb` and `intellij` to use the unified DTOs, deduplicating ~1,000 lines.
+2. **IntelliJ Hints Parity** (`uno.anahata.asi.intellij.tools.java.Hints`):
+   - Refactor IntelliJ `Hints` to `extends AbstractHints` and return `List<HintInfo>` from `getFileHints(String filePath)`.
+   - Implement `getHintMetadata()` for IntelliJ inspection profile via `InspectionProjectProfileManager`.
+3. **Base Editor & Navigation Toolkits** (`uno.anahata.asi.ide.tools.ide`):
+   - Define `AbstractEditor` (`openFile`, `getOpenFiles`, `closeAllFiles`) and `AbstractIDE` (`selectInProjects`, `monitorLogs`).
+4. **Base Resource UI Strategy & Panel** (`uno.anahata.asi.ide.ui.resources`):
+   - Leverage `IdeResourceUI` and `IdeHandlePanel` across future IDE modules (e.g. Eclipse).
+
+---
+
+## 13. Session Handover & Architecture Achievements (2026-10-04: Universal Hints Layer, Live Diagnostic Annex, and KV-Cached Inspection Profile)
+
+### A. Universal Inspection Layer in `anahata-asi-ide` (`uno.anahata.asi.ide.tools.hints`)
+- **Strictly Zero False Abstractions & 100% Preservation of Native IDE Semantics**:
+  * Avoided forcing false fix abstractions: NetBeans applies fixes by catalog rule ID across the file (`applyHintFix`), whereas IntelliJ applies line-targeted `IntentionAction`s (`applyHint`). Each host IDE preserves its native fix tool and mental model.
+  * Extracted genuine semantic commonalities: live diagnostic reporting and rule catalog metadata.
+- **Universal DTOs**:
+  * `HintInfo.java`: Canonical diagnostic hit in a file with `filePath`, `line`, `column`, `severity` (String preserving localized IDE names), `description`, and `id`. Includes `toMarkdown()` and `toMarkdown(fileName, hints)` helpers.
+  * `HintMetadata.java`: Canonical rule definition in catalog with `id`, `displayName`, `description`, `category`, `severity`, and `enabled` boolean state.
+  * `package-info.java`: Javadoc documentation for `uno.anahata.asi.ide.tools.hints`.
+- **Abstract Toolkit Base (`AbstractHints.java`)**:
+  * Universal base class extending `AnahataToolkit` with:
+    `public abstract List<HintInfo> getFileHints(String filePath) throws Exception;`
+  * Intentionally omits `@AgiTool` annotations so concrete IDE toolkits retain 100% authentic localized prompts and descriptions.
+
+### B. Core Architecture Guidelines in `anahata-asi-ide/anahata.md`
+- Documented foundational principles in `anahata-asi-ide/anahata.md`:
+  1. Strictly zero false abstractions and 100% preservation of native IDE semantics.
+  2. No `@AgiTool` annotations on abstract toolkit methods unless 100% identical semantics letter-by-letter.
+  3. Tool Return Types (String vs DTO): tools consumed purely by the LLM return Markdown Strings; DTOs are reserved for data programmatically consumed by the framework.
+  4. Shared `populateMessage` and `getSystemInstructions` in abstract toolkits.
+  5. No defensive method-start null checks (fail fast).
+
+### C. Live Diagnostic Annex in `IdeHandle` (`uno.anahata.asi.ide.resources.handle.IdeHandle`)
+- Added `public List<HintInfo> getHints()` querying the session's active `AbstractHints` toolkit.
+- Updated `public List<String> getAnnex()`:
+  * Automatically formats and appends active inspection warnings and errors under the file header for all managed text resources via `HintInfo.toMarkdown(hints)`.
+  * Omits redundant file name repeating since the resource header already establishes file identity.
+  * Displays file diagnostics alongside working-copy VCS diffs and recent commit history with zero prompt bloat when clean.
+
+### D. NetBeans `Hints.java` Modernization & Prefix KV-Cache Architecture
+- Refactored `uno.anahata.asi.nb.tools.java.Hints` to `extends AbstractHints`:
+  * Implements `getFileHints(String filePath) -> List<HintInfo>`.
+  * Deleted legacy inner `HintInfo` and `HintMetadata` classes.
+  * Added `setHintsEnabled(List<String> hintIds, boolean enabled)` tool to batch toggle multiple rules on/off in `HintsSettings`.
+- **Prefix KV-Cache Optimization for Inspection Profile**:
+  * Shifted the comprehensive 313-rule inspection catalog from dynamic tail RAG message (`populateMessage`) to static prefix system instructions (`getSystemInstructions()`) via `public String getHintMetadata()`.
+  * Formatted as clean per-category Markdown tables (`### category` $\to$ `| Enabled | ID | Short Description |`).
+  * Enabled rules listed first with `✅`, disabled rules listed second with blank space, both sorted alphabetically.
+  * Evaluated dynamically on each turn (~15-20 ms) with zero static caching, guaranteeing 100% reactivity to manual user toggles in the NetBeans GUI while maximizing LLM prefix KV cache hits.
+
