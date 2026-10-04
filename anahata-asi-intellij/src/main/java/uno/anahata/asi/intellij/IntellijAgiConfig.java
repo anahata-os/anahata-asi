@@ -108,10 +108,30 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         setIconProvider(new IntellijIconProvider());
     }
 
-    /** 
-     * {@inheritDoc} 
+    /**
+     * Constructs a new IntelliJ AGI configuration.
+     *
+     * @param container The host ASI container.
+     */
+    public IntellijAgiConfig(AbstractAsiContainer container) {
+        super(container);
+    }
+
+    /**
+     * Constructs a new IntelliJ AGI configuration with a specific session ID.
+     *
+     * @param container The host ASI container.
+     * @param sessionId The unique session ID.
+     */
+    public IntellijAgiConfig(AbstractAsiContainer container, String sessionId) {
+        super(container, sessionId);
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
-     * Overrides the factory to return the reactive IntellijHandle for local or JAR resources.
+     * Overrides the factory to return the reactive IntellijHandle for local or
+     * JAR resources.
      * </p>
      */
     @Override
@@ -125,38 +145,63 @@ public class IntellijAgiConfig extends SwingAgiConfig {
     /**
      * {@inheritDoc}
      * <p>
-     * Maps semantic action keys to native, theme-adaptive IntelliJ {@link AllIcons}.
-     * Falls back to built-in Anahata vector icons for any keys without a platform equivalent.
+     * Maps semantic action keys to native, theme-adaptive IntelliJ
+     * {@link AllIcons}. Falls back to built-in Anahata vector icons for any
+     * keys without a platform equivalent.
      * </p>
      */
     @Override
     public Icon getActionIcon(@NonNull ActionIconKey key, int size) {
         Icon icon = switch (key) {
-            case CANCEL -> AllIcons.Actions.Cancel;
-            case DELETE -> AllIcons.General.Delete;
-            case SAVE -> AllIcons.Actions.MenuSaveall;
-            case EDIT, EDIT_STAGED -> AllIcons.Actions.Edit;
-            case COPY -> AllIcons.Actions.Copy;
-            case SEND, RUN_AND_SEND -> AllIcons.Actions.Execute;
-            case STOP -> AllIcons.Actions.Suspend;
-            case ATTACH -> AllIcons.Actions.Attach;
-            case LINK -> AllIcons.Ide.Link;
-            case SCREENSHOT -> AllIcons.Actions.Dump;
-            case SEARCH -> AllIcons.Actions.Search;
-            case OPEN_SESSION -> AllIcons.General.OpenInToolWindow;
-            case REFRESH -> AllIcons.Actions.Refresh;
-            case CLEAR_HISTORY -> AllIcons.Actions.GC;
-            case NEW_SESSION -> AllIcons.General.Add;
-            case IMPORT -> AllIcons.ToolbarDecorator.Import;
-            case SETTINGS -> AllIcons.General.Settings;
-            case EXTERNAL -> AllIcons.Ide.External_link_arrow;
-            case OPEN_IN_IDE, NEXT -> AllIcons.Actions.Forward;
-            case PIN -> AllIcons.General.Pin_tab;
+            case CANCEL ->
+                AllIcons.Actions.Cancel;
+            case DELETE ->
+                AllIcons.General.Delete;
+            case SAVE ->
+                AllIcons.Actions.MenuSaveall;
+            case EDIT, EDIT_STAGED ->
+                AllIcons.Actions.Edit;
+            case COPY ->
+                AllIcons.Actions.Copy;
+            case SEND, RUN_AND_SEND ->
+                AllIcons.Actions.Execute;
+            case STOP ->
+                AllIcons.Actions.Suspend;
+            case ATTACH ->
+                AllIcons.Actions.Attach;
+            case LINK ->
+                AllIcons.Ide.Link;
+            case SCREENSHOT ->
+                AllIcons.Actions.Dump;
+            case SEARCH ->
+                AllIcons.Actions.Search;
+            case OPEN_SESSION ->
+                AllIcons.General.OpenInToolWindow;
+            case REFRESH ->
+                AllIcons.Actions.Refresh;
+            case CLEAR_HISTORY ->
+                AllIcons.Actions.GC;
+            case NEW_SESSION ->
+                AllIcons.General.Add;
+            case IMPORT ->
+                AllIcons.ToolbarDecorator.Import;
+            case SETTINGS ->
+                AllIcons.General.Settings;
+            case EXTERNAL ->
+                AllIcons.Ide.External_link_arrow;
+            case OPEN_IN_IDE, NEXT ->
+                AllIcons.Actions.Forward;
+            case PIN ->
+                AllIcons.General.Pin_tab;
             //case LOCAL_TOOLS -> AllIcons.Nodes.Toolbox;
-            case SERVER_TOOLS -> AllIcons.Nodes.Plugin;
-            case AUTO_REPLY -> AllIcons.Actions.Rerun;
-            case TEST_CONNECTION -> AllIcons.Actions.Lightning;
-            default -> null;
+            case SERVER_TOOLS ->
+                AllIcons.Nodes.Plugin;
+            case AUTO_REPLY ->
+                AllIcons.Actions.Rerun;
+            case TEST_CONNECTION ->
+                AllIcons.Actions.Lightning;
+            default ->
+                null;
         };
         return icon != null ? icon : super.getActionIcon(key, size);
     }
@@ -164,7 +209,8 @@ public class IntellijAgiConfig extends SwingAgiConfig {
     /**
      * {@inheritDoc}
      * <p>
-     * Queries IntelliJ's {@link JBColor#isBright()} to determine whether a dark theme is active.
+     * Queries IntelliJ's {@link JBColor#isBright()} to determine whether a dark
+     * theme is active.
      * </p>
      */
     @Override
@@ -175,9 +221,10 @@ public class IntellijAgiConfig extends SwingAgiConfig {
     /**
      * {@inheritDoc}
      * <p>
-     * Customizes toolbar buttons for IntelliJ: applies the {@code "toolBarButton"} FlatLaf client
-     * property and constrains icon-only buttons to square dimensions so IntelliJ's New UI does not
-     * render them overly wide.
+     * Customizes toolbar buttons for IntelliJ: applies the
+     * {@code "toolBarButton"} FlatLaf client property and constrains icon-only
+     * buttons to square dimensions so IntelliJ's New UI does not render them
+     * overly wide.
      * </p>
      */
     @Override
@@ -186,9 +233,10 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         forceSquare(button, size);
         return button;
     }
-    
+
     /**
-     * Creates and styles an action toggle button for the current host environment.
+     * Creates and styles an action toggle button for the current host
+     * environment.
      *
      * @param key The semantic action icon key.
      * @param size The nominal icon size.
@@ -250,11 +298,14 @@ public class IntellijAgiConfig extends SwingAgiConfig {
     /**
      * {@inheritDoc}
      * <p>
-     * Overrides the lifecycle hook to register an IntelliJ-aware component-scoped {@link AnAction}
-     * for clipboard paste (Ctrl+V on Windows/Linux, Cmd+V on macOS) directly on the input text area.
-     * This intercepts the keystroke before IntelliJ's global {@code EditorPaste} action can consume it,
-     * routing it directly through {@link javax.swing.text.JTextComponent#paste()} and {@link AgiTransferHandler}
-     * to support binary images, file drops, and text seamlessly.
+     * Overrides the lifecycle hook to register an IntelliJ-aware
+     * component-scoped {@link AnAction} for clipboard paste (Ctrl+V on
+     * Windows/Linux, Cmd+V on macOS) directly on the input text area. This
+     * intercepts the keystroke before IntelliJ's global {@code EditorPaste}
+     * action can consume it, routing it directly through
+     * {@link javax.swing.text.JTextComponent#paste()} and
+     * {@link AgiTransferHandler} to support binary images, file drops, and text
+     * seamlessly.
      * </p>
      *
      * @param agiPanel The newly initialized AgiPanel.
@@ -276,22 +327,4 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         pasteAction.registerCustomShortcutSet(shortcutSet, textArea);
     }
 
-    /**
-     * Constructs a new IntelliJ AGI configuration.
-     *
-     * @param container The host ASI container.
-     */
-    public IntellijAgiConfig(AbstractAsiContainer container) {
-        super(container);
-    }
-
-    /**
-     * Constructs a new IntelliJ AGI configuration with a specific session ID.
-     *
-     * @param container The host ASI container.
-     * @param sessionId The unique session ID.
-     */
-    public IntellijAgiConfig(AbstractAsiContainer container, String sessionId) {
-        super(container, sessionId);
-    }
 }
