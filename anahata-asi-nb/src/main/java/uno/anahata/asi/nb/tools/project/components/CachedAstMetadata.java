@@ -10,7 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.lang.model.element.ElementKind;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * High-performance, in-memory cache for resolved AST metadata of Java source files.

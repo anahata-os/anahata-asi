@@ -38,8 +38,8 @@ import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.intellij.tools.project.context.IntellijProjectContextProvider;
-import uno.anahata.asi.toolkit.project.AbstractProjects;
-import uno.anahata.asi.toolkit.project.ProjectOverview;
+import uno.anahata.asi.ide.tools.project.AbstractProjects;
+import uno.anahata.asi.ide.tools.project.ProjectOverview;
 
 /**
  * A toolkit for interacting with the IntelliJ IDEA Project APIs.

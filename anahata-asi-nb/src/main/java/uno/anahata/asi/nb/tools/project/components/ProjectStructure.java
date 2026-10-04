@@ -14,7 +14,7 @@ import org.netbeans.api.project.ProjectUtils;
 import org.netbeans.api.project.SourceGroup;
 import org.netbeans.api.project.Sources;
 import org.openide.filesystems.FileObject;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * The high-level orchestrator for the refined project structure model.

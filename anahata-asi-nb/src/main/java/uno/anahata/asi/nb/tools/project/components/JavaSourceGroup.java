@@ -34,8 +34,8 @@ import org.objectweb.asm.Opcodes;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import uno.anahata.asi.nb.tools.project.components.ProjectStructure.ScanStrategy;
-import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * A specialized container for a Java source group (e.g., src/main/java).

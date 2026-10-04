@@ -1,6 +1,7 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.toolkit.project;
+package uno.anahata.asi.ide.tools.project;
 
+import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
 import java.util.List;
 import java.util.Optional;
 import lombok.Getter;
@@ -41,7 +42,7 @@ public abstract class AbstractProjects extends AnahataToolkit {
     public void setDefaultScope(ProjectStructureScope defaultScope) {
         ProjectStructureScope old = this.defaultScope;
         this.defaultScope = defaultScope != null ? defaultScope : new ProjectStructureScope();
-        propertyChangeSupport.firePropertyChange("projectStructureScope", old, this.defaultScope);
+        propertyChangeSupport.firePropertyChange("defaultScope", old, this.defaultScope);
     }
 
     /**

@@ -48,10 +48,10 @@ import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.tools.maven.IntellijMaven;
 import uno.anahata.asi.intellij.tools.project.IntellijProjects;
 import uno.anahata.asi.intellij.tools.vcs.IntellijVCS;
-import uno.anahata.asi.toolkit.maven.DependencyScope;
-import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
-import uno.anahata.asi.toolkit.project.ProjectOverview;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.maven.DependencyScope;
+import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
+import uno.anahata.asi.ide.tools.project.ProjectOverview;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * Unified, hierarchical context provider for an IntelliJ project or submodule.

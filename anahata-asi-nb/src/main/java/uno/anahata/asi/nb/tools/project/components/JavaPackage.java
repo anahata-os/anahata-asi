@@ -11,7 +11,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import uno.anahata.asi.internal.TextUtils;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * A domain object representing a logical Java package within a project.

@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.toolkit.project;
+package uno.anahata.asi.ide.tools.project;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.io.Serializable;
@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.ide.tools.maven.DependencyScope;
 
 /**
  * Represents a high-level, structured overview of an open project or submodule.
@@ -134,10 +134,10 @@ public final class ProjectOverview implements Serializable {
             for (DependencyScope scope : mavenDeclaredDependencies) {
                 sb.append("    - Scope: `").append(scope.getScope()).append("`\n");
                 if (scope.getGroups() != null) {
-                    for (uno.anahata.asi.toolkit.maven.DependencyGroup group : scope.getGroups()) {
+                    for (uno.anahata.asi.ide.tools.maven.DependencyGroup group : scope.getGroups()) {
                         String artifacts = group.getArtifacts() != null
                                 ? group.getArtifacts().stream()
-                                        .map(uno.anahata.asi.toolkit.maven.DeclaredArtifact::getId)
+                                        .map(uno.anahata.asi.ide.tools.maven.DeclaredArtifact::getId)
                                         .collect(Collectors.joining(", "))
                                 : "";
                         sb.append("      - `").append(group.getId()).append("`: ").append(artifacts).append("\n");

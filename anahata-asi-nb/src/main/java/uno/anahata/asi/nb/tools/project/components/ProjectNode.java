@@ -2,7 +2,7 @@
 package uno.anahata.asi.nb.tools.project.components;
 
 import java.io.Serializable;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * The abstract base class for all structural nodes in the project model.

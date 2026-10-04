@@ -52,7 +52,7 @@ import uno.anahata.asi.agi.context.ContextProvider;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.nb.tools.project.context.NbProjectContextProvider;
 import uno.anahata.asi.nb.tools.maven.Maven;
-import uno.anahata.asi.toolkit.project.AbstractProjects;
+import uno.anahata.asi.ide.tools.project.AbstractProjects;
 import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
@@ -61,8 +61,8 @@ import uno.anahata.asi.nb.tools.vcs.NbVCS;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
-import uno.anahata.asi.toolkit.maven.DependencyScope;
-import uno.anahata.asi.toolkit.project.ProjectOverview;
+import uno.anahata.asi.ide.tools.maven.DependencyScope;
+import uno.anahata.asi.ide.tools.project.ProjectOverview;
 
 /**
  * A toolkit for interacting with the NetBeans Project APIs.

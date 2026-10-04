@@ -16,9 +16,9 @@ import uno.anahata.asi.nb.tools.project.alerts.JavacAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectAlert;
 import uno.anahata.asi.nb.tools.project.alerts.ProjectDiagnostics;
 import uno.anahata.asi.nb.tools.project.components.ProjectStructure;
-import uno.anahata.asi.toolkit.project.AbstractProjectContextProvider;
-import uno.anahata.asi.toolkit.project.ProjectOverview;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.context.AbstractProjectContextProvider;
+import uno.anahata.asi.ide.tools.project.ProjectOverview;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * Unified, comprehensive context provider for a NetBeans project.

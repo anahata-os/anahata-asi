@@ -14,7 +14,7 @@ import org.netbeans.api.java.source.ElementHandle;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import uno.anahata.asi.internal.TextUtils;
-import uno.anahata.asi.toolkit.project.ProjectStructureScope;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 
 /**
  * A leaf or branch node representing a physical file or a logical Java type.

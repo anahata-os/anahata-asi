@@ -1,6 +1,9 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.toolkit.project;
+package uno.anahata.asi.ide.tools.project.context;
 
+import uno.anahata.asi.ide.tools.project.ProjectOverview;
+import uno.anahata.asi.ide.tools.project.AbstractProjects;
+import uno.anahata.asi.ide.tools.project.ProjectStructureScope;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
