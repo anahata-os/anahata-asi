@@ -38,12 +38,12 @@ import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 import uno.anahata.asi.agi.tool.ToolContext;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
-import uno.anahata.asi.toolkit.maven.AddDependencyResult;
-import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
-import uno.anahata.asi.toolkit.maven.DependencyGroup;
-import uno.anahata.asi.toolkit.maven.DependencyScope;
-import uno.anahata.asi.toolkit.maven.MavenBuildResult;
-import uno.anahata.asi.toolkit.maven.MavenBuildResult.ProcessStatus;
+import uno.anahata.asi.ide.tools.maven.AddDependencyResult;
+import uno.anahata.asi.ide.tools.maven.DeclaredArtifact;
+import uno.anahata.asi.ide.tools.maven.DependencyGroup;
+import uno.anahata.asi.ide.tools.maven.DependencyScope;
+import uno.anahata.asi.ide.tools.maven.MavenBuildResult;
+import uno.anahata.asi.ide.tools.maven.MavenBuildResult.ProcessStatus;
 
 import java.io.BufferedWriter;
 import java.io.File;

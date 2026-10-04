@@ -1,8 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.nb.tools.maven;
 
-import uno.anahata.asi.toolkit.maven.AddDependencyResult;
-import uno.anahata.asi.toolkit.maven.MavenBuildResult;
+import uno.anahata.asi.ide.tools.maven.AddDependencyResult;
+import uno.anahata.asi.ide.tools.maven.MavenBuildResult;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
@@ -75,9 +75,9 @@ import uno.anahata.asi.nb.util.TeeInputOutput;
 import uno.anahata.asi.agi.tool.AgiToolkit;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.agi.tool.AgiTool;
-import uno.anahata.asi.toolkit.maven.DeclaredArtifact;
-import uno.anahata.asi.toolkit.maven.DependencyGroup;
-import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.ide.tools.maven.DeclaredArtifact;
+import uno.anahata.asi.ide.tools.maven.DependencyGroup;
+import uno.anahata.asi.ide.tools.maven.DependencyScope;
 
 /**
  * Consolidated "super-tool" class for all Maven-related AI operations.

@@ -3,7 +3,7 @@ package uno.anahata.asi.nb.tools.maven;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
-import uno.anahata.asi.toolkit.maven.DependencyScope;
+import uno.anahata.asi.ide.tools.maven.DependencyScope;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
