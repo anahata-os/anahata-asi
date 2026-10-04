@@ -19,7 +19,7 @@ import uno.anahata.asi.nb.ui.render.TextResourceReplacementsRenderer;
 import uno.anahata.asi.nb.ui.render.TextResourceLineEditsRenderer;
 import uno.anahata.asi.nb.ui.resources.NbResourceUI;
 import uno.anahata.asi.nb.util.ElementHandleModule;
-import uno.anahata.asi.swing.AbstractSwingAsiContainer;
+import uno.anahata.asi.ide.AbstractIdeAsiContainer;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.agi.tool.schema.SchemaProvider;
@@ -42,7 +42,7 @@ import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
  * @author anahata
  */
 @Slf4j
-public class NetBeansAsiContainer extends AbstractSwingAsiContainer {
+public class NetBeansAsiContainer extends AbstractIdeAsiContainer {
 
     static {
         log.info("Performing global NetBeans environment configuration...");

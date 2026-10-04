@@ -9,9 +9,9 @@ import java.awt.Color;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.ide.ui.resources.IdeHandlePanel;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
-import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
 
 /**
  * Specialized metadata panel for the {@link IntellijHandle}.
@@ -23,12 +23,7 @@ import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
  * @author anahata
  */
 @Slf4j
-public class IntellijHandlePanel extends AbstractHandlePanel<IntellijHandle> {
-
-    /**
-     * Label indicating whether the IntelliJ VFS considers the underlying {@link VirtualFile} valid.
-     */
-    private final JLabel validityLabel = new JLabel();
+public class IntellijHandlePanel extends IdeHandlePanel<IntellijHandle> {
 
     /**
      * Label displaying the Version Control System (VCS) status text and color.
@@ -36,16 +31,10 @@ public class IntellijHandlePanel extends AbstractHandlePanel<IntellijHandle> {
     private final JLabel vcsStatusLabel = new JLabel();
 
     /**
-     * Read-only text field displaying the absolute filesystem path.
-     */
-    private final JTextField pathField = createReadOnlyField();
-
-    /**
      * Constructs a new IntelliJ handle metadata panel and initializes property fields.
      */
     public IntellijHandlePanel() {
-        addProperty("Path:", pathField);
-        addProperty("VFS Validity:", validityLabel);
+        super();
         addProperty("VCS Status:", vcsStatusLabel);
     }
 

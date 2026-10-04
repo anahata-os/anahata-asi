@@ -7,8 +7,8 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 import lombok.extern.slf4j.Slf4j;
 import org.openide.filesystems.FileObject;
+import uno.anahata.asi.ide.ui.resources.IdeHandlePanel;
 import uno.anahata.asi.nb.resources.handle.NbHandle;
-import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
 
 /**
  * A specialized metadata panel for the {@link NbHandle}.
@@ -19,12 +19,8 @@ import uno.anahata.asi.swing.agi.resources.handle.AbstractHandlePanel;
  * </p>
  */
 @Slf4j
-public class NbHandlePanel extends AbstractHandlePanel<NbHandle> {
+public class NbHandlePanel extends IdeHandlePanel<NbHandle> {
 
-    /**
-     * Label indicating whether the IDE considers the underlying {@code FileObject} valid.
-     */
-    private final JLabel validityLabel = new JLabel();
     /**
      * Checkbox indicating if the resource originates from a read-only archive (e.g., inside a JAR).
      */
@@ -33,20 +29,15 @@ public class NbHandlePanel extends AbstractHandlePanel<NbHandle> {
      * Read-only field displaying the full URI of the resource.
      */
     private final JTextField uriField = createReadOnlyField();
-    /**
-     * Read-only field displaying the absolute filesystem path, if applicable.
-     */
-    private final JTextField pathField = createReadOnlyField();
 
     /**
      * Constructs a new metadata panel and initializes the property layout.
      */
     public NbHandlePanel() {
+        super();
         archiveBox.setEnabled(false);
         archiveBox.setOpaque(false);
         addProperty("URI:", uriField);
-        addProperty("Path:", pathField);
-        addProperty("IDE Validity:", validityLabel);
         addProperty("Storage:", archiveBox);
     }
 

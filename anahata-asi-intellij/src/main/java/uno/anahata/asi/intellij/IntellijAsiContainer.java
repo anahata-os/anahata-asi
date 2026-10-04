@@ -32,7 +32,7 @@ import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
 import uno.anahata.asi.intellij.ui.IntellijJavaCodeParameterRenderer;
 import uno.anahata.asi.intellij.ui.IntellijTextResourceWriteRenderer;
 import uno.anahata.asi.intellij.ui.resources.IntellijResourceUI;
-import uno.anahata.asi.swing.AbstractSwingAsiContainer;
+import uno.anahata.asi.ide.AbstractIdeAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRendererFactory;
@@ -53,7 +53,7 @@ import uno.anahata.asi.toolkit.resources.text.lines.TextResourceLineEdits;
  * @author anahata
  */
 @Slf4j
-public class IntellijAsiContainer extends AbstractSwingAsiContainer implements Disposable {
+public class IntellijAsiContainer extends AbstractIdeAsiContainer implements Disposable {
 
     /**
      * Registers the IntelliJ diff visualization for the core text-write tool

@@ -5,20 +5,19 @@ import com.intellij.icons.AllIcons;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.AbstractAsiContainer;
-import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.agi.resource.handle.PathHandle;
-import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
-import uno.anahata.asi.intellij.internal.ProjectUtils;
-import uno.anahata.asi.intellij.tools.ide.IDE;
-import uno.anahata.asi.intellij.tools.ide.SelectInTarget;
-import uno.anahata.asi.swing.agi.AgiPanel;
-import uno.anahata.asi.swing.agi.resources.DefaultResourceUI;
-
+import javax.swing.Icon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import lombok.extern.slf4j.Slf4j;
+import uno.anahata.asi.AbstractAsiContainer;
+import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.ide.ui.resources.IdeResourceUI;
+import uno.anahata.asi.intellij.internal.ProjectUtils;
+import uno.anahata.asi.intellij.resources.handle.IntellijHandle;
+import uno.anahata.asi.intellij.tools.ide.IDE;
+import uno.anahata.asi.intellij.tools.ide.SelectInTarget;
+import uno.anahata.asi.swing.agi.AgiPanel;
 
 /**
  * IntelliJ-specific implementation of {@link uno.anahata.asi.swing.agi.resources.ResourceUI}.
@@ -31,7 +30,7 @@ import javax.swing.JPanel;
  * @author anahata
  */
 @Slf4j
-public class IntellijResourceUI extends DefaultResourceUI {
+public class IntellijResourceUI extends IdeResourceUI {
 
     /**
      * {@inheritDoc}
@@ -86,25 +85,14 @@ public class IntellijResourceUI extends DefaultResourceUI {
         return super.createHandlePanel(resource, agiPanel);
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Injects IDE-specific 'Open in Editor' and 'Select in Project' actions for physical resources.
-     * </p>
-     */
     @Override
-    public void populateActions(JPanel actionContainer, Resource resource, AgiPanel agiPanel) {
-        if (!resource.getHandle().isVirtual()) {
-            JButton openBtn = createLinkButton("Open in Editor", "Open the file in the IntelliJ code editor.", AllIcons.Actions.Edit);
-            openBtn.addActionListener(e -> open(resource, agiPanel));
-            actionContainer.add(openBtn);
+    protected Icon getOpenInEditorIcon(AgiPanel agiPanel) {
+        return AllIcons.Actions.Edit;
+    }
 
-            JButton selectBtn = createLinkButton("Select in Project", "Locate and highlight the file in the IDE Project view.", AllIcons.Nodes.Project);
-            selectBtn.addActionListener(e -> select(resource, agiPanel));
-            actionContainer.add(selectBtn);
-        } else {
-            super.populateActions(actionContainer, resource, agiPanel);
-        }
+    @Override
+    protected Icon getSelectInProjectIcon(AgiPanel agiPanel) {
+        return AllIcons.Nodes.Project;
     }
 
     /**
@@ -147,18 +135,5 @@ public class IntellijResourceUI extends DefaultResourceUI {
         }
     }
 
-    /**
-     * Resolves the physical path from the handle for IDE navigation.
-     *
-     * @param resource the resource.
-     * @return the absolute path, or null if virtual.
-     */
-    private String getPath(Resource resource) {
-        if (resource.getHandle() instanceof IntellijHandle ih) {
-            return ih.getPath();
-        } else if (resource.getHandle() instanceof PathHandle ph) {
-            return ph.getPath();
-        }
-        return null;
-    }
+
 }

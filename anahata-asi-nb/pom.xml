@@ -40,6 +40,11 @@
         <!-- Anahata V2 Libraries -->
         <dependency>
             <groupId>uno.anahata</groupId>
+            <artifactId>anahata-asi-ide</artifactId>
+            <version>${project.parent.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uno.anahata</groupId>
             <artifactId>anahata-asi-swing</artifactId>
             <version>${project.parent.version}</version>
             <exclusions>

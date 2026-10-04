@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -39,11 +40,8 @@ import org.openide.loaders.OperationAdapter;
 import org.openide.loaders.OperationEvent;
 import org.openide.loaders.OperationListener;
 import uno.anahata.asi.internal.TikaUtils;
-import uno.anahata.asi.nb.tools.vcs.NbVCS;
-import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
-import uno.anahata.asi.agi.resource.vcs.VcsDiff;
 import uno.anahata.asi.persistence.Rebindable;
-import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
+import uno.anahata.asi.ide.resources.handle.IdeHandle;
 
 /**
  * A NetBeans-native resource handle that wraps a {@link FileObject}.
@@ -59,20 +57,7 @@ import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
  * </p>
  */
 @Slf4j
-public class NbHandle extends AbstractResourceHandle implements FileChangeListener, Rebindable {
-
-    /**
-     * The unique identifier URI for the resource.
-     */
-    @NonNull
-    @Getter
-    private URI uri;
-
-    /**
-     * Cached path for secondary resolution.
-     */
-    @Getter
-    private String path;
+public class NbHandle extends IdeHandle implements FileChangeListener {
 
     /**
      * The live NetBeans FileObject.
@@ -104,7 +89,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
      * @param uri The resource URI (file:, jar:, etc.).
      */
     public NbHandle(URI uri) {
-        setUri(uri);
+        super(uri);
         setupOperationListener();
     }
 
@@ -114,26 +99,9 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
      * @param fileObject The NetBeans FileObject to wrap.
      */
     public NbHandle(FileObject fileObject) {
-        this(fileObject.toURI());
+        super(fileObject.toURI());
         this.fileObject = fileObject;
         setupListener();
-    }
-
-    /**
-     * Authoritatively sets and normalizes the resource URI. For local files, it
-     * forces the triple-slash (file:///) format and extracts the physical path
-     * to maintain identity consistency within the manager.
-     *
-     * @param uri The URI to set.
-     */
-    private void setUri(URI uri) {
-        if (uri != null && uri.getScheme() != null && uri.getScheme().equalsIgnoreCase("file")) {
-            this.uri = Paths.get(uri).toUri();
-            this.path = this.uri.getPath();
-        } else {
-            this.uri = uri;
-            this.path = null;
-        }
     }
 
     /**
@@ -371,52 +339,7 @@ public class NbHandle extends AbstractResourceHandle implements FileChangeListen
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Queries the session's active {@link NbVCS} toolkit to generate
-     * a unified diff against the repository pristine base. Returns null if clean, untracked,
-     * newly added, or unsupported.
-     * </p>
-     */
-    @Override
-    public VcsDiff getDiffToHead() {
-        if (owner == null || owner.getAgi() == null || path == null) {
-            return null;
-        }
-        Optional<NbVCS> vcsOpt = owner.getAgi().getToolkit(NbVCS.class);
-        if (vcsOpt.isPresent()) {
-            try {
-                return vcsOpt.get().getDiff(path, null);
-            } catch (Exception e) {
-                log.debug("Failed to get diff to head for {}: {}", path, e.getMessage());
-            }
-        }
-        return null;
-    }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Queries the session's active {@link NbVCS} toolkit to retrieve
-     * recent VCS and Local History revisions.
-     * </p>
-     */
-    @Override
-    public List<HistoryEntry> getHistory(int maxEntries) {
-        if (owner == null || owner.getAgi() == null || path == null) {
-            return Collections.emptyList();
-        }
-        Optional<NbVCS> vcsOpt = owner.getAgi().getToolkit(NbVCS.class);
-        if (vcsOpt.isPresent()) {
-            try {
-                return vcsOpt.get().getHistory(path, maxEntries);
-            } catch (Exception e) {
-                log.debug("Failed to get history for {}: {}", path, e.getMessage());
-            }
-        }
-        return Collections.emptyList();
-    }
 
     /**
      * {@inheritDoc}

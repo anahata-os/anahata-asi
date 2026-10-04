@@ -24,6 +24,7 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -31,10 +32,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
-import uno.anahata.asi.agi.resource.handle.AbstractResourceHandle;
-import uno.anahata.asi.agi.resource.vcs.HistoryEntry;
-import uno.anahata.asi.agi.resource.vcs.VcsDiff;
-import uno.anahata.asi.intellij.tools.vcs.IntellijVCS;
+import uno.anahata.asi.ide.resources.handle.IdeHandle;
 import uno.anahata.asi.internal.TikaUtils;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.persistence.Rebindable;
@@ -53,20 +51,7 @@ import uno.anahata.asi.persistence.Rebindable;
  * @author anahata
  */
 @Slf4j
-public class IntellijHandle extends AbstractResourceHandle implements Rebindable {
-
-    /**
-     * The unique identifier URI for the resource.
-     */
-    @NonNull
-    @Getter
-    private URI uri;
-
-    /**
-     * The absolute filesystem path for local resources, or null if remote.
-     */
-    @Getter
-    private String path;
+public class IntellijHandle extends IdeHandle implements Rebindable {
 
     /**
      * The live IntelliJ VirtualFile instance.
@@ -81,7 +66,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      * @param path The absolute path to the local file.
      */
     public IntellijHandle(@NonNull String path) {
-        this(Paths.get(path).toUri());
+        super(path);
     }
 
     /**
@@ -90,7 +75,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      * @param uri The URI of the resource.
      */
     public IntellijHandle(@NonNull URI uri) {
-        setUri(uri);
+        super(uri);
     }
 
     /**
@@ -99,23 +84,8 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      * @param virtualFile The IntelliJ VirtualFile to wrap.
      */
     public IntellijHandle(@NonNull VirtualFile virtualFile) {
-        this(Paths.get(virtualFile.getPath()).toUri());
+        super(Paths.get(virtualFile.getPath()).toUri());
         this.virtualFile = virtualFile;
-    }
-
-    /**
-     * Sets and normalizes the URI and derived absolute path.
-     *
-     * @param uri The resource URI.
-     */
-    private void setUri(URI uri) {
-        if (uri.getScheme() != null && uri.getScheme().equalsIgnoreCase("file")) {
-            this.uri = Paths.get(uri).toUri();
-            this.path = Paths.get(this.uri).toAbsolutePath().toString();
-        } else {
-            this.uri = uri;
-            this.path = uri.getPath();
-        }
     }
 
     /**
@@ -454,50 +424,5 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         return false;
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Queries the session's active {@link IntellijVCS} toolkit to generate
-     * a unified diff against the repository pristine base. Returns null if clean, untracked,
-     * newly added, or unsupported.
-     * </p>
-     */
-    @Override
-    public VcsDiff getDiffToHead() {
-        if (path == null) {
-            return null;
-        }
-        Optional<IntellijVCS> vcsOpt = owner.getAgi().getToolkit(IntellijVCS.class);
-        if (vcsOpt.isPresent()) {
-            try {
-                return vcsOpt.get().getDiff(path, null);
-            } catch (Exception e) {
-                log.debug("Failed to get diff to head for {}: {}", path, e.getMessage());
-            }
-        }
-        return null;
-    }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * Implementation details: Queries the session's active {@link IntellijVCS} toolkit to retrieve
-     * recent VCS and Local History revisions.
-     * </p>
-     */
-    @Override
-    public List<HistoryEntry> getHistory(int maxEntries) {
-        if (path == null) {
-            return Collections.emptyList();
-        }
-        Optional<IntellijVCS> vcsOpt = owner.getAgi().getToolkit(IntellijVCS.class);
-        if (vcsOpt.isPresent()) {
-            try {
-                return vcsOpt.get().getHistory(path, maxEntries);
-            } catch (Exception e) {
-                log.debug("Failed to get history for {}: {}", path, e.getMessage());
-            }
-        }
-        return Collections.emptyList();
-    }
 }
