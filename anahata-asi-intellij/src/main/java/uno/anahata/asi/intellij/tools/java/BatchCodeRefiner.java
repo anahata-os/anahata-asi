@@ -8,22 +8,16 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.JavaPsiFacade;
-import com.intellij.psi.PsiClass;
-import com.intellij.psi.PsiClassInitializer;
 import com.intellij.psi.PsiDocumentManager;
-import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementFactory;
-import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiJavaFile;
-import com.intellij.psi.PsiMember;
-import com.intellij.psi.PsiMethod;
 import com.intellij.psi.codeStyle.CodeStyleManager;
 import com.intellij.psi.codeStyle.JavaCodeStyleManager;
-import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.agi.tool.AgiToolParam;
@@ -34,7 +28,6 @@ import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementBatch;
 import uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementIntent;
-import uno.anahata.asi.intellij.tools.java.coderefiner.RelativePosition;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -116,7 +109,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
             runWrite(project, () -> {
                 PsiElementFactory factory = JavaPsiFacade.getElementFactory(project);
                 for (CodeRefinementIntent intent : batch.getIntents()) {
-                    applyIntent(project, factory, intent);
+                    CodeRefinementBatch.applyIntentToPsi(project, factory, javaFile, intent);
                 }
                 JavaCodeStyleManager styleManager = JavaCodeStyleManager.getInstance(project);
                 styleManager.shortenClassReferences(javaFile);
@@ -147,7 +140,7 @@ public class BatchCodeRefiner extends AnahataToolkit {
         String filePath = batch.getFilePath();
         if (filePath == null && batch.getResourceUuid() != null) {
             Resource r = getToolContext().getResourceManager().get(batch.getResourceUuid());
-            if (r != null && r.getHandle() instanceof uno.anahata.asi.agi.resource.handle.PathHandle ph) {
+            if (r != null && r.getHandle() instanceof PathHandle ph) {
                 filePath = ph.getPath();
             }
         }
@@ -156,142 +149,6 @@ public class BatchCodeRefiner extends AnahataToolkit {
         }
         return resolveJavaFile(filePath);
     }
-
-    //<editor-fold defaultstate="collapsed" desc="Intent application">
-    /**
-     * Applies a single intent to the live PSI tree. Must run inside a write command.
-     *
-     * @param project the host project.
-     * @param factory the element factory used to parse member declarations.
-     * @param intent  the intent to apply.
-     * @throws AgiToolException if the intent target cannot be resolved.
-     */
-    private void applyIntent(Project project, PsiElementFactory factory, CodeRefinementIntent intent) throws AgiToolException {
-        switch (intent.getType()) {
-            case INSERT -> {
-                PsiClass target = JavaPsi.findClass(project, intent.getClassFqn());
-                if (target == null) {
-                    throw new AgiToolException("INSERT target class not found: " + intent.getClassFqn());
-                }
-                PsiMember member = parseMember(factory, intent.getDeclaration(), target);
-                insertMember(target, member, intent.getPosition(), intent.getAnchorMemberName());
-            }
-            case UPDATE -> {
-                PsiElement existing = requireMember(project, intent.getMemberFqn());
-                PsiMember replacement = parseMember(factory, intent.getDeclaration(), existing);
-                existing.replace(replacement);
-            }
-            case DELETE -> requireMember(project, intent.getMemberFqn()).delete();
-            case MOVE -> {
-                PsiElement existing = requireMember(project, intent.getMemberFqn());
-                PsiClass parent = PsiTreeUtil.getParentOfType(existing, PsiClass.class);
-                if (parent == null) {
-                    throw new AgiToolException("MOVE member has no enclosing class: " + intent.getMemberFqn());
-                }
-                PsiElement copy = existing.copy();
-                existing.delete();
-                insertMember(parent, (PsiMember) copy, intent.getPosition(), intent.getAnchorMemberName());
-            }
-            default -> throw new AgiToolException("Unknown intent type: " + intent.getType());
-        }
-    }
-
-    /**
-     * Resolves a member FQN to its PSI element, failing fast if absent.
-     *
-     * @param project   the host project.
-     * @param memberFqn the canonical member FQN.
-     * @return the resolved member.
-     * @throws AgiToolException if no member matches.
-     */
-    private PsiElement requireMember(Project project, String memberFqn) throws AgiToolException {
-        PsiElement member = JavaPsi.findMember(project, memberFqn);
-        if (member == null) {
-            throw new AgiToolException("Member not found: " + memberFqn);
-        }
-        return member;
-    }
-
-    /**
-     * Parses a verbatim member declaration into a detached PSI member by wrapping it in a
-     * throwaway class, robustly handling methods, fields, inner classes and initializers.
-     *
-     * @param factory     the element factory.
-     * @param declaration the member source.
-     * @param context     a PSI context element (for resolution/scope).
-     * @return the parsed member.
-     * @throws AgiToolException if no member can be parsed from the declaration.
-     */
-    private PsiMember parseMember(PsiElementFactory factory, String declaration, PsiElement context) throws AgiToolException {
-        PsiClass holder = factory.createClassFromText(declaration, context);
-        if (holder.getMethods().length > 0) {
-            return holder.getMethods()[0];
-        }
-        if (holder.getFields().length > 0) {
-            return holder.getFields()[0];
-        }
-        if (holder.getInnerClasses().length > 0) {
-            return holder.getInnerClasses()[0];
-        }
-        if (holder.getInitializers().length > 0) {
-            return holder.getInitializers()[0];
-        }
-        throw new AgiToolException("Could not parse a member from declaration: " + declaration);
-    }
-
-    /**
-     * Inserts a member into a class at the requested position (defaulting to END).
-     *
-     * @param target     the target class.
-     * @param member     the member to insert.
-     * @param position   the requested placement, or {@code null} for END.
-     * @param anchorName the anchor member simple name for BEFORE/AFTER placement.
-     * @throws AgiToolException if a BEFORE/AFTER anchor is required but not found.
-     */
-    private void insertMember(PsiClass target, PsiMember member, RelativePosition position, String anchorName) throws AgiToolException {
-        RelativePosition pos = position != null ? position : RelativePosition.END;
-        switch (pos) {
-            case END -> target.add(member);
-            case START -> {
-                PsiElement lBrace = target.getLBrace();
-                if (lBrace != null) {
-                    target.addAfter(member, lBrace);
-                } else {
-                    target.add(member);
-                }
-            }
-            case BEFORE -> target.addBefore(member, requireAnchor(target, anchorName));
-            case AFTER -> target.addAfter(member, requireAnchor(target, anchorName));
-        }
-    }
-
-    /**
-     * Finds an anchor member by simple name within a class, failing fast if absent.
-     *
-     * @param target     the class to search.
-     * @param anchorName the simple member name.
-     * @return the anchor member.
-     * @throws AgiToolException if no member with that name exists.
-     */
-    private PsiMember requireAnchor(PsiClass target, String anchorName) throws AgiToolException {
-        for (PsiMethod method : target.getMethods()) {
-            if (method.getName().equals(anchorName)) {
-                return method;
-            }
-        }
-        for (PsiField field : target.getFields()) {
-            if (field.getName().equals(anchorName)) {
-                return field;
-            }
-        }
-        for (PsiClass inner : target.getInnerClasses()) {
-            if (anchorName.equals(inner.getName())) {
-                return inner;
-            }
-        }
-        throw new AgiToolException("Anchor member not found in " + target.getQualifiedName() + ": " + anchorName);
-    }
-    //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Write / resolve plumbing">
     /**

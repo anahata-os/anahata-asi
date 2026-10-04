@@ -25,6 +25,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -71,9 +72,9 @@ public class CodeModel extends AnahataToolkit {
      * @param pageSize Max results per page.
      * @return Paginated result of JavaType.
      */
-    @AgiTool("Finds any Java types matching a query within the aggregated classpath of all open projects (exactly like NetBeans `Ctrl+O`) and returns a paginated result of minimalist, machine-readable keys.")
+    @AgiTool("Finds any Java types matching a query within the aggregated classpath of all open projects and returns a paginated result of minimalist, machine-readable keys.")
     public Page<JavaType> findTypes(
-            @AgiToolParam("The search query for the types (e.g., simple name, FQN, wildcards). Never include the file extension.") String query,
+            @AgiToolParam("The search query: simple class name (e.g. 'CodeModel'), FQN (e.g. 'java.util.List'), or simple name glob wildcard (e.g. '*Renderer', 'Gutter*'). Do not include the '.java' extension or package wildcards.") String query,
             @AgiToolParam("Whether the search should be case-sensitive.") boolean caseSensitive,
             @AgiToolParam("Whether to prioritize results from open projects.") boolean preferOpenProjects,
             @AgiToolParam(value = "The starting index (0-based) for pagination.", required = false) Integer startIndex,
@@ -82,29 +83,38 @@ public class CodeModel extends AnahataToolkit {
         awaitSmart();
         List<JavaType> allResults = ReadAction.computeBlocking(() -> {
             List<JavaType> results = new ArrayList<>();
+            boolean hasWildcard = query.contains("*") || query.contains("?");
+            Pattern pattern = hasWildcard ? Pattern.compile(
+                    "^" + Pattern.quote(query).replace("*", "\\E.*\\Q").replace("?", "\\E.\\Q") + "$",
+                    caseSensitive ? 0 : Pattern.CASE_INSENSITIVE) : null;
+
             for (Project project : ProjectManager.getInstance().getOpenProjects()) {
                 PsiShortNamesCache cache = PsiShortNamesCache.getInstance(project);
 
-                // Try exact class name first
-                PsiClass[] exactClasses = cache.getClassesByName(query, GlobalSearchScope.allScope(project));
-                for (PsiClass cl : exactClasses) {
-                    addClassToResults(cl, results);
-                }
-
-                // If query is an FQN, use JavaPsiFacade
-                if (query.contains(".")) {
-                    PsiClass cl = JavaPsiFacade.getInstance(project).findClass(query, GlobalSearchScope.allScope(project));
-                    if (cl != null) {
+                if (!hasWildcard) {
+                    // Try exact class name first
+                    PsiClass[] exactClasses = cache.getClassesByName(query, GlobalSearchScope.allScope(project));
+                    for (PsiClass cl : exactClasses) {
                         addClassToResults(cl, results);
+                    }
+
+                    // If query is an FQN, use JavaPsiFacade
+                    if (query.contains(".")) {
+                        PsiClass cl = JavaPsiFacade.getInstance(project).findClass(query, GlobalSearchScope.allScope(project));
+                        if (cl != null) {
+                            addClassToResults(cl, results);
+                        }
                     }
                 }
 
-                // Fallback: Prefix/partial scanning with safety bounds to avoid token bloat
-                if (results.size() < 20) {
+                // Scanning with safety bounds to avoid token bloat
+                if (results.size() < 20 || hasWildcard) {
                     String[] names = cache.getAllClassNames();
                     int count = 0;
                     for (String name : names) {
-                        boolean match = caseSensitive ? name.contains(query) : name.toLowerCase().contains(query.toLowerCase());
+                        boolean match = hasWildcard
+                                ? pattern.matcher(name).matches()
+                                : (caseSensitive ? name.contains(query) : name.toLowerCase().contains(query.toLowerCase()));
                         if (match) {
                             PsiClass[] matches = cache.getClassesByName(name, GlobalSearchScope.allScope(project));
                             for (PsiClass cl : matches) {

@@ -109,12 +109,12 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      * @param uri The resource URI.
      */
     private void setUri(URI uri) {
-        if (uri != null && uri.getScheme() != null && uri.getScheme().equalsIgnoreCase("file")) {
+        if (uri.getScheme() != null && uri.getScheme().equalsIgnoreCase("file")) {
             this.uri = Paths.get(uri).toUri();
             this.path = Paths.get(this.uri).toAbsolutePath().toString();
         } else {
             this.uri = uri;
-            this.path = (uri != null && uri.getPath() != null) ? uri.getPath() : null;
+            this.path = uri.getPath();
         }
     }
 
@@ -128,7 +128,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
             if (path != null) {
                 virtualFile = ProjectUtils.findVirtualFile(path);
             }
-            if (virtualFile == null && uri != null) {
+            if (virtualFile == null) {
                 virtualFile = VirtualFileManager.getInstance().findFileByUrl(uri.toString());
             }
         }
@@ -176,7 +176,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
     @Override
     public void rebind() {
         super.rebind();
-        if (uri != null && uri.getScheme() == null) {
+        if (uri.getScheme() == null) {
             setUri(URI.create(uri.toString()));
         } else {
             setUri(uri);
@@ -271,7 +271,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
         if (vf != null) {
             return vf.getName();
         }
-        return (path != null) ? new File(path).getName() : (uri != null ? uri.toString() : "");
+        return (path != null) ? new File(path).getName() : uri.toString();
     }
 
     /**
@@ -464,7 +464,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      */
     @Override
     public VcsDiff getDiffToHead() {
-        if (owner == null || owner.getAgi() == null || path == null) {
+        if (path == null) {
             return null;
         }
         Optional<IntellijVCS> vcsOpt = owner.getAgi().getToolkit(IntellijVCS.class);
@@ -487,7 +487,7 @@ public class IntellijHandle extends AbstractResourceHandle implements Rebindable
      */
     @Override
     public List<HistoryEntry> getHistory(int maxEntries) {
-        if (owner == null || owner.getAgi() == null || path == null) {
+        if (path == null) {
             return Collections.emptyList();
         }
         Optional<IntellijVCS> vcsOpt = owner.getAgi().getToolkit(IntellijVCS.class);

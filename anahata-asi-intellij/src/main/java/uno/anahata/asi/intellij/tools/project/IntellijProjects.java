@@ -318,19 +318,15 @@ public class IntellijProjects extends AbstractProjects {
             CompilerManager compilerManager = CompilerManager.getInstance(project);
             CompileScope scope = compilerManager.createProjectCompileScope(project);
             CompileStatusNotification callback = (aborted, errors, warnings, compileContext) -> {
-                CompilerMessage[] errorMessages = compileContext != null ? compileContext.getMessages(CompilerMessageCategory.ERROR) : new CompilerMessage[0];
-                CompilerMessage[] warningMessages = compileContext != null ? compileContext.getMessages(CompilerMessageCategory.WARNING) : new CompilerMessage[0];
+                CompilerMessage[] errorMessages = compileContext.getMessages(CompilerMessageCategory.ERROR);
+                CompilerMessage[] warningMessages = compileContext.getMessages(CompilerMessageCategory.WARNING);
 
                 for (CompilerMessage err : errorMessages) {
-                    if (ctx != null) {
-                        ctx.error(formatCompilerMessage(err));
-                    }
+                    ctx.error(formatCompilerMessage(err));
                 }
 
                 for (CompilerMessage warn : warningMessages) {
-                    if (ctx != null) {
-                        ctx.log("WARNING: " + formatCompilerMessage(warn));
-                    }
+                    ctx.log("WARNING: " + formatCompilerMessage(warn));
                 }
 
                 StringBuilder sb = new StringBuilder();

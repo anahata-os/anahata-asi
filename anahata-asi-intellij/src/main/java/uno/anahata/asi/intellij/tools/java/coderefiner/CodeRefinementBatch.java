@@ -5,8 +5,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.intellij.lang.java.JavaLanguage;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
+import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.util.ThrowableComputable;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.*;
 import com.intellij.psi.codeStyle.CodeStyleManager;
@@ -19,6 +21,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.Resource;
+import uno.anahata.asi.agi.resource.handle.PathHandle;
 import uno.anahata.asi.agi.tool.AgiToolException;
 import uno.anahata.asi.intellij.internal.JavaPsi;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
@@ -26,6 +29,7 @@ import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -90,6 +94,17 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
     /**
      * {@inheritDoc}
      * <p>
+     * Returns calculated comments from the AST refinement pipeline.
+     * </p>
+     */
+    @Override
+    public List<LineComment> calculateLineComments(Agi agi) {
+        return calculatedComments != null ? calculatedComments : Collections.emptyList();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
      * Replays the refinement intents in-memory on a dummy {@link PsiJavaFile} created via
      * {@link PsiFileFactory}, shortens class references, optionally optimizes imports, and
      * reformats code without mutating workspace files until committed.
@@ -105,7 +120,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         String name = originalResourceName != null ? originalResourceName : "Temp.java";
         String baseSource = originalContent.replace("\r\n", "\n");
 
-        return ReadAction.computeBlocking(() -> {
+        return WriteCommandAction.runWriteCommandAction(hostProject, (ThrowableComputable<String, Exception>) () -> {
             PsiFileFactory fileFactory = PsiFileFactory.getInstance(hostProject);
             PsiFile file = fileFactory.createFileFromText(name, JavaLanguage.INSTANCE, baseSource);
             if (!(file instanceof PsiJavaFile dummyFile)) {
@@ -136,7 +151,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         if (resourceUuid == null && filePath != null) {
             for (Resource r : agi.getResourceManager().getResources().values()) {
                 String path = null;
-                if (r.getHandle() instanceof uno.anahata.asi.agi.resource.handle.PathHandle ph) {
+                if (r.getHandle() instanceof PathHandle ph) {
                     path = ph.getPath();
                 }
                 if (filePath.equals(path) || filePath.equals(r.getHandle().getUri().toString())) {
@@ -183,7 +198,7 @@ public class CodeRefinementBatch extends AbstractTextResourceWrite {
         }
         if (resourceUuid != null) {
             Resource r = agi.getResourceManager().get(resourceUuid);
-            if (r != null && r.getHandle() instanceof uno.anahata.asi.agi.resource.handle.PathHandle ph) {
+            if (r != null && r.getHandle() instanceof PathHandle ph) {
                 VirtualFile vf = ProjectUtils.findVirtualFile(ph.getPath());
                 if (vf != null) {
                     Project p = ProjectUtils.findHostProject(vf);

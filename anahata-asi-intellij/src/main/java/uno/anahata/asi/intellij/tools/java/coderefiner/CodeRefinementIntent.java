@@ -79,4 +79,89 @@ public class CodeRefinementIntent {
      */
     @Schema(description = "A short human-readable rationale for this change.")
     private String reason;
+
+    /**
+     * Generates a rich HTML representation of this intent with colored badges for UI rendering.
+     *
+     * @return an HTML-formatted string.
+     */
+    public String getHtmlDisplay() {
+        String color = switch (type) {
+            case INSERT -> "#4CAF50";
+            case UPDATE -> "#2196F3";
+            case DELETE -> "#F44336";
+            case MOVE -> "#FF9800";
+        };
+        String icon = switch (type) {
+            case INSERT -> "[+]";
+            case UPDATE -> "[*]";
+            case DELETE -> "[-]";
+            case MOVE -> "[M]";
+        };
+
+        String targetName = (memberFqn != null) ? getSimpleName(memberFqn) : "New Member";
+        if (type == Type.INSERT && declaration != null) {
+            targetName = getSimpleNameFromDeclaration(declaration);
+        }
+
+        StringBuilder sb = new StringBuilder("<font color='").append(color).append("'>").append(icon).append("</font> ");
+        sb.append("<b>").append(type.toString().toUpperCase()).append("</b> <code>").append(targetName).append("</code>");
+
+        if (position != null) {
+            sb.append(" ").append(position);
+            if (anchorMemberName != null) {
+                sb.append(" ").append(getSimpleName(anchorMemberName));
+            }
+        }
+
+        if (reason != null && !reason.isBlank()) {
+            sb.append(" <i style='color: #888888;'>(").append(reason).append(")</i>");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Extracts the simple name from a fully qualified name.
+     *
+     * @param fqn the fully qualified name.
+     * @return the simple name.
+     */
+    private String getSimpleName(String fqn) {
+        if (fqn == null || fqn.isBlank()) {
+            return "Unknown";
+        }
+        int paren = fqn.indexOf('(');
+        String namePart = (paren == -1) ? fqn : fqn.substring(0, paren);
+        int lastDot = Math.max(namePart.lastIndexOf('.'), namePart.lastIndexOf('$'));
+        return (lastDot == -1) ? namePart : namePart.substring(lastDot + 1);
+    }
+
+    /**
+     * Parses a member declaration string to extract its simple name.
+     *
+     * @param decl the declaration string.
+     * @return the simple name.
+     */
+    private String getSimpleNameFromDeclaration(String decl) {
+        if (decl == null) {
+            return "Unknown";
+        }
+        String clean = decl.trim();
+        while (clean.startsWith("@")) {
+            int space = clean.indexOf(' ');
+            if (space == -1) {
+                break;
+            }
+            clean = clean.substring(space).trim();
+        }
+        int paren = clean.indexOf('(');
+        int end = (paren != -1) ? paren : (clean.endsWith(";") ? clean.length() - 1 : clean.length());
+        int start = clean.lastIndexOf(' ', end - 1);
+        if (start == -1) {
+            start = 0;
+        }
+        String name = clean.substring(start + 1, end).trim();
+        return (paren != -1) ? name + "()" : name;
+    }
 }

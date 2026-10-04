@@ -917,49 +917,76 @@ public class IntellijVCS extends AbstractVCS {
 
     /**
      * Stages one or more files into the Git index.
+     * <p>
+     * Automatically differentiates between existing files (staged via {@code git add})
+     * and deleted files (verified against repository tracking and staged via {@code git rm}).
+     * </p>
      *
-     * @param filePaths List of file paths to stage into the Git index.
+     * @param filePaths List of file paths to stage into the Git index (supports created, modified, and deleted files).
      * @return Confirmation message of staged files.
      * @throws Exception if staging fails.
      */
-    @AgiTool("Stages one or more files into the Git index.")
+    @AgiTool("Stages one or more files into the Git index (supports created, modified, and deleted files).")
     public String gitAdd(
-            @AgiToolParam(value = "List of file paths to stage into the Git index.", rendererId = "path") List<String> filePaths) throws Exception {
+            @AgiToolParam(value = "List of file paths to stage into the Git index (supports created, modified, and deleted files).", rendererId = "path") List<String> filePaths) throws Exception {
 
         if (filePaths == null || filePaths.isEmpty()) {
             throw new AgiToolException("No files specified to stage.");
         }
 
         GitRepository repo = requireRepo(null);
-        List<String> relativePaths = new ArrayList<>();
+        List<String> toAdd = new ArrayList<>();
+        List<String> toRemove = new ArrayList<>();
+
         for (String p : filePaths) {
             File f = resolveRepoFile(repo.getRoot(), p);
-            if (!f.exists()) {
-                throw new AgiToolException("File does not exist: " + f.getAbsolutePath());
-            }
             String rel = repo.getRoot().toNioPath().relativize(f.toPath()).toString().replace('\\', '/');
-            relativePaths.add(rel);
+            if (f.exists()) {
+                toAdd.add(rel);
+            } else {
+                GitLineHandler check = new GitLineHandler(repo.getProject(), repo.getRoot(), GitCommand.LS_FILES);
+                check.addParameters("--with-tree=HEAD", "--error-unmatch", rel);
+                GitCommandResult checkRes = Git.getInstance().runCommand(check);
+                if (checkRes.success()) {
+                    toRemove.add(rel);
+                } else {
+                    throw new AgiToolException("File does not exist and is not tracked in repository: " + f.getAbsolutePath());
+                }
+            }
         }
 
-        GitLineHandler handler = new GitLineHandler(repo.getProject(), repo.getRoot(), GitCommand.ADD);
-        handler.addParameters(relativePaths);
-        GitCommandResult result = Git.getInstance().runCommand(handler);
-        if (!result.success()) {
-            throw new AgiToolException("Failed to stage files: " + result.getErrorOutputAsJoinedString());
+        if (!toAdd.isEmpty()) {
+            GitLineHandler handler = new GitLineHandler(repo.getProject(), repo.getRoot(), GitCommand.ADD);
+            handler.addParameters(toAdd);
+            GitCommandResult result = Git.getInstance().runCommand(handler);
+            if (!result.success()) {
+                throw new AgiToolException("Failed to stage files: " + result.getErrorOutputAsJoinedString());
+            }
+        }
+
+        if (!toRemove.isEmpty()) {
+            GitLineHandler rmHandler = new GitLineHandler(repo.getProject(), repo.getRoot(), GitCommand.RM);
+            rmHandler.addParameters("--ignore-unmatch");
+            rmHandler.addParameters(toRemove);
+            GitCommandResult rmResult = Git.getInstance().runCommand(rmHandler);
+            if (!rmResult.success()) {
+                throw new AgiToolException("Failed to stage deleted files: " + rmResult.getErrorOutputAsJoinedString());
+            }
         }
 
         repo.getRoot().refresh(false, true);
         repo.update();
 
-        log("Staged " + relativePaths.size() + " files into Git index in: " + repo.getRoot().getName());
-        return "Successfully staged " + relativePaths.size() + " file(s) into Git index in " + repo.getRoot().getName() + ".";
+        int total = toAdd.size() + toRemove.size();
+        log("Staged " + total + " files into Git index in: " + repo.getRoot().getName());
+        return "Successfully staged " + total + " file(s) into Git index in " + repo.getRoot().getName() + ".";
     }
 
     /**
-     * Commits changes headlessly in a single shot (automatically staging files if specified).
+     * Commits changes headlessly in a single shot (automatically staging added, modified, or deleted files if specified).
      *
      * @param repoPath Path of the repository or project directory. If omitted, uses active project repository.
-     * @param filePaths Optional list of specific files to stage and commit. If omitted, commits all staged files in repository.
+     * @param filePaths Optional list of specific files to stage and commit (supports added, modified, and deleted files). If omitted, commits all staged files in repository.
      * @param message The commit message.
      * @param authorName Optional author name. If omitted, uses repository gitconfig or system user.
      * @param authorEmail Optional author email. If omitted, uses repository gitconfig.
@@ -969,7 +996,7 @@ public class IntellijVCS extends AbstractVCS {
     @AgiTool("Commits changes headlessly in a single shot (auto-stages files if specified).")
     public String gitCommit(
             @AgiToolParam(value = "Path of the repository or project directory. If omitted, uses active project repository.", required = false, rendererId = "path") String repoPath,
-            @AgiToolParam(value = "Optional list of specific files to stage and commit. If omitted, commits all staged files.", required = false, rendererId = "path") List<String> filePaths,
+            @AgiToolParam(value = "Optional list of specific files to stage and commit (supports added, modified, and deleted files). If omitted, commits all staged files.", required = false, rendererId = "path") List<String> filePaths,
             @AgiToolParam(value = "The commit message.") String message,
             @AgiToolParam(value = "Optional author name.", required = false) String authorName,
             @AgiToolParam(value = "Optional author email.", required = false) String authorEmail) throws Exception {

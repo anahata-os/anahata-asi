@@ -1,6 +1,8 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.ui;
 
+import com.intellij.codeInsight.hint.HintManager;
+import com.intellij.codeInsight.hint.HintManagerImpl;
 import com.intellij.diff.DiffContentFactory;
 import com.intellij.diff.DiffManager;
 import com.intellij.diff.DiffRequestPanel;
@@ -9,8 +11,13 @@ import com.intellij.diff.requests.SimpleDiffRequest;
 import com.intellij.icons.AllIcons;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.editor.Document;
+import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.event.DocumentEvent;
 import com.intellij.openapi.editor.event.DocumentListener;
+import com.intellij.openapi.editor.event.EditorMouseEvent;
+import com.intellij.openapi.editor.event.EditorMouseEventArea;
+import com.intellij.openapi.editor.event.EditorMouseMotionListener;
 import com.intellij.openapi.editor.impl.DocumentMarkupModel;
 import com.intellij.openapi.editor.markup.GutterIconRenderer;
 import com.intellij.openapi.editor.markup.HighlighterLayer;
@@ -21,8 +28,12 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.ui.popup.Balloon;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.ui.HintHint;
+import com.intellij.ui.LightweightHint;
+import org.jetbrains.annotations.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.Agi;
 import uno.anahata.asi.agi.resource.handle.PathHandle;
@@ -31,6 +42,7 @@ import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.persistence.kryo.KryoUtils;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
 import uno.anahata.asi.swing.agi.message.part.tool.param.ParameterRenderer;
 import uno.anahata.asi.swing.agi.resources.ResourceUiRegistry;
 import uno.anahata.asi.toolkit.resources.text.AbstractTextResourceWrite;
@@ -38,6 +50,9 @@ import uno.anahata.asi.toolkit.resources.text.FullTextResourceUpdate;
 import uno.anahata.asi.toolkit.resources.text.LineComment;
 import uno.anahata.asi.agi.resource.Resource;
 import net.miginfocom.swing.MigLayout;
+import uno.anahata.asi.intellij.ui.AnahataFileIconProvider;
+import uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementBatch;
+import uno.anahata.asi.intellij.tools.java.coderefiner.CodeRefinementIntent;
 
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
@@ -47,6 +62,7 @@ import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Point;
 import java.util.List;
 import java.util.Objects;
 
@@ -214,7 +230,7 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
      * @return the project, or null if none is open.
      */
     private Project resolveProject() {
-        if (update != null && update.getOriginalResourceName() != null) {
+        if (update.getOriginalResourceName() != null) {
             VirtualFile vf = ProjectUtils.findVirtualFile(update.getOriginalResourceName());
             if (vf != null) {
                 Project p = ProjectUtils.findHostProject(vf);
@@ -278,8 +294,9 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
                 "Anahata: " + safeName(update.getOriginalResourceName()),
                 baseContent, proposedContent, baseTitle, proposedTitle);
         diffPanel.setRequest(request);
+        attachZeroDelayGutterTooltip(project, proposedContent, lineComments(), contentDisposable);
 
-        Resource resource = (agiPanel != null && agiPanel.getAgi() != null && update != null && update.getResourceUuid() != null)
+        Resource resource = (update.getResourceUuid() != null)
                 ? agiPanel.getAgi().getResourceManager().get(update.getResourceUuid())
                 : null;
         JPanel headerPanel = createHeaderPanel(resource, lineComments(), call.getResponse().getStatus());
@@ -293,7 +310,7 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
 
     /**
      * Creates the top header panel containing the file identity, action buttons,
-     * and AI line comments summary.
+     * surgical AST intent summary, and AI line comments.
      *
      * @param resource the managed resource being updated.
      * @param comments the list of AI line comments.
@@ -305,24 +322,37 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
         JPanel topRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         topRow.setOpaque(false);
 
+        String intentSuffix = "";
+        if (update instanceof CodeRefinementBatch batch && batch.getIntents() != null && !batch.getIntents().isEmpty()) {
+            intentSuffix = " (" + batch.getIntents().size() + " AST Intents)";
+        }
+
         String labelText;
         switch (status) {
-            case PENDING -> labelText = "Proposed Changes:";
-            case EXECUTED -> labelText = "Applied Changes:";
-            case DECLINED -> labelText = "Changes (Declined):";
-            case FAILED -> labelText = "Changes (Failed):";
-            default -> labelText = "Changes (" + status + "):";
+            case PENDING -> labelText = "Proposed Changes" + intentSuffix + ":";
+            case EXECUTED -> labelText = "Applied Changes" + intentSuffix + ":";
+            case DECLINED -> labelText = "Changes (Declined)" + intentSuffix + ":";
+            case FAILED -> labelText = "Changes (Failed)" + intentSuffix + ":";
+            default -> labelText = "Changes (" + status + ")" + intentSuffix + ":";
         }
         JLabel statusLabel = new JLabel(labelText);
         statusLabel.setFont(statusLabel.getFont().deriveFont(Font.BOLD));
         topRow.add(statusLabel);
 
         if (resource != null) {
-            JLabel htmlDisplayName = new JLabel(resource.getHtmlDisplayName());
-            if (resource.getHandle() != null && resource.getHandle().getUri() != null) {
-                htmlDisplayName.setToolTipText(resource.getHandle().getUri().toString());
+            String displayName = resource.getHtmlDisplayName();
+            if (displayName == null) {
+                displayName = resource.getName();
             }
+            JLabel htmlDisplayName = new JLabel(displayName);
+            htmlDisplayName.setToolTipText(resource.getHandle().getUri().toString());
             htmlDisplayName.setOpaque(false);
+
+            Icon icon =  agiPanel.getAgiConfig().getIconProvider().getIconFor(resource);
+            if (icon != null) {
+                htmlDisplayName.setIcon(icon);
+            }
+
             topRow.add(htmlDisplayName);
 
             ResourceUiRegistry.getInstance().getResourceUI().populateActions(topRow, resource, agiPanel);
@@ -330,25 +360,57 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
 
         panel.add(topRow, BorderLayout.NORTH);
 
-        if (comments != null && !comments.isEmpty()) {
+        JComponent intentPanel = createIntentPanel();
+        boolean hasComments = comments != null && !comments.isEmpty();
+
+        if (intentPanel != null || hasComments) {
             JPanel dashboard = new JPanel(new MigLayout("fillx, insets 0 15 5 10", "[grow, left][]", "[]"));
             dashboard.setOpaque(false);
 
-            StringBuilder sb = new StringBuilder("<html><div style='text-align: right;'>");
-            for (LineComment lc : comments) {
-                sb.append("<i style='color: #888888; font-size: 10pt;'>Line ").append(lc.getLineNumber()).append(":</i> ")
-                        .append("<span style='color: #666666; font-size: 10pt;'>").append(escape(lc.getComment())).append("</span><br>");
+            if (intentPanel != null) {
+                dashboard.add(intentPanel, "cell 0 0, aligny top, growx");
             }
-            sb.append("</div></html>");
 
-            JLabel commentsLabel = new JLabel(sb.toString());
-            commentsLabel.setVerticalAlignment(JLabel.TOP);
-            dashboard.add(commentsLabel, "cell 1 0, aligny top, alignx right");
+            if (hasComments) {
+                StringBuilder sb = new StringBuilder("<html><div style='text-align: right;'>");
+                for (LineComment lc : comments) {
+                    sb.append("<i style='color: #888888; font-size: 10pt;'>Line ").append(lc.getLineNumber()).append(":</i> ")
+                            .append("<span style='color: #666666; font-size: 10pt;'>").append(escape(lc.getComment())).append("</span><br>");
+                }
+                sb.append("</div></html>");
+
+                JLabel commentsLabel = new JLabel(sb.toString());
+                commentsLabel.setVerticalAlignment(JLabel.TOP);
+                dashboard.add(commentsLabel, "cell 1 0, aligny top, alignx right");
+            }
 
             panel.add(dashboard, BorderLayout.CENTER);
         }
 
         return panel;
+    }
+
+    /**
+     * Creates an intent panel summarizing structural AST operations for {@link CodeRefinementBatch}.
+     *
+     * @return the intent summary component, or {@code null} if not applicable.
+     */
+    private JComponent createIntentPanel() {
+        if (update instanceof CodeRefinementBatch batch && batch.getIntents() != null && !batch.getIntents().isEmpty()) {
+            JPanel panel = new JPanel(new MigLayout("fillx, insets 0", "[grow]", "[]"));
+            panel.setOpaque(false);
+
+            JLabel title = new JLabel("<html><b>Surgical AST Intents (" + batch.getIntents().size() + "):</b></html>");
+            panel.add(title, "wrap");
+
+            for (CodeRefinementIntent intent : batch.getIntents()) {
+                JLabel label = new JLabel("<html>" + intent.getHtmlDisplay() + "</html>");
+                label.setToolTipText("Structural Modification: " + intent.getType());
+                panel.add(label, "gapleft 15, wrap");
+            }
+            return panel;
+        }
+        return null;
     }
 
     /**
@@ -372,6 +434,9 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
         MarkupModel markup = DocumentMarkupModel.forDocument(doc, project, true);
         int lineCount = doc.getLineCount();
         for (LineComment comment : comments) {
+            if (comment.getComment() == null || comment.getComment().isBlank()) {
+                continue;
+            }
             int lineIndex = comment.getLineNumber() - 1;
             if (lineIndex < 0 || lineIndex >= lineCount) {
                 continue;
@@ -379,20 +444,19 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
             RangeHighlighter highlighter = markup.addRangeHighlighter(
                     doc.getLineStartOffset(lineIndex), doc.getLineEndOffset(lineIndex),
                     HighlighterLayer.ADDITIONAL_SYNTAX, null, HighlighterTargetArea.LINES_IN_RANGE);
+            highlighter.setErrorStripeTooltip(comment.getComment());
             highlighter.setGutterIconRenderer(new CommentGutterRenderer(comment.getComment()));
         }
     }
 
     /**
-     * Extracts the AI's line comments from the current DTO (only full-file updates carry them).
+     * Extracts the AI's line comments from the current DTO by delegating to
+     * {@link AbstractTextResourceWrite#calculateLineComments}.
      *
      * @return the line comments, or an empty list.
      */
     private List<LineComment> lineComments() {
-        if (update instanceof FullTextResourceUpdate fullUpdate && fullUpdate.getLineComments() != null) {
-            return fullUpdate.getLineComments();
-        }
-        return List.of();
+        return update.calculateLineComments(agiPanel.getAgi());
     }
 
     /**
@@ -466,6 +530,56 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
     }
 
     /**
+     * Attaches an immediate mouse motion listener to the proposed editor to display
+     * AI line comments with zero dwell delay whenever the mouse enters the gutter marker icon.
+     *
+     * @param project           the host project.
+     * @param proposedContent   the proposed document content.
+     * @param comments          the list of line comments.
+     * @param contentDisposable the parent disposable for listener cleanup.
+     */
+    private void attachZeroDelayGutterTooltip(Project project, DocumentContent proposedContent, List<LineComment> comments, Disposable contentDisposable) {
+        if (project == null || comments == null || comments.isEmpty()) {
+            return;
+        }
+        Editor[] editors = EditorFactory.getInstance().getEditors(proposedContent.getDocument(), project);
+        if (editors.length == 0) {
+            return;
+        }
+        Editor proposedEditor = editors[0];
+        proposedEditor.addEditorMouseMotionListener(new EditorMouseMotionListener() {
+            private int lastLine = -1;
+
+            @Override
+            public void mouseMoved(@NotNull EditorMouseEvent e) {
+                if (e.getArea() == EditorMouseEventArea.LINE_MARKERS_AREA) {
+                    int lineIndex = e.getLogicalPosition().line;
+                    if (lineIndex == lastLine) {
+                        return;
+                    }
+                    lastLine = lineIndex;
+                    for (LineComment c : comments) {
+                        if (c.getLineNumber() - 1 == lineIndex && c.getComment() != null && !c.getComment().isBlank()) {
+                            Point p = e.getMouseEvent().getPoint();
+                            HintHint hintHint = new HintHint(proposedEditor.getContentComponent(), p)
+                                    .setShowImmediately(true)
+                                    .setAwtTooltip(true)
+                                    .setPreferredPosition(Balloon.Position.atRight);
+                            LightweightHint hint = new LightweightHint(new JLabel("<html>" + escape(c.getComment()) + "</html>"));
+                            HintManagerImpl.getInstanceImpl().showEditorHint(hint, proposedEditor, p,
+                                    HintManager.HIDE_BY_ANY_KEY | HintManager.HIDE_BY_TEXT_CHANGE | HintManager.HIDE_BY_OTHER_HINT | HintManager.HIDE_BY_SCROLLING,
+                                    0, false, hintHint);
+                            return;
+                        }
+                    }
+                } else {
+                    lastLine = -1;
+                }
+            }
+        }, contentDisposable);
+    }
+
+    /**
      * A gutter marker that shows an AI line comment as its tooltip on the proposed pane.
      */
     private static final class CommentGutterRenderer extends GutterIconRenderer {
@@ -478,10 +592,10 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
         /**
          * Creates a gutter renderer for a line comment.
          *
-         * @param comment the comment text.
+         * @param comment the non-blank comment text.
          */
-        private CommentGutterRenderer(String comment) {
-            this.comment = comment != null ? comment : "";
+        private CommentGutterRenderer(@lombok.NonNull String comment) {
+            this.comment = comment;
         }
 
         /**
@@ -489,7 +603,7 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
          */
         @Override
         public Icon getIcon() {
-            return AllIcons.General.Balloon;
+            return AnahataFileIconProvider.getFileIcon();
         }
 
         /**
@@ -497,7 +611,7 @@ public class IntellijTextResourceWriteRenderer implements ParameterRenderer<Abst
          */
         @Override
         public String getTooltipText() {
-            return comment;
+            return "<html>" + escape(comment) + "</html>";
         }
 
         /**
