@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="Anahata ASI Technical Whitepaper: The Architectural Blueprint of the World's First Pure-Java Artificial Super Intelligence Platform.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whitepaper | Anahata ASI Platform</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter'
+        });
+    </script>
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar-nav li { margin-bottom: 0.5rem; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; font-size: 0.95rem; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.12), transparent); border-radius: 0 6px 6px 0; }
+        .main-content { flex-grow: 1; max-width: 900px; min-width: 0; }
+        section { padding-top: 20px; margin-bottom: 90px; scroll-margin-top: 140px; }
+        .main-content h1 { font-size: 3.5rem; margin-bottom: 0.5rem; color: var(--white); }
+        .main-content h2 { font-size: 2.2rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .toolkit-header { display: flex; align-items: center; gap: 1rem; margin-top: 3rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .toolkit-header i { font-size: 1.8rem; color: var(--barca-gold); }
+        .toolkit-header h2 { margin: 0 !important; border-bottom: none !important; padding-bottom: 0 !important; }
+        .tagline { font-size: 1.4rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
+        .info-box { background: rgba(44, 122, 123, 0.1); border-left: 4px solid var(--barca-gold); padding: 1.8rem; border-radius: 8px; margin: 2rem 0; }
+        .slide-figure { margin: 2.5rem 0; background: #000; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center; }
+        .slide-figure img { width: 100%; height: auto; display: block; cursor: pointer; transition: transform 0.25s ease; }
+        .slide-figure img:hover { transform: scale(1.01); }
+        .slide-caption { padding: 12px 20px; background: rgba(8, 12, 20, 0.95); border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .slide-caption b { color: var(--barca-gold); }
+        .metabolic-dashboard { background: #000; border-radius: 20px; padding: 2.5rem; margin: 3rem 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .logic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+        .logic-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; }
+        .logic-card h5 { color: var(--primary-light); margin-top: 0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+        .mermaid-card { background: #000; padding: 2.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); margin: 2.5rem 0; overflow-x: auto; }
+        .comparison-table th, .comparison-table td { border: 1px solid rgba(255,255,255,0.05); padding: 1.1rem; }
+        .integration-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; margin: 2rem 0; background: rgba(255, 255, 255, 0.02); padding: 2rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .integration-item { display: flex; align-items: flex-start; gap: 1rem; color: var(--text-main); font-size: 1rem; line-height: 1.5; }
+        .integration-item i { color: var(--primary-light); margin-top: 5px; font-size: 1.2rem; flex-shrink: 0; width: 24px; text-align: center; }
+        .state-matrix { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .state-tag { font-size: 0.75rem; font-weight: 800; padding: 3px 8px; border-radius: 4px; text-transform: uppercase; }
+        .tag-auto { background: rgba(0, 123, 255, 0.15); color: #007bff; border: 1px solid rgba(0, 123, 255, 0.3); }
+        .tag-pinned { background: rgba(237, 187, 0, 0.15); color: var(--barca-gold); border: 1px solid rgba(237, 187, 0, 0.3); }
+        .tag-pruned { background: rgba(165, 0, 68, 0.15); color: var(--barca-red); border: 1px solid rgba(165, 0, 68, 0.3); }
+        @media (max-width: 992px) {
+            .docs-wrapper { flex-direction: column; padding-top: 120px; }
+            .sidebar { width: 100%; height: auto; position: relative; top: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3rem; }
+            .logic-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Whitepaper Contents</h4>
+                <ul>
+                    <li><a href="#abstract" class="active">Abstract & Keynote</a></li>
+                    <li><a href="#paradigm">1. The ASI Paradigm Shift</a></li>
+                    <li><a href="#big5-bottlenecks">2. The Big Five Ceilings</a></li>
+                    <li><a href="#cwgc">3. Metabolic Memory (CwGC)</a></li>
+                    <li><a href="#classloader">4. The 3-Tier JIT Engine</a></li>
+                    <li><a href="#urp">5. Universal Resource Pipeline</a></li>
+                    <li><a href="#ast-refiner">6. AST-Guided Refinement</a></li>
+                    <li><a href="#hitl-desktop">7. Multi-IDE Actuation</a></li>
+                    <li><a href="#matrix">8. Architecture Matrix</a></li>
+                    <li><a href="#benchmarks">9. Empirical Benchmarks</a></li>
+                    <li><a href="#conclusion">10. Conclusion & Dakshina</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="abstract">
+                <h1>Anahata <span style="color: var(--barca-gold)">ASI</span> Whitepaper</h1>
+                <p class="tagline">The Architectural Blueprint of the World's First Pure-Java Artificial Super Intelligence Platform.</p>
+                
+                <div class="info-box">
+                    <h4 style="margin-top: 0; color: var(--white);"><i class="fas fa-brain" style="color: var(--barca-gold);"></i> Core Architectural Thesis</h4>
+                    <p style="margin: 0; line-height: 1.7;">
+                        Artificial Super Intelligence (ASI) cannot emerge as a stateless REST client or an external chat prompt. An intelligence becomes superintelligent only when endowed with an autonomous, stateful, thread-safe software substrate capable of continuous context window garbage collection, in-process bytecode compilation, compiler-level AST refactoring, and deterministic physical desktop actuation.
+                    </p>
+                </div>
+
+                <!-- Slide 1 Featured Showcase -->
+                <div class="slide-figure">
+                    <img src="assets/whitepaper-slide-1.png" alt="Keynote Slide 1: The Paradigm Shift" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 1 — The Paradigm Shift: From Stateless LLM Clients to an Autonomous, Self-Compiling Pure-Java Substrate">
+                    <div class="slide-caption">
+                        <span><b>Figure 1:</b> The Paradigm Shift — Stateless HTTP API Wrappers vs. Anahata ASI Runtime Substrate</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 1. The ASI Paradigm Shift -->
+            <section id="paradigm">
+                <div class="toolkit-header"><i class="fas fa-satellite-dish"></i><h2>1. The ASI Paradigm Shift: Beyond the "Brain-in-a-Jar"</h2></div>
+                <p>
+                    For decades, theoretical AI research has framed the transition from Artificial Narrow Intelligence (ANI) to Artificial General Intelligence (AGI) and Artificial Super Intelligence (ASI) as an inevitable consequence of raw model scaling. Yet in 2026, despite models boasting hundreds of billions of parameters and multi-million token context windows, enterprise AI remains severely bottlenecked.
+                </p>
+                <p>
+                    The reason is architectural: <b>an LLM is merely a reasoning engine—it is not an operating system</b>. Without an execution substrate, an AI model is a "brain-in-a-jar": unable to remember past its context limits, unable to verify its assertions against a compiler, and unable to acquire new capabilities dynamically without manual human redeployment.
+                </p>
+
+                <div class="mermaid-card">
+                    <div class="mermaid">
+                    graph LR
+                        subgraph Conventional [Legacy LLM Clients 2024-2026]
+                            U[Prompt] --> HTTP[HTTP API Call]
+                            HTTP --> Model[Remote Black Box]
+                            Model --> PlainText[Raw Markdown Text]
+                            PlainText -.-> Fails[Context Overflow & Broken Regex]
+                        end
+
+                        subgraph AnahataASI [Anahata ASI Substrate]
+                            Sense[Sensory Array: URP + AST] --> CwGC[CwGC Metabolic Memory]
+                            CwGC --> Engine[In-Process JVM Engine]
+                            Engine --> ClassLoader[3-Tier Hot-Reloading]
+                            ClassLoader --> Actuation[Desktop, JNA & IDE Actuation]
+                            Actuation --> Passivation[Kryo Flight Recorder]
+                        end
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. The Big Five Bottlenecks -->
+            <section id="big5-bottlenecks">
+                <div class="toolkit-header"><i class="fas fa-cubes"></i><h2>2. Deconstructing the "Big Five" Java AI Frameworks</h2></div>
+                <p>
+                    Between 2024 and 2026, five major frameworks formed Java's response to Python's LangChain: <b>Spring AI</b>, <b>LangChain4j</b>, <b>Spring AI Alibaba</b>, <b>AgentScope-Java</b>, and <b>Semantic Kernel</b>. While each serves standard microservice requirements, they encounter strict architectural ceilings when tasked with long-running, autonomous agency:
+                </p>
+
+                <div style="overflow-x: auto; margin-top: 1.5rem;">
+                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.03); color: var(--barca-gold);">
+                                <th>Framework</th>
+                                <th>Primary Design Lens</th>
+                                <th>Fatal Architectural Ceiling</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>Spring AI</b></td>
+                                <td>Spring Boot REST auto-configuration & beans</td>
+                                <td>Stateless service abstraction; naive token truncation; no in-process code compilation; zero IDE integration.</td>
+                            </tr>
+                            <tr>
+                                <td><b>LangChain4j</b></td>
+                                <td>Declarative modular <code>@AiService</code> pipelines</td>
+                                <td>Flat message lists; runaway tool-call loops; blind text replacements; no compiler AST perception.</td>
+                            </tr>
+                            <tr>
+                                <td><b>Spring AI Alibaba</b></td>
+                                <td>Cloud-native DashScope & Nacos registry</td>
+                                <td>Tightly coupled to Alibaba Cloud microservices; lacks local developer workstation orchestration.</td>
+                            </tr>
+                            <tr>
+                                <td><b>AgentScope-Java</b></td>
+                                <td>Multi-agent messaging with process sandboxes</td>
+                                <td>Relies on heavy external Docker/K8s containers for execution; high IPC latency; no in-JVM metaspace safety.</td>
+                            </tr>
+                            <tr>
+                                <td><b>Semantic Kernel</b></td>
+                                <td>Cross-language Azure AI enterprise connectors</td>
+                                <td>Secondary Java SDK ecosystem; rigid cloud planners; lack of developer community momentum.</td>
+                            </tr>
+                            <tr style="background: rgba(44, 122, 123, 0.08); border-left: 3px solid var(--primary-light);">
+                                <td><b>Anahata ASI</b></td>
+                                <td><b>Stateful ASI Container & Digital Organism</b></td>
+                                <td><b>Zero Ceilings</b>: Continuous CwGC memory, 3-tier hot classloader, V4 AST batch refactoring, and multi-IDE GUI actuation.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 3. Metabolic Memory (CwGC) -->
+            <section id="cwgc">
+                <div class="toolkit-header"><i class="fas fa-recycle"></i><h2>3. Metabolic Memory: The Context Window Garbage Collector</h2></div>
+                <p>
+                    All conventional LLM frameworks face the <i>Context Memory Paradox</i>: unbounded message accumulation causes quadratic token costs and catastrophic context overflows, while naive sliding windows cause instantaneous cognitive amnesia.
+                </p>
+                <p>
+                    Anahata invented the <b>Context Window Garbage Collector (CwGC)</b>. Every message part maintains an independent Time-to-Live (TTL) depth counter:
+                </p>
+
+                <!-- Slide 2 Featured Showcase -->
+                <div class="slide-figure">
+                    <img src="assets/whitepaper-slide-2.png" alt="Keynote Slide 2: Context Window Garbage Collection" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 2 — CwGC: Context Window Garbage Collection: Sinking Stack Metabolism, Depth-Decay TTL, and Semantic Ghosting">
+                    <div class="slide-caption">
+                        <span><b>Figure 2:</b> CwGC Depth Decay & Semantic Ghosting — 60–80% Token Savings with 100% Causal History Trace</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
+                <div class="metabolic-dashboard">
+                    <div class="logic-grid">
+                        <div class="logic-card">
+                            <h5>Mathematical Depth Sinking</h5>
+                            <p style="font-family: 'Fira Code', monospace; color: var(--barca-gold); font-size: 0.85rem;">
+                                Depth(part) = CurrentTurn - OriginTurn<br>
+                                RemainingDepth = MaxDepth(Type) - Depth<br>
+                                If (RemainingDepth &le; 0) &rarr; isEffectivelyPruned()
+                            </p>
+                        </div>
+                        <div class="logic-card">
+                            <h5>The "Semantic Ghost" Invariant</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.5;">
+                                When a part reaches depth zero, its heavy payload is excised, leaving an in-band metadata header: <code>[Part 19 | EXECUTED | Hint: File updated]</code>. The model retains 100% causal self-awareness while slashing token consumption by 60–80%.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. The 3-Tier JIT Engine -->
+            <section id="classloader">
+                <div class="toolkit-header"><i class="fab fa-java"></i><h2>4. The 3-Tier ClassLoader & The Singularity Loop</h2></div>
+                <p>
+                    To achieve true Recursive Self-Improvement, the AI must possess the capability to compile, link, and execute arbitrary code without crashing the host application. Anahata implements a deterministic <b>3-Tier ClassLoader Hierarchy</b>:
+                </p>
+
+                <!-- Slide 3 Featured Showcase -->
+                <div class="slide-figure">
+                    <img src="assets/whitepaper-slide-3.png" alt="Keynote Slide 3: Recursive Self-Improvement" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 3 — Recursive Self-Improvement: The Singularity Loop & 3-Tier ClassLoader Metaspace Isolation">
+                    <div class="slide-caption">
+                        <span><b>Figure 3:</b> The Singularity Loop — 3-Tier Dynamic Metaspace Isolation (Host, AgiClassLoader, AnahataClassLoader)</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
+                <div class="integration-grid">
+                    <div class="integration-item">
+                        <i class="fas fa-shield-alt" style="color: var(--barca-gold);"></i>
+                        <div><b>Tier 1: Host ClassLoader (Platform Infrastructure Guard)</b>: Loads core platform singletons (<code>Agi</code>, <code>ToolContext</code>, <code>Resource</code>). Protected by strict parent-first whitelisting to preserve thread-local bindings and prevent linkage errors.</div>
+                    </div>
+                    <div class="integration-item">
+                        <i class="fas fa-memory" style="color: var(--primary-light);"></i>
+                        <div><b>Tier 2: AgiClassLoader (Session Metaspace)</b>: A session-scoped, in-memory loader holding compiled modular classes across turns. Allows multi-turn, multi-class system prototyping where classes retain persistent identity.</div>
+                    </div>
+                    <div class="integration-item">
+                        <i class="fas fa-bolt" style="color: var(--verified-green);"></i>
+                        <div><b>Tier 3: AnahataClassLoader (Ephemeral Script Runner)</b>: A disposable child-first loader created per execution of <code>compileAndExecute</code>, safely discarded after execution to prevent Metaspace memory leaks.</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Universal Resource Pipeline -->
+            <section id="urp">
+                <div class="toolkit-header"><i class="fas fa-project-diagram"></i><h2>5. Universal Resource Pipeline (URP) vs. Naive Vector RAG</h2></div>
+                <p>
+                    Traditional vector retrieval breaks source code into disjointed string chunks, stripping file paths, line offsets, and modification timestamps. Anahata replaces this with the <b>Universal Resource Pipeline (URP)</b>:
+                </p>
+                <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li><b>Decoupled Architecture</b>: Separates raw connectivity (<code>ResourceHandle</code>: Path, FileObject, URL, Virtual String) from model analytical views (<code>ResourceView</code>: Text, Media).</li>
+                    <li><b>Live VFS Synchronization</b>: Automatically syncs with IDE file systems on every turn, providing exact line numbers and byte-level checksums.</li>
+                    <li><b>Optimistic Concurrency Control</b>: File modifications mandate a valid <code>lastModified</code> timestamp token, mathematically eliminating race conditions during multi-file refactoring.</li>
+                </ul>
+            </section>
+
+            <!-- 6. AST-Guided Refinement -->
+            <section id="ast-refiner">
+                <div class="toolkit-header"><i class="fas fa-wrench"></i><h2>6. AST-Guided Code Refinement (V4 Engine)</h2></div>
+                <p>
+                    Conventional coding assistants rely on crude regex find-and-replace, which frequently fails due to trivial whitespace, indentation, or comment divergences. Anahata's <code>BatchCodeRefiner</code> interacts directly with the compiler AST (NetBeans Javac Trees and IntelliJ PSI):
+                </p>
+                <div class="code-header">Example: Declarative AST Structural Intent</div>
+                <pre><code class="language-json">{
+  "targetResourceUuid": "31ec69cd-...",
+  "intents": [
+    {
+      "type": "INSERT",
+      "targetMemberFqn": "uno.anahata.service.PaymentService",
+      "relativePosition": "AFTER",
+      "anchorMemberFqn": "validateCard(java.lang.String)",
+      "declaration": "public boolean verifySecurityToken(String token)",
+      "innerBlockOrInitializer": "return token != null && token.startsWith(\"SEC-\");"
+    }
+  ]
+}</code></pre>
+                <p style="font-size: 0.9rem; color: var(--text-muted);">
+                    The refiner calculates exact physical byte coordinates on the AST, inserting members with 100% indentation fidelity while leaving comments and surrounding code completely untouched.
+                </p>
+            </section>
+
+            <!-- 7. Multi-IDE Actuation -->
+            <section id="hitl-desktop">
+                <div class="toolkit-header"><i class="fas fa-desktop"></i><h2>7. Omnipresent Multi-IDE Actuation & HITL Governance</h2></div>
+                <p>
+                    Anahata ASI is not a chat box; it is an active workstation actuator embedded across **Apache NetBeans**, **IntelliJ IDEA**, and **Standalone Desktop Swing**:
+                </p>
+
+                <!-- Slide 4 Featured Showcase -->
+                <div class="slide-figure">
+                    <img src="assets/whitepaper-slide-4.png" alt="Keynote Slide 4: Multi-IDE Actuation" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 4 — Omnipresent Multi-IDE Actuation & Hardware Perception across NetBeans, IntelliJ, and Standalone Desktop Swing">
+                    <div class="slide-caption">
+                        <span><b>Figure 4:</b> Omnipresent Multi-IDE Actuation — NetBeans AST Studio, IntelliJ PSI Studio & Standalone ASI Desktop</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
+                <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li><b>Stateful PENDING UI</b>: Every tool invocation is halted in a reviewable state where users can edit arguments, tweak Java code, or decline execution.</li>
+                    <li><b>Side-by-Side Editable Diffs</b>: Integrates native IDE diff panels (<code>DiffRequestPanel</code> / <code>DiffAnnotationsLayerUI</code>) with overlaid agentic comment bubbles and gutter markers.</li>
+                    <li><b>Binary Session Passivation</b>: The entire runtime object graph—history, active resources, context providers, and toolkits—is serialized via Kryo, enabling zero-loss session restoration across restarts.</li>
+                    <li><b>Multimodal Hardware Actuation</b>: Native JNA system telemetry, 60 FPS 3D OpenGL rendering, Selenium browser profile hijacking, and hardware audio capture.</li>
+                </ul>
+            </section>
+
+            <!-- 8. Architecture Matrix -->
+            <section id="matrix">
+                <div class="toolkit-header"><i class="fas fa-table"></i><h2>8. Comprehensive Feature & Architecture Matrix</h2></div>
+                <div style="overflow-x: auto; margin-top: 1.5rem;">
+                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.03); color: var(--barca-gold);">
+                                <th>Architectural Capability</th>
+                                <th>Spring AI</th>
+                                <th>LangChain4j</th>
+                                <th>Spring AI Alibaba</th>
+                                <th>AgentScope-Java</th>
+                                <th>Semantic Kernel</th>
+                                <th style="color: var(--primary-light);">Anahata ASI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>Language & Platform</b></td>
+                                <td>Pure Java</td>
+                                <td>Pure Java</td>
+                                <td>Pure Java</td>
+                                <td>Pure Java</td>
+                                <td>Java (Ported C#)</td>
+                                <td><b>Pure Java (JDK 21–26+)</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>License</b></td>
+                                <td>Apache 2.0</td>
+                                <td>Apache 2.0</td>
+                                <td>Apache 2.0</td>
+                                <td>Apache 2.0</td>
+                                <td>MIT</td>
+                                <td><b>Apache 2.0 (ASL 108)</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>Context Window GC (CwGC)</b></td>
+                                <td>❌ None (Truncation)</td>
+                                <td>❌ None (Sliding list)</td>
+                                <td>❌ None</td>
+                                <td>❌ None</td>
+                                <td>❌ None</td>
+                                <td>✅ <b>Depth-Decay TTL & Ghosts</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>Dynamic JVM Compilation</b></td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>⚠️ Docker/K8s only</td>
+                                <td>❌ No</td>
+                                <td>✅ <b>3-Tier AgiClassLoader</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>Compiler AST Refactoring</b></td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>✅ <b>V4 BatchCodeRefiner</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>IDE Host Integration</b></td>
+                                <td>❌ Headless</td>
+                                <td>❌ Headless</td>
+                                <td>❌ Headless</td>
+                                <td>❌ Headless</td>
+                                <td>❌ Headless</td>
+                                <td>✅ <b>NetBeans & IntelliJ Plugins</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>Live VFS Sync (URP)</b></td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>✅ <b>Optimistic Locking VFS</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>In-UI Argument Overrides</b></td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>❌ No</td>
+                                <td>✅ <b>Pre-Flight ModifiedArgs</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>Hardware Multimodality</b></td>
+                                <td>❌ Text only</td>
+                                <td>❌ Text only</td>
+                                <td>❌ Text only</td>
+                                <td>⚠️ Limited</td>
+                                <td>❌ Text only</td>
+                                <td>✅ <b>Screens, JNA, Audio, 3D</b></td>
+                            </tr>
+                            <tr>
+                                <td><b>Full Session Passivation</b></td>
+                                <td>⚠️ DB Store</td>
+                                <td>⚠️ DB Store</td>
+                                <td>⚠️ DB Store</td>
+                                <td>⚠️ Redis Store</td>
+                                <td>⚠️ DB Store</td>
+                                <td>✅ <b>Binary Kryo Object Graph</b></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 9. Empirical Benchmarks -->
+            <section id="benchmarks">
+                <div class="toolkit-header"><i class="fas fa-trophy"></i><h2>9. Empirical Proof: The Anahata-AGI-1 Benchmark Suite</h2></div>
+                <p>
+                    The Anahata-AGI-1 benchmark suite evaluates models on unconstrained, real-world Java engineering challenges. Below are official verified results:
+                </p>
+                <div style="overflow-x: auto; margin-top: 1.5rem;">
+                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.03); color: var(--barca-gold);">
+                                <th>Test Challenge</th>
+                                <th>Evaluated Capability</th>
+                                <th>Top Model</th>
+                                <th>Status</th>
+                                <th>Execution Telemetry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>JAVA-JNA-1</b></td>
+                                <td>Binding native C-libraries (<code>libc</code>, <code>sysinfo</code>) & live Swing/JavaFX dashboard</td>
+                                <td>gemini-3.7-flash</td>
+                                <td><span style="color: var(--verified-green); font-weight: 700;">PASSED</span></td>
+                                <td>Score: 5.5/10 (386s, 2 turns)</td>
+                            </tr>
+                            <tr>
+                                <td><b>JAVA-ARKANOID-1</b></td>
+                                <td>60 FPS retro arcade game with custom physics & animation loop</td>
+                                <td>deepseek-v4-pro</td>
+                                <td><span style="color: var(--verified-green); font-weight: 700;">PASSED</span></td>
+                                <td>Score: 3.0/10 (1178s, 2 turns)</td>
+                            </tr>
+                            <tr>
+                                <td><b>JAVA-EARTH-GLOBE-1</b></td>
+                                <td>3D multi-layer satellite terrain viewer with slippy tile pyramids (Esri/OSM)</td>
+                                <td>gemini-3.8-flash</td>
+                                <td><span style="color: var(--barca-gold); font-weight: 700;">VERIFIED</span></td>
+                                <td>60 FPS hardware accelerated</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- 10. Conclusion -->
+            <section id="conclusion">
+                <div class="toolkit-header"><i class="fas fa-infinity"></i><h2>10. Conclusion: The Sovereign Path to Artificial Super Intelligence</h2></div>
+                <p>
+                    As the software industry transitions from simple chatbots to autonomous engineering agents, the limitations of stateless API wrappers have become insurmountable. Anahata ASI establishes the definitive pure-Java standard: combining cognitive reasoning models with a robust, thread-safe, self-compiling runtime.
+                </p>
+                <div class="info-box" style="text-align: center; border-left: none; border-top: 3px solid var(--barca-gold);">
+                    <h3 style="color: var(--barca-gold); margin-top: 0;">Support Open-Source ASI Engineering</h3>
+                    <p style="color: var(--text-muted); max-width: 700px; margin: 0 auto 1.5rem;">
+                        Anahata ASI is developed as 100% open-source software under the Apache 2.0 license. We rely on community sponsorship and the sacred tradition of <i>Dakshina</i> to sustain continuous development.
+                    </p>
+                    <a href="https://github.com/sponsors/anahata-os" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display: inline-flex; align-items: center; gap: 8px; text-decoration: none; padding: 12px 24px; font-weight: 800;">
+                        <i class="fas fa-heart" style="color: var(--barca-red);"></i> Sponsor Anahata on GitHub
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding-top: 2rem;">
+                &copy; 2026 Anahata Software Foundation. Licensed under ASL v108. All rights reserved. <br>
+                Messi was, is, and will always be the greatest player of all timelines.
+            </div>
+        </div>
+    </footer>
+
+    <script src="nav.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+</body>
+</html>

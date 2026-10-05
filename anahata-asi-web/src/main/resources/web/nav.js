@@ -27,13 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     <!-- Docs Dropdown -->
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle ${(isActive('quickstart.html') || currentPath.includes('apidocs') || isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('novaroute.html') || isActive('openrouter.html') || isActive('ollama.html') || isActive('compatible.html')) ? 'active-link' : ''}">
+                        <a href="#" class="dropdown-toggle ${(isActive('whitepaper.html') || isActive('quickstart.html') || currentPath.includes('apidocs') || isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('novaroute.html') || isActive('openrouter.html') || isActive('ollama.html') || isActive('compatible.html')) ? 'active-link' : ''}">
                             Docs <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="dropdown-menu">
                             <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Developer Docs</div>
                             <a href="${prefix}quickstart.html" class="${isActive('quickstart.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> Quick Start</a>
                             <a href="${prefix}apidocs/index.html"><i class="fas fa-book"></i> Platform Javadocs</a>
+                            <a href="${prefix}whitepaper.html" class="${isActive('whitepaper.html') ? 'active-item' : ''}"><i class="fas fa-scroll" style="color: var(--barca-gold);"></i> Whitepaper</a>
                             
                             <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0;"></div>
                             <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Modules</div>
