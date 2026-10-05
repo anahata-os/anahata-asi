@@ -23,6 +23,23 @@ import uno.anahata.asi.agi.tool.AnahataToolkit;
 public abstract class AbstractVCS extends AnahataToolkit {
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Supplies universal instructions for Version Control System toolkits,
+     * highlighting the unified Local History + VCS chronological timeline in {@code getHistory}
+     * and clarifying that live working-tree diffs are evaluated JIT in the resource footer.
+     * </p>
+     */
+    @Override
+    public List<String> getSystemInstructions() throws Exception {
+        return List.of(
+                "- **Unified Chronological History (`getHistory`)**: Combines repository VCS commits and IDE Local History into a single chronological timeline. Use `getHistory` whenever you need to trace changes over time, investigate when a bug was introduced, or recover previous revisions.",
+                "- **Live Working Tree & History Telemetry in Resource Footer**: For any text resource loaded in context, live uncommitted working-tree diffs (`### Live Working Tree Changes`) and the 5 most recent history entries are evaluated JIT after tool execution and right before the turn starts in the resource footer, regardless of whether the resource has a LIVE or SNAPSHOT refresh policy.",
+                "- **Avoid Redundant Diffs**: DO NOT invoke `gitDiff` or `getDiff` on resources already in context merely to check for uncommitted changes, as their live working tree modifications and unified diffs are already visible in their resource footer."
+        );
+    }
+
+    /**
      * Gets the Version Control metadata and repository root for a file or directory.
      *
      * @param path The absolute path of the file or directory to inspect.
