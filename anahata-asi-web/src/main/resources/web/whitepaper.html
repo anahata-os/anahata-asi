@@ -152,6 +152,15 @@
                     Between 2024 and 2026, five major frameworks formed Java's response to Python's LangChain: <b>Spring AI</b>, <b>LangChain4j</b>, <b>Spring AI Alibaba</b>, <b>AgentScope-Java</b>, and <b>Semantic Kernel</b>. While each serves standard microservice requirements, they encounter strict architectural ceilings when tasked with long-running, autonomous agency:
                 </p>
 
+                <!-- Big 5 Featured Infographic Showcase -->
+                <div class="slide-figure">
+                    <img src="assets/medium-big5-table.png" alt="Deconstructing the Big Five Java AI Frameworks" class="clickable-media" data-caption="Deconstructing the Big Five Java AI Frameworks — Comparing the Architectural Ceilings of Spring AI, LangChain4j, Spring AI Alibaba, AgentScope-Java, and Semantic Kernel vs. Anahata ASI">
+                    <div class="slide-caption">
+                        <span><b>Figure 2:</b> Architectural Ceilings of the 'Big Five' Java AI Frameworks vs. Anahata ASI Sovereign Substrate</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
                 <div style="overflow-x: auto; margin-top: 1.5rem;">
                     <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
                         <thead>
@@ -211,7 +220,7 @@
                 <div class="slide-figure">
                     <img src="assets/whitepaper-slide-2.png" alt="Keynote Slide 2: Context Window Garbage Collection" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 2 — CwGC: Context Window Garbage Collection: Sinking Stack Metabolism, Depth-Decay TTL, and Semantic Ghosting">
                     <div class="slide-caption">
-                        <span><b>Figure 2:</b> CwGC Depth Decay & Semantic Ghosting — 60–80% Token Savings with 100% Causal History Trace</span>
+                        <span><b>Figure 3:</b> CwGC Depth Decay & Semantic Ghosting — 60–80% Token Savings with 100% Causal History Trace</span>
                         <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
                     </div>
                 </div>
@@ -247,7 +256,7 @@
                 <div class="slide-figure">
                     <img src="assets/whitepaper-slide-3.png" alt="Keynote Slide 3: Recursive Self-Improvement" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 3 — Recursive Self-Improvement: The Singularity Loop & 3-Tier ClassLoader Metaspace Isolation">
                     <div class="slide-caption">
-                        <span><b>Figure 3:</b> The Singularity Loop — 3-Tier Dynamic Metaspace Isolation (Host, AgiClassLoader, AnahataClassLoader)</span>
+                        <span><b>Figure 4:</b> The Singularity Loop — 3-Tier Dynamic Metaspace Isolation (Host, AgiClassLoader, AnahataClassLoader)</span>
                         <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
                     </div>
                 </div>
@@ -274,6 +283,16 @@
                 <p>
                     Traditional vector retrieval breaks source code into disjointed string chunks, stripping file paths, line offsets, and modification timestamps. Anahata replaces this with the <b>Universal Resource Pipeline (URP)</b>:
                 </p>
+
+                <!-- Slide Featured Showcase: URP -->
+                <div class="slide-figure">
+                    <img src="assets/medium-urp-pipeline.png" alt="Universal Resource Pipeline vs. Naive Vector RAG" class="clickable-media" data-caption="Universal Resource Pipeline (URP) — Continuous VFS Synchronization, Decoupled Views, and Optimistic Concurrency Control vs. Naive Vector Chunking">
+                    <div class="slide-caption">
+                        <span><b>Figure 5:</b> The Universal Resource Pipeline (URP) — Real-Time IDE VFS Synchronization & Optimistic Concurrency</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
                 <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
                     <li><b>Decoupled Architecture</b>: Separates raw connectivity (<code>ResourceHandle</code>: Path, FileObject, URL, Virtual String) from model analytical views (<code>ResourceView</code>: Text, Media).</li>
                     <li><b>Live VFS Synchronization</b>: Automatically syncs with IDE file systems on every turn, providing exact line numbers and byte-level checksums.</li>
@@ -287,6 +306,16 @@
                 <p>
                     Conventional coding assistants rely on crude regex find-and-replace, which frequently fails due to trivial whitespace, indentation, or comment divergences. Anahata's <code>BatchCodeRefiner</code> interacts directly with the compiler AST (NetBeans Javac Trees and IntelliJ PSI):
                 </p>
+
+                <!-- Slide Featured Showcase: AST Refinement -->
+                <div class="slide-figure">
+                    <img src="assets/medium-ast-refinement.png" alt="AST-Guided Structural Refinement (The V4 Engine)" class="clickable-media" data-caption="V4 AST-Guided Structural Refinement — Compiler-Level Javac Trees and IntelliJ PSI Grafting vs. Fragile Regex String Manipulation">
+                    <div class="slide-caption">
+                        <span><b>Figure 6:</b> V4 AST-Guided Structural Refinement — 100% Indentation & Comment Fidelity with Atomic Compiler Transactions</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
                 <div class="code-header">Example: Declarative AST Structural Intent</div>
                 <pre><code class="language-json">{
   "targetResourceUuid": "31ec69cd-...",
@@ -317,7 +346,7 @@
                 <div class="slide-figure">
                     <img src="assets/whitepaper-slide-4.png" alt="Keynote Slide 4: Multi-IDE Actuation" class="clickable-media" data-caption="Anahata ASI Architecture Keynote Slide 4 — Omnipresent Multi-IDE Actuation & Hardware Perception across NetBeans, IntelliJ, and Standalone Desktop Swing">
                     <div class="slide-caption">
-                        <span><b>Figure 4:</b> Omnipresent Multi-IDE Actuation — NetBeans AST Studio, IntelliJ PSI Studio & Standalone ASI Desktop</span>
+                        <span><b>Figure 7:</b> Omnipresent Multi-IDE Actuation — NetBeans AST Studio, IntelliJ PSI Studio & Standalone ASI Desktop</span>
                         <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
                     </div>
                 </div>
@@ -333,6 +362,16 @@
             <!-- 8. Architecture Matrix -->
             <section id="matrix">
                 <div class="toolkit-header"><i class="fas fa-table"></i><h2>8. Comprehensive Feature & Architecture Matrix</h2></div>
+
+                <!-- Slide Featured Showcase: Scorecard Table -->
+                <div class="slide-figure">
+                    <img src="assets/medium-scorecard-table.png" alt="The Architectural Scorecard: AI Client vs. True ASI Substrate" class="clickable-media" data-caption="The Architectural Scorecard — Comprehensive Capability Matrix Across Enterprise Java AI Frameworks: Spring AI, LangChain4j, AgentScope-Java, and Anahata ASI">
+                    <div class="slide-caption">
+                        <span><b>Figure 8:</b> The Architectural Scorecard — Enterprise Java AI Clients vs. Anahata ASI Sovereign Substrate</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
                 <div style="overflow-x: auto; margin-top: 1.5rem;">
                     <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
                         <thead>
