@@ -18,26 +18,28 @@ import org.netbeans.api.java.source.SourceUtils;
 import org.openide.filesystems.FileObject;
 
 /**
- * A "Finder" command object that recursively searches for all subtypes 
+ * A "Finder" command object that recursively searches for all subtypes
  * (implementations and subclasses) of a given JavaType.
  */
 @Slf4j
 @Getter
 public class JavaSubtypeSearch {
 
-    /** The root node of the subtype hierarchy tree. */
+    /**
+     * The root node of the subtype hierarchy tree.
+     */
     private final JavaHierarchyNode rootNode;
 
     /**
      * Performs a recursive subtype search.
-     * 
+     *
      * @param rootType The starting type.
      * @param maxDepth The maximum depth to recurse.
      * @throws Exception if the search fails.
      */
     public JavaSubtypeSearch(JavaType rootType, int maxDepth) throws Exception {
         this.rootNode = JavaHierarchyNode.builder().type(rootType).build();
-        
+
         ClasspathInfo cpInfo = CodeModel.getGlobalClasspathInfo();
         JavaSource js = JavaSource.create(cpInfo);
 
@@ -52,18 +54,19 @@ public class JavaSubtypeSearch {
 
     /**
      * Recursively builds the subtype tree using the NetBeans ClassIndex.
-     * 
+     *
      * @param info The current compilation context.
      * @param te The type element to find implementors for.
      * @param node The current node in the hierarchy tree.
      * @param depth The remaining depth to search.
-     * @param visited Set of visited FQNs to prevent cycles in broken classpaths.
+     * @param visited Set of visited FQNs to prevent cycles in broken
+     * classpaths.
      */
     private void buildSubtypeTree(CompilationInfo info, TypeElement te, JavaHierarchyNode node, int depth, Set<String> visited) {
         if (depth <= 0) {
             return;
         }
-        
+
         String fqn = te.getQualifiedName().toString();
         if (!visited.add(fqn)) {
             return;
@@ -71,9 +74,9 @@ public class JavaSubtypeSearch {
 
         ElementHandle<TypeElement> handle = ElementHandle.create(te);
         Set<ElementHandle<TypeElement>> implementors = info.getClasspathInfo().getClassIndex().getElements(
-            handle, 
-            EnumSet.of(ClassIndex.SearchKind.IMPLEMENTORS), 
-            EnumSet.of(ClassIndex.SearchScope.SOURCE, ClassIndex.SearchScope.DEPENDENCIES)
+                handle,
+                EnumSet.of(ClassIndex.SearchKind.IMPLEMENTORS),
+                EnumSet.of(ClassIndex.SearchScope.SOURCE, ClassIndex.SearchScope.DEPENDENCIES)
         );
 
         for (ElementHandle<TypeElement> kidHandle : implementors) {
@@ -81,12 +84,17 @@ public class JavaSubtypeSearch {
             if (kidTe != null) {
                 FileObject kidFo = SourceUtils.getFile(kidHandle, info.getClasspathInfo());
                 URL url = null;
-                try { if (kidFo != null) url = kidFo.toURL(); } catch (Exception e) {}
-                
+                try {
+                    if (kidFo != null) {
+                        url = kidFo.toURL();
+                    }
+                } catch (Exception e) {
+                }
+
                 JavaHierarchyNode kidNode = JavaHierarchyNode.builder()
                         .type(new JavaType(kidHandle, url))
                         .build();
-                
+
                 node.getSubtypes().add(kidNode);
                 buildSubtypeTree(info, kidTe, kidNode, depth - 1, visited);
             }
