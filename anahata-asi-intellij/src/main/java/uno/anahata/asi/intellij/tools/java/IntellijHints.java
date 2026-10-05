@@ -99,6 +99,7 @@ public class IntellijHints extends AbstractHints {
         instructions.add("""
                 ### IntellijHints Toolkit Instructions:
                 - The `IntellijHints` toolkit allows running inspections on arbitrary files on disk using `getFileHints` and applying quick fixes via `applyHint`.
+                - **Quick-Fix Execution Badges in Resource Footer**: Quick fixes in `[Fixes: ...]` are annotated with execution badges: `(⚡)` indicates a headless fix that can be executed programmatically via `applyHint` in a single turn; `(👤)` indicates an interactive fix (e.g. dialogs, chooser popups, dictionary selectors) requiring user interaction in the IDE UI.
                 - Use `applyHint` with the line number and the action name from `[Fixes: ...]` to execute a single-shot quick fix in one turn. Only fixes tagged with `(⚡)` can be executed headlessly; fixes tagged with `(👤)` require user interaction in the IDE.
                 - Use `setHintsEnabled` with inspection tool IDs to dynamically enable or disable inspections in the active project profile.
                 """);
@@ -448,10 +449,11 @@ public class IntellijHints extends AbstractHints {
                     isFinished = true;
                     break;
                 }
-                boolean runningOrPending = ReadAction.computeBlocking(() ->
-                        !project.isDisposed() && analyzer.isRunningOrPending()
+                VirtualFile fileVf = psiFile.getVirtualFile();
+                boolean isFileOpen = ReadAction.computeBlocking(() ->
+                        !project.isDisposed() && fileVf != null && FileEditorManager.getInstance(project).isFileOpen(fileVf)
                 );
-                if (!runningOrPending) {
+                if (!isFileOpen) {
                     break;
                 }
                 try {
@@ -575,16 +577,18 @@ public class IntellijHints extends AbstractHints {
                             if (pass.getClass().getSimpleName().contains("ExternalTool")) {
                                 continue;
                             }
-                            ReadAction.runBlocking(() -> pass.doCollectInformation(progress));
-                            List<HighlightInfo> passResult = pass.getInfos();
-                            if (passResult != null && !passResult.isEmpty()) {
-                                for (HighlightInfo info : passResult) {
-                                    if (info.getDescription() != null && !info.getDescription().isBlank()) {
-                                        infos.add(info);
+                            ReadAction.runBlocking(() -> {
+                                pass.doCollectInformation(progress);
+                                List<HighlightInfo> passResult = pass.getInfos();
+                                if (passResult != null && !passResult.isEmpty()) {
+                                    for (HighlightInfo info : passResult) {
+                                        if (info.getDescription() != null && !info.getDescription().isBlank()) {
+                                            infos.add(info);
+                                        }
                                     }
                                 }
-                            }
-                            analyzer.getFileStatusMap().markFileUpToDate(document, CodeInsightContexts.anyContext(), pass.getId(), progress);
+                                analyzer.getFileStatusMap().markFileUpToDate(document, CodeInsightContexts.anyContext(), pass.getId(), progress);
+                            });
                         }
                     }
             );

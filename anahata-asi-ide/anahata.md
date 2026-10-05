@@ -12,6 +12,8 @@ This module provides the universal, IDE-agnostic abstractions, domain DTOs, reso
    - Never force NetBeans concepts onto IntelliJ or IntelliJ concepts onto NetBeans or Eclipse.
    - Only abstract genuine redundancies where both IDEs share the exact same semantics.
    - Preserve localized context and terminology so the AI model working in a specific IDE sees authentic, native idioms and conventions.
+   - **Concrete Example / Cautionary Anti-Pattern (The Quick-Fix Execution Badges Leak)**:
+     When implementing quick-fix execution badges (`(⚡)` for headless fixes runnable via `applyHint` vs `(👤)` for interactive UI dialogs/popups), this documentation belongs **strictly** in `IntellijHints.getSystemInstructions()`. Leaking `(⚡)` and `(👤)` into `AbstractHints.getSystemInstructions()` in `anahata-asi-ide` is a violation of this rule: NetBeans (`NbHints`) does not have `(⚡)`/`(👤)` badges because NetBeans applies fixes via `applyHintFix` using static rule catalog IDs, not line-targeted `IntentionAction`s. Host-specific tool capabilities, execution modes, and badges must never be placed in abstract base toolkits.
 
 2. **No `@AgiTool` Annotations on Abstract Toolkit Methods**:
    - Do **NOT** put `@AgiTool` or `@AgiToolParam` annotations on abstract methods in abstract toolkits unless the semantics, parameter descriptions, and behavior are 100% identical letter-by-letter across all IDEs.
