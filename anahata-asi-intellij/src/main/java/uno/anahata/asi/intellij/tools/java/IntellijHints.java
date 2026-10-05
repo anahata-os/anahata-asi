@@ -99,7 +99,7 @@ public class IntellijHints extends AbstractHints {
         instructions.add("""
                 ### IntellijHints Toolkit Instructions:
                 - The `IntellijHints` toolkit allows running inspections on arbitrary files on disk using `getFileHints` and applying quick fixes via `applyHint`.
-                - Use `applyHint` with the line number and the exact action name from `[Fixes: ...]` to execute a single-shot quick fix in one turn.
+                - Use `applyHint` with the line number and the action name from `[Fixes: ...]` to execute a single-shot quick fix in one turn. Only fixes tagged with `(⚡)` can be executed headlessly; fixes tagged with `(👤)` require user interaction in the IDE.
                 - Use `setHintsEnabled` with inspection tool IDs to dynamically enable or disable inspections in the active project profile.
                 """);
         instructions.addAll(super.getSystemInstructions());
@@ -298,7 +298,9 @@ public class IntellijHints extends AbstractHints {
                 info.findRegisteredQuickFix((descriptor, fixRange) -> {
                     IntentionAction action = descriptor.getAction();
                     if (action != null && action.getText() != null && !action.getText().isBlank()) {
-                        fixNames.add(action.getText());
+                        String text = action.getText().trim();
+                        boolean isHeadless = isHeadlessFix(action, text);
+                        fixNames.add(text + (isHeadless ? " (⚡)" : " (👤)"));
                     }
                     return null;
                 });
@@ -353,6 +355,9 @@ public class IntellijHints extends AbstractHints {
         IntentionAction[] chosen = new IntentionAction[1];
         int[] offset = {-1};
         String[] fixLabel = new String[1];
+        String requestedFix = (fixName != null && !fixName.isBlank())
+                ? fixName.replace("(⚡)", "").replace("(👤)", "").trim().toLowerCase()
+                : null;
         ReadAction.runBlocking(() -> {
             for (HighlightInfo info : infos) {
                 if (document.getLineNumber(info.getStartOffset()) != targetLine) {
@@ -360,10 +365,11 @@ public class IntellijHints extends AbstractHints {
                 }
                 info.findRegisteredQuickFix((descriptor, fixRange) -> {
                     IntentionAction action = descriptor.getAction();
-                    if (fixName == null || action.getText().toLowerCase().contains(fixName.toLowerCase())) {
+                    String actionText = (action != null) ? action.getText() : null;
+                    if (actionText != null && (requestedFix == null || actionText.toLowerCase().contains(requestedFix))) {
                         chosen[0] = action;
                         offset[0] = info.getStartOffset();
-                        fixLabel[0] = action.getText();
+                        fixLabel[0] = actionText;
                         return action;
                     }
                     return null;
@@ -379,6 +385,9 @@ public class IntellijHints extends AbstractHints {
         }
 
         IntentionAction fix = chosen[0];
+        if (!isHeadlessFix(fix, fixLabel[0])) {
+            throw new AgiToolException("Quick-fix '" + fixLabel[0] + "' is interactive (👤) and requires user interaction in the IDE UI; it cannot be applied headlessly.");
+        }
         int caretOffset = offset[0];
         Editor[] editorHolder = new Editor[1];
         ApplicationManager.getApplication().invokeAndWait(() -> {
@@ -506,6 +515,32 @@ public class IntellijHints extends AbstractHints {
         } finally {
             ON_DEMAND_ANALYSIS_LOCK.unlock();
         }
+    }
+
+    /**
+     * Determines whether an intention action or quick-fix can be executed headlessly
+     * without displaying interactive UI dialogs, chooser popups, or dictionary selectors.
+     *
+     * @param action The intention action to evaluate.
+     * @param text The human-readable action label.
+     * @return {@code true} if the fix is headless (⚡), {@code false} if interactive (👤).
+     */
+    private static boolean isHeadlessFix(IntentionAction action, String text) {
+        String className = action.getClass().getName();
+        String lower = text.toLowerCase();
+        if (className.contains("Grazie") || lower.contains("dictionary")) {
+            return false;
+        }
+        if (lower.contains("settings") || lower.contains("options") || lower.contains("report") || lower.contains("cloud")) {
+            return false;
+        }
+        if (lower.startsWith("safe delete") || lower.startsWith("show all duplicates") || lower.contains("do not detect duplicates") || lower.startsWith("extract method")) {
+            return false;
+        }
+        if (className.contains("ModCommand")) {
+            return true;
+        }
+        return action.startInWriteAction();
     }
 
     /**

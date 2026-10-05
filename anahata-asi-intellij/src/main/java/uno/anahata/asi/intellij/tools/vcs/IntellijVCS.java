@@ -88,7 +88,11 @@ public class IntellijVCS extends AbstractVCS {
     @Override
     public List<String> getSystemInstructions() throws Exception {
         List<String> instructions = new ArrayList<>();
-        instructions.add("### IntellijVCS Toolkit Instructions:\n- Universal toolkit for Version Control Systems (Git) and IntelliJ Local History.");
+        instructions.add("""
+                ### IntellijVCS Toolkit Instructions:
+                - Universal toolkit for Version Control Systems (Git) and IntelliJ Local History.
+                - **Inspection Fix Badges in Resource Footer**: Quick fixes in `[Fixes: ...]` display `(⚡)` for headless fixes runnable via `applyHint`, and `(👤)` for interactive UI fixes.
+                """);
         instructions.addAll(super.getSystemInstructions());
         instructions.add("""
         ### IntellijVCS & Git4Idea Direct Access:

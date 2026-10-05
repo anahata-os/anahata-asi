@@ -41,6 +41,7 @@ public abstract class AbstractHints extends AnahataToolkit {
     public List<String> getSystemInstructions() throws Exception {
         return List.of(
                 "- **Live Inspection Hints in Resource Footer**: For any text resource loaded in context, live code inspection diagnostics, compiler warnings, errors, and available quick-fix action names are evaluated JIT after tool execution and right before the turn starts, displayed in the resource footer, regardless of whether the resource has a LIVE or SNAPSHOT refresh policy.",
+                "- **Quick-Fix Execution Badges**: Quick fixes in `[Fixes: ...]` are annotated with execution badges: `(⚡)` indicates a headless fix that can be executed programmatically via `applyHint` in a single turn; `(👤)` indicates an interactive fix (e.g. dialogs, chooser popups, dictionary selectors) requiring user interaction in the IDE UI.",
                 "- **Avoid Redundant getFileHints**: DO NOT invoke `getFileHints` on resources that are already in context, as their active diagnostics and available quick-fix actions are already visible in their resource footer."
         );
     }
