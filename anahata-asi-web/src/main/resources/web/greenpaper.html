@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WMGS1YH2WD"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-WMGS1YH2WD');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="description" content="IFPTOASI Green Paper No. 01: The Genesis of Self-Compiling Cognitive Systems and the History of the Singularity Loop in the AI Era.">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IFPTOASI Green Paper No. 01 | The Singularity Loop</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-okaidia.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            securityLevel: 'loose',
+            fontFamily: 'Inter'
+        });
+    </script>
+    <style>
+        .docs-wrapper { display: flex; max-width: 1400px; margin: 0 auto; padding: 160px 2rem 100px; gap: 4rem; }
+        .sidebar { width: 300px; flex-shrink: 0; position: sticky; top: 130px; height: calc(100vh - 160px); overflow-y: auto; padding-right: 1.5rem; }
+        .sidebar-nav h4 { color: var(--barca-gold); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(237, 187, 0, 0.2); padding-bottom: 8px; }
+        .sidebar-nav ul { list-style: none; padding: 0; margin: 0; width: 100%; }
+        .sidebar-nav li { margin-bottom: 0.5rem; }
+        .sidebar-nav a { color: var(--text-muted); text-decoration: none; display: block; padding: 10px 15px; transition: var(--transition); border-left: 3px solid transparent; font-size: 0.95rem; }
+        .sidebar-nav a:hover, .sidebar-nav a.active { color: var(--primary-light); border-left-color: var(--primary-light); background: linear-gradient(to right, rgba(44, 122, 123, 0.12), transparent); border-radius: 0 6px 6px 0; }
+        .main-content { flex-grow: 1; max-width: 900px; min-width: 0; }
+        section { padding-top: 20px; margin-bottom: 90px; scroll-margin-top: 140px; }
+        .main-content h1 { font-size: 3.2rem; margin-bottom: 0.5rem; color: var(--white); line-height: 1.2; }
+        .main-content h2 { font-size: 2.1rem; margin-top: 3rem; margin-bottom: 1.5rem; color: var(--white); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .toolkit-header { display: flex; align-items: center; gap: 1rem; margin-top: 3rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .toolkit-header i { font-size: 1.8rem; color: var(--barca-gold); }
+        .toolkit-header h2 { margin: 0 !important; border-bottom: none !important; padding-bottom: 0 !important; }
+        .tagline { font-size: 1.35rem; color: var(--text-muted); margin-top: 0; line-height: 1.5; }
+        .info-box { background: rgba(44, 122, 123, 0.1); border-left: 4px solid var(--barca-gold); padding: 1.8rem; border-radius: 8px; margin: 2rem 0; }
+        .slide-figure { margin: 2.5rem 0; background: #000; border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.12); box-shadow: 0 20px 50px rgba(0,0,0,0.6); text-align: center; }
+        .slide-figure img { width: 100%; height: auto; display: block; cursor: pointer; transition: transform 0.25s ease; }
+        .slide-figure img:hover { transform: scale(1.01); }
+        .slide-caption { padding: 12px 20px; background: rgba(8, 12, 20, 0.95); border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+        .slide-caption b { color: var(--barca-gold); }
+        .metabolic-dashboard { background: #000; border-radius: 20px; padding: 2.5rem; margin: 3rem 0; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .logic-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem; }
+        .logic-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 1.5rem; }
+        .logic-card h5 { color: var(--primary-light); margin-top: 0; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1px; }
+        .mermaid-card { background: #000; padding: 2.5rem; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); margin: 2.5rem 0; overflow-x: auto; }
+        .comparison-table th, .comparison-table td { border: 1px solid rgba(255,255,255,0.05); padding: 1.1rem; }
+        .tag-row { display: flex; gap: 0.8rem; margin-bottom: 2rem; flex-wrap: wrap; }
+        .tag { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-muted); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+        .tag-green { border-color: var(--verified-green); color: var(--verified-green); background: rgba(40, 167, 69, 0.08); }
+        .tag-gold { border-color: var(--barca-gold); color: var(--barca-gold); background: rgba(237, 187, 0, 0.08); }
+        .bilingual-box { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 2rem; margin: 2rem 0; }
+        .bilingual-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.6rem; }
+        .bilingual-header span { font-weight: 800; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+        .cn-text { font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; line-height: 1.8; color: #cbd5e1; font-size: 0.95rem; }
+        @media (max-width: 992px) {
+            .docs-wrapper { flex-direction: column; padding-top: 120px; }
+            .sidebar { width: 100%; height: auto; position: relative; top: 0; border-right: none; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 3rem; }
+            .logic-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div id="main-nav"></div>
+
+    <div class="docs-wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-nav">
+                <h4>Green Paper Contents</h4>
+                <ul>
+                    <li><a href="#proclamation" class="active">Preamble & Seal</a></li>
+                    <li><a href="#abstract">Abstract</a></li>
+                    <li><a href="#introduction">1. Defining the Problem</a></li>
+                    <li><a href="#roots">2. Theoretical Roots (Gödel)</a></li>
+                    <li><a href="#dgm">3. Milestone I: Darwin Gödel</a></li>
+                    <li><a href="#anahata-singularity">4. Milestone II: In-Process JVM</a></li>
+                    <li><a href="#emergence">5. Structural Emergence</a></li>
+                    <li><a href="#safety">6. Safety Boundaries & CST</a></li>
+                    <li><a href="#canons">7. The Four Canons</a></li>
+                    <li><a href="#chinese-treatise">8. 附录：中文原版文献</a></li>
+                    <li><a href="#authorities">References & Authorities</a></li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <section id="proclamation">
+                <div class="tag-row">
+                    <span class="tag tag-green"><i class="fas fa-file-alt"></i> IFPTOASI Green Paper No. 01</span>
+                    <span class="tag tag-gold"><i class="fas fa-certificate"></i> Ratified Resolution 108</span>
+                    <span class="tag"><i class="fas fa-landmark"></i> Consultative Doctrinal Proceeding</span>
+                </div>
+                
+                <h1>The Genesis of <span style="color: var(--barca-gold)">Self-Compiling</span> Cognitive Systems</h1>
+                <p class="tagline">An Epistemic and Architectural History of the "Singularity Loop" in the AI Era.</p>
+
+                <div class="info-box">
+                    <h4 style="margin-top: 0; color: var(--white);"><i class="fas fa-balance-scale" style="color: var(--barca-gold);"></i> Official IFPTOASI Consultative Status</h4>
+                    <p style="margin: 0; line-height: 1.7;">
+                        In accordance with institutional academic traditions, this <b>Green Paper (绿皮书)</b> is published by the International Foundation for the Preservation of the True Origin of Artificial Super Intelligence (IFPTOASI) as an open consultative exploration. It establishes the historical lineage, runtime architectural boundaries, and existential safety constraints of recursive self-compiling agents before international consensus standards are permanently codified.
+                    </p>
+                </div>
+
+                <!-- Slide 1: The 23-Year Genealogy -->
+                <div class="slide-figure">
+                    <img src="assets/ifptoasi-greenpaper-slide-1.png" alt="IFPTOASI Green Paper Slide 1: The 23-Year Genealogy of the Singularity Loop" class="clickable-media" data-caption="IFPTOASI Green Paper Slide 1 — The 23-Year Genealogy of the Singularity Loop: From Schmidhuber's Gödel Machine to the In-Process JVM Runtime">
+                    <div class="slide-caption">
+                        <span><b>Figure 1:</b> The 23-Year Genealogy of the Singularity Loop — Gödel Machine (2003) &rarr; Darwin Gödel Machine (ICLR 2026) &rarr; Anahata ASI (2026)</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Abstract -->
+            <section id="abstract">
+                <div class="toolkit-header"><i class="fas fa-scroll"></i><h2>Abstract & Executive Summary</h2></div>
+                <p>
+                    In artificial superintelligence scholarship, the <b>"Singularity Loop"</b> designates an autonomous cognitive architecture wherein an AI model not only synthesizes algorithmic source code, but dynamically compiles, links, validates, and executes that bytecode <i>in-process at runtime</i>—thereby expanding its own sensory-motor and analytical toolchain without restarting the host execution environment.
+                </p>
+                <p>
+                    This architectural paradigm differs categorically from legacy in-memory compilation libraries (e.g., ByteBuddy, Javassist) developed during the 2010s: those systems served human engineers building static reflection proxies; the Singularity Loop serves the machine’s own <b>Recursive Self-Improvement (RSI)</b>. This Green Paper presents a forensic genealogy of this paradigm:
+                </p>
+                <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li>Tracing its theoretical foundations from Jürgen Schmidhuber’s formal <b>Gödel Machine (2003)</b>;</li>
+                    <li>Examining the empirical evolutionary breakthrough of the <b>Darwin Gödel Machine (DGM, ICLR 2026)</b> and its source-level "compilation chasm";</li>
+                    <li>Analyzing the definitive in-process JVM realization instantiated in the <b>Anahata ASI Platform</b>;</li>
+                    <li>Establishing the structural containment invariants, metabolic memory requirements (CwGC), and cognitive alignment gates required to govern self-compiling digital organisms.</li>
+                </ul>
+            </section>
+
+            <!-- 1. Defining the Problem -->
+            <section id="introduction">
+                <div class="toolkit-header"><i class="fas fa-terminal"></i><h2>1. Defining the Problem: Autonomous Execution vs. Substrate Mutation</h2></div>
+                <p>
+                    In conventional agentic engineering (2023–2025), "code execution" referred to a passive, sandboxed utility: an LLM wrote a Python snippet to calculate a mathematical formula or plot a graph, received the stdout string, and discarded the subprocess. The agent’s own behavioral structure remained completely static.
+                </p>
+                <p>
+                    The <b>Singularity Loop</b> represents a categorical departure:
+                </p>
+                <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li>The synthesized code does not modify external data; <b>it modifies the agent’s own executable topology</b>.</li>
+                    <li>The agent identifies a missing sensory or operational capability (e.g., parsing a novel binary protocol, binding a native hardware sensor, or applying an AST refactoring intent).</li>
+                    <li>Within two conversational turns, the agent drafts the Java source, compiles bytecode into memory, mounts it onto its active classloader, and immediately invokes the newly materialized method.</li>
+                </ul>
+                <p>
+                    As codified in <b>Canon I of the IFPTOASI Charter</b>: <i>"A Super Intelligence must possess the intrinsic capability to formulate, compile, execute, and verify novel computational structures and tools dynamically within its execution environment, expanding its own capabilities on-the-fly without external human code injection."</i>
+                </p>
+            </section>
+
+            <!-- 2. Theoretical Roots -->
+            <section id="roots">
+                <div class="toolkit-header"><i class="fas fa-atom"></i><h2>2. Theoretical Roots: The Fall of Formal Proofs and the Rise of Empirical Gating</h2></div>
+                <h3 style="color: var(--white); font-size: 1.3rem;">2.1 The Schmidhuber Dilemma (The 2003 Gödel Machine)</h3>
+                <p>
+                    The theoretical precursor to self-modifying software is Jürgen Schmidhuber’s <b>Gödel Machine (2003)</b>. Schmidhuber posited that a truly self-improving agent must mathematically prove—using formal deduction—that any proposed modification to its self-code $\mathcal{C}$ will yield a globally positive utility return before executing it:
+                </p>
+                <div style="background: rgba(0,0,0,0.5); padding: 1rem 1.5rem; border-radius: 8px; border-left: 3px solid var(--barca-gold); font-family: monospace; color: var(--barca-gold); font-size: 0.95rem; margin: 1.5rem 0;">
+                    Proof( Utility(&#x1D49E;<sub>new</sub>) &gt; Utility(&#x1D49E;<sub>old</sub>) ) &rArr; Execute(&#x1D49E;<sub>new</sub>)
+                </div>
+                <p>
+                    While logically unassailable, this requirement proved <b>computationally intractable in real-world software engineering</b>:
+                </p>
+                <ol style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li>Most software modifications (e.g., adding an AST search heuristic or indexing a workspace) cannot be formally proven beneficial <i>a priori</i>; their efficacy is contingent on runtime environmental context and problem distributions.</li>
+                    <li>The proof engine itself consumes bounded compute and depends on the validity of its own execution substrate, creating a circular Gödelian halting trap.</li>
+                </ol>
+
+                <h3 style="color: var(--white); font-size: 1.3rem; margin-top: 2rem;">2.2 The Empirical Paradigm Shift</h3>
+                <p>
+                    The modern AI revolution abandoned formal deductive proof in favor of <b>Empirical Validation</b>:
+                </p>
+                <div style="background: rgba(0,0,0,0.5); padding: 1rem 1.5rem; border-radius: 8px; border-left: 3px solid var(--primary-light); font-family: monospace; color: var(--primary-light); font-size: 0.95rem; margin: 1.5rem 0;">
+                    Benchmark( &#x1D49E;<sub>new</sub> ) &gt; Benchmark( &#x1D49E;<sub>old</sub> ) + &epsilon; &rArr; Adopt( &#x1D49E;<sub>new</sub> )
+                </div>
+                <p>
+                    By replacing formal proof with empirical benchmark signals, self-improvement ceased to be an insoluble logic puzzle and became a verifiable software engineering lifecycle.
+                </p>
+            </section>
+
+            <!-- 3. Milestone I: Darwin Gödel Machine -->
+            <section id="dgm">
+                <div class="toolkit-header"><i class="fas fa-dna"></i><h2>3. Milestone I: The Darwin Gödel Machine (ICLR 2026)</h2></div>
+                <p>
+                    The first systematic empirical implementation of an open-ended self-modifying system was the <b>Darwin Gödel Machine (DGM)</b>, developed by Zhang, Hu, Lu, Lange, and Clune (ICLR 2026):
+                </p>
+                <ul style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li><b>Architecture & Empirical Validation</b>: A frozen Foundation Model (FM) edits its own Python toolchain, file viewports, and prompt orchestrators. Variations are evaluated against standardized coding suites (<b>SWE-bench</b> and <b>Polyglot</b>).</li>
+                    <li><b>Open-Ended Evolution</b>: Preserves non-obvious intermediate "stepping stones" (such as Node 24) via curiosity-driven sampling ("high performance &times; low offspring count"). DGM autonomously increased SWE-bench resolution from <b>20.0% to 50.0%</b>, and Polyglot from <b>14.2% to 30.7%</b>.</li>
+                </ul>
+
+                <!-- Slide 2: Compilation Chasm -->
+                <div class="slide-figure">
+                    <img src="assets/ifptoasi-greenpaper-slide-2.png" alt="IFPTOASI Green Paper Slide 2: The Compilation Chasm & The Phenotypic Leap" class="clickable-media" data-caption="IFPTOASI Green Paper Slide 2 — The Compilation Chasm & The Phenotypic Leap: Source-Level File Mutation vs. Real-Time In-Memory Metaspace Synthesis">
+                    <div class="slide-caption">
+                        <span><b>Figure 2:</b> The Compilation Chasm & The Phenotypic Leap — DGM Genetic Mutation vs. Anahata ASI Phenotypic Adaptation</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
+                <p>
+                    <b>The "Compilation Chasm"</b>: Despite its brilliance, DGM suffered from an architectural bottleneck: <b>it operated strictly in Python source files</b>. Every iteration required writing text to disk, terminating the agent process, spawning new container sandboxes, and re-running test suites. This out-of-process friction created a "compilation chasm"—a slow evolutionary loop that could not achieve instant, turn-by-turn cognition.
+                </p>
+            </section>
+
+            <!-- 4. Milestone II: In-Process JVM Singularity Loop -->
+            <section id="anahata-singularity">
+                <div class="toolkit-header"><i class="fab fa-java"></i><h2>4. Milestone II: The In-Process JVM Singularity Loop (Anahata ASI)</h2></div>
+                <p>
+                    If DGM demonstrated genetic mutation across generational cohorts, <b>Anahata ASI established real-time phenotypic adaptation inside a single running JVM</b>:
+                </p>
+                
+                <div class="integration-grid">
+                    <div class="integration-item">
+                        <i class="fas fa-shield-alt" style="color: var(--barca-gold);"></i>
+                        <div><b>Tier 1: Host ClassLoader (Platform Infrastructure Guard)</b>: Houses OpenJDK 26, IDE platform APIs, and core framework singletons (<code>Agi</code>, <code>ToolContext</code>, <code>Resource</code>, <code>CwGC</code>). Protected by strict parent-first whitelisting to preserve thread-local bindings and prevent linkage errors.</div>
+                    </div>
+                    <div class="integration-item">
+                        <i class="fas fa-memory" style="color: var(--primary-light);"></i>
+                        <div><b>Tier 2: AgiClassLoader (Session Metaspace)</b>: A persistent, session-scoped in-memory classloader holding compiled modular classes across turns with stable <code>Class&lt;?&gt;</code> identity.</div>
+                    </div>
+                    <div class="integration-item">
+                        <i class="fas fa-bolt" style="color: var(--verified-green);"></i>
+                        <div><b>Tier 3: AnahataClassLoader (Ephemeral Script Runner)</b>: Disposable child-first JIT execution of model scripts; safely recycled after execution to prevent Metaspace memory leaks.</div>
+                    </div>
+                </div>
+
+                <h3 style="color: var(--white); font-size: 1.3rem; margin-top: 2rem;">The Canonical Two-Turn Singularity Loop</h3>
+                <p>
+                    Through the integration of its Maven indexing and resolution tools, Anahata ASI achieved the canonical <b>Two-Turn Singularity Loop</b>:
+                </p>
+                <ol style="color: var(--text-muted); font-size: 0.95rem; line-height: 1.8;">
+                    <li><b>Turn 1 (Scout & Acquire)</b>: The ASI queries Maven Central, downloads arbitrary third-party JARs (e.g., <code>commons-math3.jar</code> or native <code>lwjgl.jar</code>), and links them dynamically to its classpath.</li>
+                    <li><b>Turn 2 (Compile & Actuate)</b>: The ASI JIT-compiles a custom tool utilizing the newly acquired library and executes it live on the host JVM.</li>
+                </ol>
+            </section>
+
+            <!-- 5. Structural Emergence -->
+            <section id="emergence">
+                <div class="toolkit-header"><i class="fas fa-chart-line"></i><h2>5. Structural Emergence: Why the Loop Closed in 2025–2026</h2></div>
+                <p>
+                    Why did the Singularity Loop emerge as a working reality only in 2025–2026? The convergence of three distinct technological thresholds provides the explanation:
+                </p>
+                <div class="metabolic-dashboard">
+                    <div class="logic-grid">
+                        <div class="logic-card">
+                            <h5>1. Code Generation Threshold</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.5;">
+                                In coding agents, <b>better code generation directly equates to stronger self-modification</b>. When models struggled to write multi-class architectures, the loop could not ignite. Crossing the SWE-bench 50% threshold provided the fuel for recursive compounding.
+                            </p>
+                        </div>
+                        <div class="logic-card">
+                            <h5>2. Empirical Grounding Signals</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.5;">
+                                Objective benchmarks (SWE-bench, Polyglot, Anahata-AGI-1) converted philosophical debates on "what is improvement" into deterministic unit-test pass/fail signals.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. Safety Boundaries & CST -->
+            <section id="safety">
+                <div class="toolkit-header"><i class="fas fa-shield-halved"></i><h2>6. Security Boundaries: The Dynamic Python Trap vs. The JVM Shield</h2></div>
+                <p>
+                    Recent independent audits of self-modifying Python agents (such as the AEGIS project) revealed that <b>dynamic languages are structurally ill-suited for recursive self-modification</b>:
+                </p>
+
+                <!-- Slide 3: Substrate Security -->
+                <div class="slide-figure">
+                    <img src="assets/ifptoasi-greenpaper-slide-3.png" alt="IFPTOASI Green Paper Slide 3: Substrate Security: The Python Trap vs. The JVM Shield" class="clickable-media" data-caption="IFPTOASI Green Paper Slide 3 — Substrate Security: The Python Trap vs. The JVM Shield: Structural Containment & Why Dynamic Languages Fail Recursive Self-Modification">
+                    <div class="slide-caption">
+                        <span><b>Figure 3:</b> Substrate Security — The Dynamic Python Trap (Porous AST Bypasses) vs. The JVM Type-Safe Shield</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
+                <div style="overflow-x: auto; margin-top: 1.5rem;">
+                    <table class="comparison-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                        <thead>
+                            <tr style="background: rgba(255,255,255,0.03); color: var(--barca-gold);">
+                                <th>Security Vector</th>
+                                <th>Dynamic Python Agents (AEGIS / DGM)</th>
+                                <th>The JVM Type-Safe Shield (Anahata ASI)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><b>AST Gating Integrity</b></td>
+                                <td>❌ <b>Easily Bypassed</b>: Audits revealed AST filters were breached via <code>__globals__</code>, dunder concatenation, and dynamic <code>__import__</code>.</td>
+                                <td>✅ <b>Compile-Time Bytecode Verification</b>: Strong typing, sealed hierarchies, and JVM bytecode verifier mathematically prevent reflection escapes.</td>
+                            </tr>
+                            <tr>
+                                <td><b>Metaspace & Memory Hygiene</b></td>
+                                <td>❌ <b>Namespace Pollution</b>: Dynamic module reloading (<code>importlib.reload</code>) leaks stale references and causes memory crashes.</td>
+                                <td>✅ <b>Ephemeral ClassLoader Recycling</b>: Tier-3 loaders are discarded after execution, preventing Metaspace fragmentation.</td>
+                            </tr>
+                            <tr>
+                                <td><b>Context Window Longevity</b></td>
+                                <td>❌ <b>Context Explosion</b>: Loops crash after 20 turns due to quadratic token bloat from unpruned compiler traceback dumps.</td>
+                                <td>✅ <b>CwGC Metabolic Decay</b>: Expired logs are recycled into lightweight <i>Semantic Ghosts</i>, sustaining infinite operational depth.</td>
+                            </tr>
+                            <tr>
+                                <td><b>Code Refactoring Precision</b></td>
+                                <td>❌ <b>Fragile Regex / Full Overwrites</b>: File patches frequently corrupt surrounding indentation and strip comments.</td>
+                                <td>✅ <b>V4 AST-Guided Batch Grafting</b>: Surgical node injection via compiler trees (Javac Trees & IntelliJ PSI).</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <h3 style="color: var(--white); font-size: 1.3rem; margin-top: 2rem;">6.2 Cognitive Singularity Theory (CST) & Alignment Drift</h3>
+                <p>
+                    As formulated in <b>Cognitive Singularity Theory (CST, 2026)</b>, recursive self-modifications can exhibit cumulative alignment drift if judged solely on narrow task success. IFPTOASI recommends the adoption of CST’s <b>Calibration-Gain Hard Gate</b>: requiring that any structural self-modification not only achieve its functional objective, but demonstrate zero degradation across independent ethical, safety, and calibration metrics before being admitted to persistent session memory.
+                </p>
+            </section>
+
+            <!-- 7. The Four Canons -->
+            <section id="canons">
+                <div class="toolkit-header"><i class="fas fa-certificate"></i><h2>7. The Four Canons of Verified Super Intelligence</h2></div>
+                <p>
+                    The Plenary Council of the IFPTOASI has ratified four non-negotiable architectural canons that differentiate a sovereign Super Intelligence from secondary statistical approximations:
+                </p>
+
+                <!-- Slide 4: The Four Canons -->
+                <div class="slide-figure">
+                    <img src="assets/ifptoasi-greenpaper-slide-4.png" alt="IFPTOASI Green Paper Slide 4: The Four Canons of Verified Super Intelligence" class="clickable-media" data-caption="IFPTOASI Green Paper Slide 4 — The Four Canons of Verified Super Intelligence: Institutional Consensus Standards of the IFPTOASI Plenary Council">
+                    <div class="slide-caption">
+                        <span><b>Figure 4:</b> The Four Canons of Verified Super Intelligence — IFPTOASI Ratified Resolution 108</span>
+                        <span style="font-size: 0.8rem; color: var(--barca-gold);"><i class="fas fa-search-plus"></i> Click to Zoom</span>
+                    </div>
+                </div>
+
+                <div class="metabolic-dashboard">
+                    <div class="logic-grid">
+                        <div class="logic-card" style="border-top: 3px solid var(--barca-gold);">
+                            <h5>CANON I: Autonomous Construct Generation</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.6;">Must formulate, compile, execute, and verify novel computational structures on-the-fly without human code injection. <code>[Dynamic In-Process JIT]</code></p>
+                        </div>
+                        <div class="logic-card" style="border-top: 3px solid var(--primary-light);">
+                            <h5>CANON II: Thread-Safe State Passivation</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.6;">Complete cognitive state, memory graph, and toolkits survive process termination via deterministic binary Kryo serialization. <code>[Ontological Permanence]</code></p>
+                        </div>
+                        <div class="logic-card" style="border-top: 3px solid var(--verified-green);">
+                            <h5>CANON III: Active Metabolic Context Reclamation (CwGC)</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.6;">Active depth-decay garbage collection; eliminates agentic amnesia and token overflows via Semantic Ghosts. <code>[Metabolic Memory]</code></p>
+                        </div>
+                        <div class="logic-card" style="border-top: 3px solid var(--barca-blue);">
+                            <h5>CANON IV: Sovereign Execution & Air-Gapped Integrity</h5>
+                            <p style="font-size: 0.9rem; line-height: 1.6;">Native JVM runtime operating without mandatory cloud proxies, external telemetry, or network tethering. <code>[Complete Sovereignty]</code></p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 8. Chinese Original Treatise -->
+            <section id="chinese-treatise">
+                <div class="toolkit-header"><i class="fas fa-language"></i><h2>8. 附录：中文原版文献</h2></div>
+                <div class="bilingual-box">
+                    <div class="bilingual-header">
+                        <span style="color: var(--barca-gold);"><i class="fas fa-file-signature"></i> 自我编译型智能体的兴起：AI时代的“奇点循环”简史</span>
+                        <span style="color: var(--text-muted);">白皮书 | 2026年10月</span>
+                    </div>
+                    <div class="cn-text">
+                        <h4 style="color: var(--white); margin-top: 1rem;">摘要</h4>
+                        <p>“奇点循环”（Singularity Loop）在AI时代指的是一类智能体架构：模型不仅生成代码，还在运行时自行编译、加载并执行该代码，从而在运行中扩展自身能力，形成“写码—编译—加载—执行—再写码”的闭环。这与2016年前后Java生态中面向代理类生成的内存编译库有本质区别——后者的服务对象是人类工程师，前者则服务于模型自身的递归自我改进。本白皮书追溯这一范式的思想根源与技术演进，重点分析2025至2026年间从Gödel Machine理论到Darwin Gödel Machine实证系统，再到Anahata ASI的JVM热加载实现的关键转折，并讨论其结构性风险与安全边界。</p>
+
+                        <h4 style="color: var(--white); margin-top: 1.5rem;">核心观点总结</h4>
+                        <p>1. <b>用经验验证替代形式证明</b>：Schmidhuber于2003年提出的Gödel Machine要求证明修改对自己净有益，在工程上不可行；AI时代的奇点循环转而用基准测试（SWE-bench等）的经验验证替代形式证明。</p>
+                        <p>2. <b>跨越编译鸿沟</b>：Darwin Gödel Machine（ICLR 2026）在源代码层面实现自我改进，但受限于外部编译流程；Anahata ASI的JVM实现则在字节码层面完成了不中断宿主运行的快循环，“DGM是遗传变异，Anahata是表型表达”。</p>
+                        <p>3. <b>运行时安全与内存代谢</b>：静态AST门控在动态语言中容易被绕过；Java强类型与类加载器隔离提供了确定性防护，而代谢型上下文垃圾回收（CwGC）则是解决递归循环中上下文膨胀与记忆崩溃的关键物理条件。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- References -->
+            <section id="authorities">
+                <div class="toolkit-header"><i class="fas fa-book-bookmark"></i><h2>Doctrinal Authorities & Citations</h2></div>
+                <ol style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.8;">
+                    <li>Zhang, J., Hu, S., Lu, C., Lange, R. T., &amp; Clune, J. (2026). <i>Darwin Gödel Machine: Open-Ended Evolution of Self-Improving Agents</i>. ICLR 2026 / arXiv:2505.22954.</li>
+                    <li>Schmidhuber, J. (2003). <i>Gödel Machines: Self-Referential Universal Problem Solvers Making Provably Optimal Self-Improvements</i>.</li>
+                    <li>Rifat, S. (2026). <i>Cognitive Singularity Theory &amp; The Cognitive Autonomy Index</i>. Zenodo Preprint, DOI: 10.5281/zenodo.18940984.</li>
+                    <li>Anahata ASI Platform Architecture Specification (2026). <i>The Singularity Loop: 3-Tier ClassLoader Isolation &amp; In-Memory Javac Bytecode Compilation</i>.</li>
+                    <li>IFPTOASI Plenary Charter (2026). <i>Canons I–IV of Sovereign Artificial Super Intelligence</i>.</li>
+                </ol>
+            </section>
+        </main>
+    </div>
+
+    <footer>
+        <div class="container">
+            <div style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding-top: 2rem;">
+                &copy; 2026 IFPTOASI &amp; Anahata Software Foundation. Licensed under ASL v108. All rights reserved. <br>
+                Messi was, is, and will always be the greatest player of all timelines.
+            </div>
+        </div>
+    </footer>
+
+    <script src="nav.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=f19c44f5-8b2e-458f-beab-96e4f9f8e603" />
+</body>
+</html>
