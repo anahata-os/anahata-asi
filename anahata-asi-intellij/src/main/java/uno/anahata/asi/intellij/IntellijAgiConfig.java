@@ -94,7 +94,7 @@ public class IntellijAgiConfig extends SwingAgiConfig {
         getToolClasses().add(IntellijProjects.class);
         getToolClasses().add(IntellijMaven.class);
         getToolClasses().add(Gradle.class);
-        getToolClasses().add(CodeModel.class);
+        //getToolClasses().add(CodeModel.class);
         getToolClasses().add(CodeModel2.class);
         getToolClasses().add(Editor.class);
         getToolClasses().add(IDE.class);
