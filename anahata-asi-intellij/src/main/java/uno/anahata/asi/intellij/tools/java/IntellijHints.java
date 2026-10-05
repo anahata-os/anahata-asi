@@ -1,14 +1,21 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
 package uno.anahata.asi.intellij.tools.java;
 
+import com.intellij.codeHighlighting.TextEditorHighlightingPass;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
+import com.intellij.codeInsight.daemon.HighlightDisplayKey;
+import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerEx;
 import com.intellij.codeInsight.daemon.impl.DaemonCodeAnalyzerImpl;
 import com.intellij.codeInsight.daemon.impl.DaemonProgressIndicator;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
+import com.intellij.codeInsight.daemon.impl.HighlightInfoProcessor;
 import com.intellij.codeInsight.daemon.impl.HighlightingSessionImpl;
+import com.intellij.codeInsight.daemon.impl.TextEditorHighlightingPassRegistrarEx;
 import com.intellij.codeInsight.intention.IntentionAction;
+import com.intellij.codeInsight.multiverse.CodeInsightContexts;
 import com.intellij.codeInspection.ex.InspectionProfileImpl;
 import com.intellij.codeInspection.ex.InspectionToolWrapper;
+import com.intellij.lang.annotation.HighlightSeverity;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.command.WriteCommandAction;
@@ -19,11 +26,13 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.progress.ProgressManager;
+import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.openapi.util.ProperTextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.profile.codeInspection.InspectionProjectProfileManager;
+import com.intellij.psi.PsiDocumentManager;
 import com.intellij.psi.PsiFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,6 +42,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolException;
@@ -60,6 +70,16 @@ import uno.anahata.asi.intellij.internal.ProjectUtils;
 public class IntellijHints extends AbstractHints {
 
     /**
+     * Mutex to serialize on-demand highlighting pass execution, preventing multiple
+     * background context-provider threads from triggering concurrent passes and starving
+     * the Event Dispatch Thread of write permits.
+     */
+    private static final ReentrantLock ON_DEMAND_ANALYSIS_LOCK = new ReentrantLock();
+
+    /** Maximum bounded wait in milliseconds for active daemon highlighting to finish. */
+    private static final long DAEMON_ACTIVE_WAIT_TIMEOUT_MS = 2000;
+
+    /**
      * Constructs the Hints toolkit (instantiated reflectively via its public no-arg constructor).
      */
     public IntellijHints() {
@@ -80,6 +100,7 @@ public class IntellijHints extends AbstractHints {
                 ### IntellijHints Toolkit Instructions:
                 - The `IntellijHints` toolkit allows running inspections on arbitrary files on disk using `getFileHints` and applying quick fixes via `applyHint`.
                 - Use `applyHint` with the line number and the exact action name from `[Fixes: ...]` to execute a single-shot quick fix in one turn.
+                - Use `setHintsEnabled` with inspection tool IDs to dynamically enable or disable inspections in the active project profile.
                 """);
         instructions.addAll(super.getSystemInstructions());
         instructions.add(getHintMetadata());
@@ -87,11 +108,10 @@ public class IntellijHints extends AbstractHints {
     }
 
     /**
-     * Constructs a Markdown summary table of all registered IntelliJ Java inspections
-     * grouped by category, showing their enabled or disabled status, unique rule ID,
-     * and short description.
+     * Constructs a compact Markdown summary of all registered IntelliJ Java inspections
+     * grouped by category, listing active rule IDs first followed by inactive rule IDs.
      *
-     * @return Formatted Markdown table containing the complete hints metadata profile.
+     * @return Formatted Markdown containing the categorized inspection IDs.
      */
     public String getHintMetadata() {
         StringBuilder sb = new StringBuilder();
@@ -104,69 +124,59 @@ public class IntellijHints extends AbstractHints {
             InspectionProfileImpl profile = InspectionProjectProfileManager.getInstance(project).getCurrentProfile();
             List<InspectionToolWrapper<?, ?>> tools = profile.getInspectionTools(null);
 
-            Map<String, List<InspectionToolWrapper<?, ?>>> byCategory = new TreeMap<>();
-            int totalJavaTools = 0;
-            int totalEnabled = 0;
-            int totalDisabled = 0;
+            Map<String, List<String>> activeByCat = new TreeMap<>();
+            Map<String, List<String>> inactiveByCat = new TreeMap<>();
+            int totalActive = 0;
+            int totalInactive = 0;
 
             for (InspectionToolWrapper<?, ?> tool : tools) {
                 String lang = tool.getLanguage();
                 if (!("JAVA".equalsIgnoreCase(lang) || "JVM".equalsIgnoreCase(lang) || "UAST".equalsIgnoreCase(lang))) {
                     continue;
                 }
-                totalJavaTools++;
-                boolean isEnabled = profile.isToolEnabled(tool.getDisplayKey(), null);
-                if (isEnabled) {
-                    totalEnabled++;
-                } else {
-                    totalDisabled++;
-                }
-
                 String[] groupPath = tool.getGroupPath();
                 String group = (groupPath != null && groupPath.length > 0) ? String.join(" > ", groupPath) : tool.getGroupDisplayName();
                 if (group == null || group.isBlank()) {
                     group = "Other";
                 }
-                byCategory.computeIfAbsent(group, k -> new ArrayList<>()).add(tool);
+
+                boolean isEnabled = profile.isToolEnabled(tool.getDisplayKey(), null);
+                String id = "`" + tool.getShortName() + "`";
+                if (isEnabled) {
+                    totalActive++;
+                    activeByCat.computeIfAbsent(group, k -> new ArrayList<>()).add(id);
+                } else {
+                    totalInactive++;
+                    inactiveByCat.computeIfAbsent(group, k -> new ArrayList<>()).add(id);
+                }
             }
 
             sb.append("## IntelliJ IDEA Java Inspections Profile\n");
             sb.append("- **Profile**: ").append(profile.getName())
-              .append(" | **Total Java Rules**: ").append(totalJavaTools)
-              .append(" | **Active**: ").append(totalEnabled)
-              .append(" | **Disabled**: ").append(totalDisabled).append("\n\n");
+              .append(" | **Total Rules**: ").append(totalActive + totalInactive)
+              .append(" | **Active**: ").append(totalActive)
+              .append(" | **Inactive**: ").append(totalInactive).append("\n\n");
 
-            for (Map.Entry<String, List<InspectionToolWrapper<?, ?>>> entry : byCategory.entrySet()) {
-                String cat = entry.getKey();
-                List<InspectionToolWrapper<?, ?>> catTools = entry.getValue();
+            for (String cat : activeByCat.keySet()) {
+                List<String> active = activeByCat.getOrDefault(cat, Collections.emptyList());
+                List<String> inactive = inactiveByCat.getOrDefault(cat, Collections.emptyList());
 
-                List<InspectionToolWrapper<?, ?>> enabledRules = new ArrayList<>();
-                List<InspectionToolWrapper<?, ?>> disabledRules = new ArrayList<>();
-
-                for (InspectionToolWrapper<?, ?> t : catTools) {
-                    if (profile.isToolEnabled(t.getDisplayKey(), null)) {
-                        enabledRules.add(t);
-                    } else {
-                        disabledRules.add(t);
-                    }
+                sb.append("### `").append(cat).append("`\n");
+                if (!active.isEmpty()) {
+                    sb.append("- **Active**: ").append(String.join(", ", active)).append("\n");
                 }
-
-                enabledRules.sort(Comparator.comparing(InspectionToolWrapper::getDisplayName));
-                disabledRules.sort(Comparator.comparing(InspectionToolWrapper::getDisplayName));
-
-                sb.append("### `").append(cat).append("`\n\n");
-                sb.append("| Enabled | ID | Short Description |\n");
-                sb.append("|---|---|---|\n");
-
-                for (InspectionToolWrapper<?, ?> r : enabledRules) {
-                    String name = r.getDisplayName().replace("|", "/");
-                    sb.append("| ✅ | `").append(r.getShortName()).append("` | ").append(name).append(" |\n");
-                }
-                for (InspectionToolWrapper<?, ?> r : disabledRules) {
-                    String name = r.getDisplayName().replace("|", "/");
-                    sb.append("|   | `").append(r.getShortName()).append("` | ").append(name).append(" |\n");
+                if (!inactive.isEmpty()) {
+                    sb.append("- **Inactive**: ").append(String.join(", ", inactive)).append("\n");
                 }
                 sb.append("\n");
+            }
+
+            for (String cat : inactiveByCat.keySet()) {
+                if (!activeByCat.containsKey(cat)) {
+                    List<String> inactive = inactiveByCat.get(cat);
+                    sb.append("### `").append(cat).append("`\n");
+                    sb.append("- **Inactive**: ").append(String.join(", ", inactive)).append("\n\n");
+                }
             }
         } catch (Exception e) {
             log.warn("Could not build IntelliJ Hints system instructions: {}", e.getMessage());
@@ -175,11 +185,66 @@ public class IntellijHints extends AbstractHints {
     }
 
     /**
+     * Enables or disables multiple IntelliJ Java inspections by their unique IDs in the active inspection profile.
+     *
+     * @param hintIds The list of unique inspection tool IDs to toggle (e.g. {@code ControlFlowStatementWithoutBraces}).
+     * @param enabled Whether to enable (true) or disable (false) the specified inspections.
+     * @return A summary describing how many inspections were toggled.
+     * @throws Exception If updating the inspection profile fails.
+     */
+    @AgiTool("Enables or disables multiple IntelliJ Java inspections by their tool IDs in the active inspection profile.")
+    public String setHintsEnabled(
+            @AgiToolParam("The list of inspection tool IDs to toggle (e.g. 'ControlFlowStatementWithoutBraces').") List<String> hintIds,
+            @AgiToolParam("Whether to enable (true) or disable (false) the inspections.") boolean enabled) throws Exception {
+
+        if (hintIds == null || hintIds.isEmpty()) {
+            throw new AgiToolException("No inspection tool IDs specified to toggle.");
+        }
+        Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+        if (openProjects.length == 0) {
+            throw new AgiToolException("No open project available.");
+        }
+        Project project = openProjects[0];
+        InspectionProfileImpl profile = InspectionProjectProfileManager.getInstance(project).getCurrentProfile();
+
+        List<String> modified = new ArrayList<>();
+        List<String> notFound = new ArrayList<>();
+
+        for (String id : hintIds) {
+            if (id == null || id.isBlank()) {
+                continue;
+            }
+            String toolId = id.trim().replace("`", "");
+            HighlightDisplayKey key = HighlightDisplayKey.find(toolId);
+            InspectionToolWrapper<?, ?> tool = profile.getInspectionTool(toolId, project);
+            if (tool != null || key != null) {
+                profile.setToolEnabled(toolId, enabled, project, true);
+                modified.add(tool != null ? tool.getDisplayName() + " (`" + toolId + "`)" : "`" + toolId + "`");
+            } else {
+                notFound.add(toolId);
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(enabled ? "Enabled " : "Disabled ").append(modified.size()).append(" inspection(s) in profile '")
+          .append(profile.getName()).append("':\n");
+        for (String m : modified) {
+            sb.append("- ").append(m).append("\n");
+        }
+        if (!notFound.isEmpty()) {
+            sb.append("Not found (").append(notFound.size()).append("): ").append(notFound).append("\n");
+        }
+        log((enabled ? "Enabled " : "Disabled ") + modified.size() + " inspection(s) in profile " + profile.getName());
+        return sb.toString().trim();
+    }
+
+    /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Runs IntelliJ's code analysis daemon main passes on demand
-     * using {@link DaemonCodeAnalyzerImpl#runMainPasses} and extracts diagnostics
-     * into {@link IntellijHintInfo} DTOs populated with available quick-fix action names.
+     * Implementation details: Prioritizes IntelliJ's native cached highlights in
+     * {@link com.intellij.openapi.editor.impl.DocumentMarkupModel} when analysis has completed,
+     * waits for active background daemon scanning to finish, or safely executes passes on-demand
+     * under a mutex (excluding external tool passes to eliminate lock contention).
      * </p>
      */
     @Override
@@ -199,7 +264,9 @@ public class IntellijHints extends AbstractHints {
         if (project == null) {
             throw new AgiToolException("No open project can host file: " + filePath);
         }
-        JavaPsi.requireSmart(project);
+        if (DumbService.isDumb(project)) {
+            return Collections.emptyList();
+        }
 
         Object[] resolved = ReadAction.computeBlocking(() -> {
             PsiFile psiFile = JavaPsi.findPsiFile(project, vf);
@@ -212,7 +279,7 @@ public class IntellijHints extends AbstractHints {
             throw new AgiToolException("Could not resolve PSI/document for: " + filePath);
         }
 
-        List<HighlightInfo> infos = runMainPasses(project, psiFile, document);
+        List<HighlightInfo> infos = getHighlightInfos(project, psiFile, document, filePath);
         List<HintInfo> hints = new ArrayList<>();
 
         for (HighlightInfo info : infos) {
@@ -281,7 +348,7 @@ public class IntellijHints extends AbstractHints {
         }
 
         int targetLine = line - 1;
-        List<HighlightInfo> infos = runMainPasses(project, psiFile, document);
+        List<HighlightInfo> infos = getHighlightInfos(project, psiFile, document, filePath);
 
         IntentionAction[] chosen = new IntentionAction[1];
         int[] offset = {-1};
@@ -339,17 +406,122 @@ public class IntellijHints extends AbstractHints {
     }
 
     /**
-     * Runs the analysis daemon's main passes for a file synchronously and returns its
-     * highlights. Must be called off the EDT (AI tool threads qualify).
+     * Resolves all {@link HighlightInfo}s for a file, prioritizing IntelliJ's native cached
+     * highlights in {@link com.intellij.openapi.editor.impl.DocumentMarkupModel} when analysis is complete,
+     * waiting for active scanning if currently running, and safely executing passes on-demand under a mutex if needed.
      *
-     * @param project the host project.
-     * @param psiFile the file to analyze.
-     * @param document the file's document.
-     * @return the highlights produced by the main passes.
+     * @param project The host project.
+     * @param psiFile The PSI file to analyze.
+     * @param document The document corresponding to the file.
+     * @param filePath The absolute file path.
+     * @return The list of highlight infos found in the file.
      */
-    private List<HighlightInfo> runMainPasses(Project project, PsiFile psiFile, Document document) {
+    private List<HighlightInfo> getHighlightInfos(Project project, PsiFile psiFile, Document document, String filePath) {
+        DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
+
+        // 1. Commit any pending document changes to PSI before inspecting
+        PsiDocumentManager.getInstance(project).commitDocument(document);
+
+        // 2. Check IntelliJ native cache guarantee: is analysis already finished?
+        boolean isFinished = ReadAction.computeBlocking(() ->
+                !project.isDisposed() && psiFile.isValid() && analyzer.isAllAnalysisFinished(psiFile)
+        );
+
+        // 3. If not finished, do a bounded wait if daemon is actively running or scheduled
+        if (!isFinished) {
+            long deadline = System.currentTimeMillis() + DAEMON_ACTIVE_WAIT_TIMEOUT_MS;
+            while (System.currentTimeMillis() < deadline) {
+                ProgressManager.checkCanceled();
+                boolean finished = ReadAction.computeBlocking(() ->
+                        !project.isDisposed() && psiFile.isValid() && analyzer.isAllAnalysisFinished(psiFile)
+                );
+                if (finished) {
+                    isFinished = true;
+                    break;
+                }
+                boolean runningOrPending = ReadAction.computeBlocking(() ->
+                        !project.isDisposed() && analyzer.isRunningOrPending()
+                );
+                if (!runningOrPending) {
+                    break;
+                }
+                try {
+                    Thread.sleep(30);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+        }
+
+        // 4. If analysis is finished, extract directly from DocumentMarkupModel (0 ms)
+        if (isFinished) {
+            List<HighlightInfo> cachedInfos = new ArrayList<>();
+            ReadAction.runBlocking(() -> {
+                DaemonCodeAnalyzerEx.processHighlights(
+                        document,
+                        project,
+                        HighlightSeverity.INFORMATION,
+                        0,
+                        document.getTextLength(),
+                        info -> {
+                            if (info.getDescription() != null && !info.getDescription().isBlank()) {
+                                cachedInfos.add(info);
+                            }
+                            return true;
+                        }
+                );
+            });
+            return cachedInfos;
+        }
+
+        // 5. Fallback for closed files: run on-demand passes under mutex
+        ON_DEMAND_ANALYSIS_LOCK.lock();
+        try {
+            // Double-check under lock in case another thread or daemon just finished it
+            boolean finishedUnderLock = ReadAction.computeBlocking(() ->
+                    !project.isDisposed() && psiFile.isValid() && analyzer.isAllAnalysisFinished(psiFile)
+            );
+            if (finishedUnderLock) {
+                List<HighlightInfo> cachedInfos = new ArrayList<>();
+                ReadAction.runBlocking(() -> {
+                    DaemonCodeAnalyzerEx.processHighlights(
+                            document,
+                            project,
+                            HighlightSeverity.INFORMATION,
+                            0,
+                            document.getTextLength(),
+                            info -> {
+                                if (info.getDescription() != null && !info.getDescription().isBlank()) {
+                                    cachedInfos.add(info);
+                                }
+                                return true;
+                            }
+                    );
+                });
+                return cachedInfos;
+            }
+
+            return collectPassesOnDemand(project, psiFile, document);
+        } finally {
+            ON_DEMAND_ANALYSIS_LOCK.unlock();
+        }
+    }
+
+    /**
+     * Executes highlighting passes for a single file on demand without global daemon cancellation,
+     * excluding external tool passes to avoid sleep loops, and marks the file clean in FileStatusMap.
+     *
+     * @param project The host project.
+     * @param psiFile The file to analyze.
+     * @param document The file's document.
+     * @return The list of collected highlight infos.
+     */
+    private List<HighlightInfo> collectPassesOnDemand(Project project, PsiFile psiFile, Document document) {
         List<HighlightInfo> infos = new ArrayList<>();
         DaemonProgressIndicator progress = new DaemonProgressIndicator();
+        DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
+
         ProgressManager.getInstance().runProcess(() -> {
             HighlightingSessionImpl.runInsideHighlightingSession(
                     psiFile,
@@ -357,8 +529,28 @@ public class IntellijHints extends AbstractHints {
                     ProperTextRange.create(0, document.getTextLength()),
                     false,
                     session -> {
-                        DaemonCodeAnalyzerImpl analyzer = (DaemonCodeAnalyzerImpl) DaemonCodeAnalyzer.getInstance(project);
-                        ReadAction.runBlocking(() -> infos.addAll(analyzer.runMainPasses(psiFile, document, progress)));
+                        TextEditorHighlightingPassRegistrarEx registrar = TextEditorHighlightingPassRegistrarEx.getInstanceEx(project);
+                        List<TextEditorHighlightingPass> passes = ReadAction.computeBlocking(() ->
+                                registrar.instantiateMainPasses(psiFile, document, HighlightInfoProcessor.getEmpty())
+                        );
+
+                        for (TextEditorHighlightingPass pass : passes) {
+                            ProgressManager.checkCanceled();
+                            // Skip ExternalToolPass to avoid external CLI linter polling and sleep loops
+                            if (pass.getClass().getSimpleName().contains("ExternalTool")) {
+                                continue;
+                            }
+                            ReadAction.runBlocking(() -> pass.doCollectInformation(progress));
+                            List<HighlightInfo> passResult = pass.getInfos();
+                            if (passResult != null && !passResult.isEmpty()) {
+                                for (HighlightInfo info : passResult) {
+                                    if (info.getDescription() != null && !info.getDescription().isBlank()) {
+                                        infos.add(info);
+                                    }
+                                }
+                            }
+                            analyzer.getFileStatusMap().markFileUpToDate(document, CodeInsightContexts.anyContext(), pass.getId(), progress);
+                        }
                     }
             );
         }, progress);
