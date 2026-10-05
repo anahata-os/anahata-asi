@@ -12,7 +12,7 @@
  *       and adding annotations directly onto the live PSI tree.</li>
  *   <li>{@link uno.anahata.asi.intellij.tools.java.BatchCodeRefiner}: The V4 AST-guided batch refinement engine for inserting,
  *       updating, deleting, and moving whole class members atomically with unified diff generation.</li>
- *   <li>{@link uno.anahata.asi.intellij.tools.java.Hints}: For inspecting on-the-fly code analysis highlights (inspections and
+ *   <li>{@link uno.anahata.asi.intellij.tools.java.IntellijHints}: For inspecting on-the-fly code analysis highlights (inspections and
  *       annotators) and applying quick-fixes programmatically.</li>
  *   <li>{@link uno.anahata.asi.intellij.tools.java.IntellijJava}: For compiling modular classes and executing dynamic scripts
  *       against an open project's classpath and configured SDK.</li>

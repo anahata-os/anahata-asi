@@ -5,7 +5,8 @@
  * <p>This package contains tools for deep source code analysis and manipulation, including:</p>
  * <ul>
  *   <li>{@link uno.anahata.asi.nb.tools.java.CodeModel}: For exploring the type hierarchy, resolving members, and loading source code.</li>
- *   <li>{@link uno.anahata.asi.nb.tools.java.Hints}: For managing IDE-provided code quality suggestions and applying automatic fixes.</li>
+ *   <li>{@link uno.anahata.asi.nb.tools.java.CodeRefiner}: For AST-based source code updates and import optimization.</li>
+ *   <li>{@link uno.anahata.asi.nb.tools.java.BatchCodeRefiner}: For advanced structural Java refinement and batch AST modifications.</li>
  *   <li>{@link uno.anahata.asi.nb.tools.java.NbJava}: For project-aware Java code compilation and dynamic execution.</li>
  * </ul>
  * <p>

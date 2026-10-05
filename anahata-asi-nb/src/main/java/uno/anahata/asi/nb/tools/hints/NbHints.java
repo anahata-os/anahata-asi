@@ -27,7 +27,6 @@ import uno.anahata.asi.agi.tool.AgiTool;
 import uno.anahata.asi.agi.tool.AgiToolParam;
 import uno.anahata.asi.ide.tools.hints.AbstractHints;
 import uno.anahata.asi.ide.tools.hints.HintInfo;
-import uno.anahata.asi.ide.tools.hints.HintMetadata;
 import org.netbeans.api.java.project.JavaProjectConstants;
 import org.netbeans.api.java.source.JavaSource;
 import org.openide.filesystems.FileObject;
