@@ -439,7 +439,11 @@ public class IntellijMaven extends AnahataToolkit {
         Integer exitCode = exitCodeHolder.get();
 
         log("Maven run completed with status: " + status + ", exitCode: " + exitCode + ", " + phases.size() + " phases executed. (Log: " + logFilePath + ")");
-        return new MavenBuildResult(status, exitCode, stdOutput, stdError, logFilePath, phases);
+        List<MavenBuildResult.BuildPhase> finalizedPhases;
+        synchronized (phases) {
+            finalizedPhases = new ArrayList<>(phases);
+        }
+        return new MavenBuildResult(status, exitCode, stdOutput, stdError, logFilePath, finalizedPhases);
     }
 
     /**
