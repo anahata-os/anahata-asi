@@ -82,12 +82,18 @@ public class NbVCS extends AbstractVCS {
 
     /**
      * {@inheritDoc}
-     * <p>Contributes system instructions describing how to access NetBeans's native GitClient for advanced Git operations.</p>
+     * <p>
+     * Implementation details: Places the NbVCS toolkit header first, incorporates universal
+     * VCS instructions from {@code super.getSystemInstructions()}, and appends NetBeans GitClient direct access instructions.
+     * </p>
      */
     @Override
-    public List<String> getSystemInstructions() {
-        return List.of("""
-        ### NetBeans VCS & Git Engine Direct Access:
+    public List<String> getSystemInstructions() throws Exception {
+        List<String> instructions = new ArrayList<>();
+        instructions.add("### NbVCS Toolkit Instructions:\n- Universal toolkit for NetBeans Versioning Systems (Git, Mercurial, Subversion) and Local History.");
+        instructions.addAll(super.getSystemInstructions());
+        instructions.add("""
+        ### NbVCS & NetBeans Git Engine Direct Access:
         For advanced Git operations not exposed as discrete `@AgiTool` methods (such as cherry-pick, interactive rebase, stash, hard reset, or tag management), you can use `NbJava.compileAndExecute` to obtain NetBeans's managed `GitClient`:
         ```java
         File repoRoot = new File("/path/to/repo");
@@ -104,6 +110,7 @@ public class NbVCS extends AbstractVCS {
         ```
         This client is pre-wired with NetBeans's Keyring credentials, SSH session factory, and VFS synchronization.
         """);
+        return instructions;
     }
 
     /**

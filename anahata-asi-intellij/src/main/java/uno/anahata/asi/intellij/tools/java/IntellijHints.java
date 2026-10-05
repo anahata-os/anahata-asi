@@ -68,20 +68,22 @@ public class IntellijHints extends AbstractHints {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Supplies usage guidance and the live catalog of all registered
-     * IntelliJ Java inspections categorized into markdown tables showing active and disabled status
-     * for prefix KV-cache optimization.
+     * Implementation details: Combines universal hint instructions from {@code super.getSystemInstructions()}
+     * with IntelliJ-specific usage guidance for single-shot quick fixes via {@link #applyHint(String, int, String)}
+     * and the live catalog of all registered IntelliJ Java inspections categorized into markdown tables for prefix KV-cache optimization.
      * </p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Hints Toolkit Instructions:\n");
-        sb.append("- Use `getFileHints` to inspect a file for code warnings, errors, and available quick-fix actions.\n");
-        sb.append("- Use `applyHint` with the line number and the exact action name from `[Fixes: ...]` to execute a single-shot quick fix.\n");
-        sb.append("- For resources already loaded in context, live inspection hints are dynamically evaluated and displayed directly in their resource headers.\n\n");
-        sb.append(getHintMetadata());
-        return Collections.singletonList(sb.toString());
+        List<String> instructions = new ArrayList<>();
+        instructions.add("""
+                ### IntellijHints Toolkit Instructions:
+                - The `IntellijHints` toolkit allows running inspections on arbitrary files on disk using `getFileHints` and applying quick fixes via `applyHint`.
+                - Use `applyHint` with the line number and the exact action name from `[Fixes: ...]` to execute a single-shot quick fix in one turn.
+                """);
+        instructions.addAll(super.getSystemInstructions());
+        instructions.add(getHintMetadata());
+        return instructions;
     }
 
     /**

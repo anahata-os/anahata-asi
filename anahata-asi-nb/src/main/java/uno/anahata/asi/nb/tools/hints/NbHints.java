@@ -58,19 +58,22 @@ public class NbHints extends AbstractHints {
     /**
      * {@inheritDoc}
      * <p>
-     * Implementation details: Supplies canonical FQN standard, member hints instructions,
-     * and the live catalog of all registered NetBeans Java hints categorized
-     * into markdown tables showing enabled and disabled status for maximum prefix KV-cache efficiency.
+     * Implementation details: Combines the NbHints toolkit header and tools guidance with universal hint
+     * instructions from {@code super.getSystemInstructions()}, canonical FQNs, and the NetBeans inspection catalog.
      * </p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Hints Toolkit Instructions:\n");
-        sb.append("- Use `getMemberHints` with a Canonical FQN to find issues in specific members.\n\n");
-        sb.append(JavaSourceUtils.CANONICAL_FQN_STANDARD).append("\n\n");
-        sb.append(getHintMetadata());
-        return Collections.singletonList(sb.toString());
+        List<String> instructions = new ArrayList<>();
+        instructions.add("""
+                ### NbHints Toolkit Instructions:
+                - Use `getMemberHints` with a Canonical FQN to find issues in specific members.
+                - Use `applyHintFix` to apply a specific hint fix to a file by its ID.
+                """);
+        instructions.addAll(super.getSystemInstructions());
+        instructions.add(JavaSourceUtils.CANONICAL_FQN_STANDARD);
+        instructions.add(getHintMetadata());
+        return instructions;
     }
 
     /**

@@ -80,12 +80,18 @@ public class IntellijVCS extends AbstractVCS {
 
     /**
      * {@inheritDoc}
-     * <p>Contributes system instructions describing how to access IntelliJ's native Git4Idea engine for advanced Git operations.</p>
+     * <p>
+     * Implementation details: Places the IntellijVCS toolkit header first, incorporates universal
+     * VCS instructions from {@code super.getSystemInstructions()}, and appends Git4Idea direct access instructions.
+     * </p>
      */
     @Override
-    public List<String> getSystemInstructions() {
-        return List.of("""
-        ### IntelliJ VCS & Git4Idea Direct Access:
+    public List<String> getSystemInstructions() throws Exception {
+        List<String> instructions = new ArrayList<>();
+        instructions.add("### IntellijVCS Toolkit Instructions:\n- Universal toolkit for Version Control Systems (Git) and IntelliJ Local History.");
+        instructions.addAll(super.getSystemInstructions());
+        instructions.add("""
+        ### IntellijVCS & Git4Idea Direct Access:
         For advanced Git operations not exposed as discrete `@AgiTool` methods (such as interactive rebase, cherry-pick, stash, hard reset, or tag management), you can use `compileAndExecute` to interact directly with IntelliJ's `GitRepositoryManager` and `Git` commands:
         ```java
         Project project = ProjectManager.getInstance().getOpenProjects()[0];
@@ -97,6 +103,7 @@ public class IntellijVCS extends AbstractVCS {
         ```
         This execution pipeline is pre-configured with IntelliJ's SSH keys, credential helpers, and Virtual File System (VFS) synchronization.
         """);
+        return instructions;
     }
 
     /**

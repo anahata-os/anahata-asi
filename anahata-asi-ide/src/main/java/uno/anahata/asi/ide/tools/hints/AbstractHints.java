@@ -39,11 +39,10 @@ public abstract class AbstractHints extends AnahataToolkit {
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        return List.of("""
-                ### Live Inspection Hints:
-                - For any text resource loaded in context, live code inspection diagnostics, compiler warnings, errors, and available quick-fix action names are evaluated JIT after tool execution and right before the turn starts, displayed in the resource footer, regardless of whether the resource has a LIVE or SNAPSHOT refresh policy.
-                - DO NOT invoke `getFileHints` on resources that are already in context, as their active diagnostics and available quick-fix actions are already visible in their resource footer.
-                """);
+        return List.of(
+                "- **Live Inspection Hints in Resource Footer**: For any text resource loaded in context, live code inspection diagnostics, compiler warnings, errors, and available quick-fix action names are evaluated JIT after tool execution and right before the turn starts, displayed in the resource footer, regardless of whether the resource has a LIVE or SNAPSHOT refresh policy.",
+                "- **Avoid Redundant getFileHints**: DO NOT invoke `getFileHints` on resources that are already in context, as their active diagnostics and available quick-fix actions are already visible in their resource footer."
+        );
     }
 
     /**
