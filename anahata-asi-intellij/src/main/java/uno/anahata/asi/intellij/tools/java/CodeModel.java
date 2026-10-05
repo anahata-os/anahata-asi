@@ -31,12 +31,13 @@ import java.util.stream.Collectors;
 /**
  * Provides tools for interacting with the Java code model in IntelliJ IDEA.
  * This includes finding types, listing members, retrieving source code fragments, 
- * loading Javadocs, and navigating type hierarchies.
+ * loading Javadocs, and navigating type hierarchies across all open projects,
+ * external library dependencies (e.g. Kryo, Jackson, Spring), and the IntelliJ Platform SDK.
  * 
  * @author anahata
  */
 @Slf4j
-@AgiToolkit("A toolkit for browsing types, members, sources and javadocs.")
+@AgiToolkit("Explores Java types, members, sources, and javadocs across all open projects, external library dependencies (e.g. Kryo, Jackson, Spring), and the IntelliJ Platform SDK using GlobalSearchScope.allScope.")
 public class CodeModel extends AnahataToolkit {
 
     /**
@@ -50,16 +51,21 @@ public class CodeModel extends AnahataToolkit {
      * {@inheritDoc}
      * <p>
      * Provides context-aware system instructions for the CodeModel toolkit, detailing
-     * the usage of FQN-based methods versus discovery-based searches.
+     * the full classpath scope (open projects, library dependencies, and IntelliJ SDK/JDK),
+     * library source availability, and the usage of FQN-based methods versus discovery searches.
      * </p>
      */
     @Override
     public List<String> getSystemInstructions() throws Exception {
-        String instructions = "CodeModel Toolkit Instructions:\n" 
-                + "- **One Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the FQN of a type or member, use these methods to skip discovery.\n" 
-                + "- **Disambiguation**: If a `xxxxByFqn` method fails, use `findTypes` or `getMembers` to get the explicit high-precision FQN.\n"
-                + "- **Hierarchy**: Use `getSubtypes` and `getSupertypes` to explore inheritance.\n";
-        return Collections.singletonList(instructions);
+        List<String> instructions = new ArrayList<>(super.getSystemInstructions());
+        String codeModelInstructions = "CodeModel Toolkit Scope & Instructions:\n"
+                + "- **Scope & Classpath (`GlobalSearchScope.allScope`)**: CodeModel operates across all open projects, their external dependencies (Maven/Gradle library JARs such as Kryo, Spring, Jackson, etc.), and the IntelliJ Platform SDK/JDK.\n"
+                + "- **Library & Platform Sources**: Sources for external dependencies and platform classes are fully accessible. If physical sources are attached, they are loaded directly; if not, decompiled bytecode is provided as managed memory resources.\n"
+                + "- **One-Shot Methods (`loadXxxxByFqn` or `getXxxxByFqn`)**: If you already know or can work out the FQN of a type or member (e.g. 'com.esotericsoftware.kryo.Kryo' or 'com.intellij.psi.PsiClass'), use these methods to skip discovery.\n"
+                + "- **Disambiguation**: If a `xxxxByFqn` method fails or FQN is unknown, use `findTypes` or `getMembers` to discover the exact FQN.\n"
+                + "- **Hierarchy**: Use `getSubtypes` and `getSupertypes` to explore inheritance trees across project classes and libraries.\n";
+        instructions.add(codeModelInstructions);
+        return instructions;
     }
 
     /**
@@ -72,7 +78,7 @@ public class CodeModel extends AnahataToolkit {
      * @param pageSize Max results per page.
      * @return Paginated result of JavaType.
      */
-    @AgiTool("Finds any Java types matching a query within the aggregated classpath of all open projects and returns a paginated result of minimalist, machine-readable keys.")
+    @AgiTool("Finds Java types matching a query across all open projects, library dependencies (e.g. Kryo, Spring, Maven/Gradle JARs), and the IntelliJ SDK/JDK using GlobalSearchScope.allScope. Returns a paginated result of minimalist, machine-readable keys.")
     public Page<JavaType> findTypes(
             @AgiToolParam("The search query: simple class name (e.g. 'CodeModel'), FQN (e.g. 'java.util.List'), or simple name glob wildcard (e.g. '*Renderer', 'Gutter*'). Do not include the '.java' extension or package wildcards.") String query,
             @AgiToolParam("Whether the search should be case-sensitive.") boolean caseSensitive,
@@ -190,7 +196,7 @@ public class CodeModel extends AnahataToolkit {
      * @return Confirmation message.
      * @throws Exception on execution failure.
      */
-    @AgiTool("Loads the source file for a given `JavaType` (as returned by `Codemodel.findTypes`) as a managed text resource. Works only for outer types (whole java files that can be loaded into context), for inner classess use `getMemberSources` or `getMemberSourcesByFqn`")
+    @AgiTool("Loads the source file for a given `JavaType` (as returned by `CodeModel.findTypes`) as a managed text resource. Supports project source files, external library dependencies (e.g. Kryo, Jackson), and IntelliJ Platform SDK classes (via attached source JARs or decompiled bytecode). Works only for outer types; for inner classes use `getMemberSources` or `getMemberSourcesByFqn`.")
     public String loadTypeSources(
             @AgiToolParam("The minimalist keychain DTO from a findTypes call.") JavaType javaType) throws Exception {
         awaitSmart();
@@ -255,7 +261,7 @@ public class CodeModel extends AnahataToolkit {
      * @return Confirmation message summarizing the loaded sources.
      * @throws Exception on execution failure.
      */
-    @AgiTool(value = "Loads the source files for java types as managed resources by their fully qualified names (fqns). Fails if any FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
+    @AgiTool(value = "Loads the source files for java types (including project sources, external library dependencies like Kryo, and IntelliJ Platform SDK classes) as managed resources by their fully qualified names (FQNs). Fails if any FQN is ambiguous.", permission = ToolPermission.APPROVE_ALWAYS)
     public String loadTypeSourcesByFqn(
             @AgiToolParam("The list of fully qualified names of the types.") List<String> fqns) throws Exception {
         StringBuilder sb = new StringBuilder();
