@@ -126,6 +126,12 @@
             .apps-row {
                 grid-template-columns: 1fr;
             }
+            .apps-container-grid {
+                grid-template-columns: 1fr !important;
+            }
+            .ide-tiles-row {
+                grid-template-columns: 1fr !important;
+            }
         }
         .app-tile-ij { border-top-color: var(--accent); }
         .comparison-table th, .comparison-table td {
@@ -521,22 +527,60 @@
                             <div class="label-suffix">Containers</div>
                         </div>
                         <div class="stack-content">
-                            <div class="apps-row">
-                                <a href="desktop.html" class="app-tile">
-                                    <i class="fas fa-rocket"></i>
-                                    <h3>ASI Desktop</h3>
-                                    <p>Pure Java portable launcher for standalone environments.</p>
+                            <div class="apps-container-grid" style="display: grid; grid-template-columns: 240px 1fr; gap: 0.75rem; align-items: stretch;">
+                                <!-- Left: Desktop Standalone (bypasses IDE layer, talks straight to Swing) -->
+                                <a href="desktop.html" class="app-tile" style="display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; height: 100%; box-sizing: border-box; border-top-color: var(--primary-light); padding: 1.2rem 1rem;">
+                                    <i class="fas fa-rocket" style="font-size: 2rem; color: var(--primary-light); margin-bottom: 0.8rem;"></i>
+                                    <h3 style="font-size: 1.05rem; margin-bottom: 0.5rem;">ASI Desktop</h3>
+                                    <p style="font-size: 0.8rem; line-height: 1.4; color: var(--text-muted);">Pure Java portable launcher for standalone desktop environments.</p>
+                                    <span style="margin-top: 0.8rem; font-size: 0.7rem; color: var(--barca-gold); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Standalone &bull; No IDE</span>
                                 </a>
-                                <a href="nb.html" class="app-tile app-tile-nb">
-                                    <i class="fas fa-code"></i>
-                                    <h3>NetBeans ASI Studio</h3>
-                                    <p>Full NetBeans container with deep architectural observability.</p>
-                                </a>
-                                <a href="intellij.html" class="app-tile app-tile-ij">
-                                    <i class="fas fa-laptop-code" style="color: var(--accent);"></i>
-                                    <h3>IntelliJ ASI Studio <span class="beta-badge" style="margin-left: 4px;">BETA</span></h3>
-                                    <p>JetBrains OpenAPI container with live PSI tree and VFS sync.</p>
-                                </a>
+
+                                <!-- Right: IDE Subsystem (rests on ASI IDE) -->
+                                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                    <!-- 3 IDEs Row -->
+                                    <div class="ide-tiles-row" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                                        <!-- NetBeans -->
+                                        <a href="nb.html" class="app-tile app-tile-nb" style="margin: 0; padding: 1rem 0.8rem;">
+                                            <i class="fas fa-code"></i>
+                                            <h3 style="font-size: 0.9rem;">NetBeans ASI Studio</h3>
+                                            <p style="font-size: 0.75rem;">Full NetBeans container with deep architectural observability.</p>
+                                        </a>
+
+                                        <!-- IntelliJ -->
+                                        <a href="intellij.html" class="app-tile app-tile-ij" style="margin: 0; padding: 1rem 0.8rem; border-top-color: var(--accent);">
+                                            <i class="fas fa-laptop-code" style="color: var(--accent);"></i>
+                                            <h3 style="font-size: 0.9rem;">IntelliJ ASI Studio <span class="beta-badge" style="margin-left: 2px;">BETA</span></h3>
+                                            <p style="font-size: 0.75rem;">JetBrains OpenAPI container with live PSI tree and VFS sync.</p>
+                                        </a>
+
+                                        <!-- Eclipse (Planned) -->
+                                        <div class="app-tile" style="margin: 0; padding: 1rem 0.8rem; border-top-color: #c792ea; background: rgba(255,255,255,0.015); cursor: default;">
+                                            <i class="fas fa-circle-half-stroke" style="color: #c792ea; font-size: 1.2rem; margin-bottom: 0.5rem;"></i>
+                                            <h3 style="font-size: 0.9rem; color: var(--white);">Eclipse Studio <span class="badge" style="background: rgba(199, 146, 234, 0.15); color: #c792ea; border: 1px solid rgba(199, 146, 234, 0.4); font-size: 0.6rem; padding: 1px 5px; border-radius: 4px; font-weight: 800; margin-left: 2px;">PLANNED</span></h3>
+                                            <p style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px;">Universal OSGi Eclipse IDE workspace plugin integration.</p>
+                                            <a href="https://discord.gg/gwGWWxPUXE" target="_blank" rel="noopener noreferrer" style="font-size: 0.72rem; color: var(--barca-gold); font-weight: 700; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px; margin-top: 2px;">
+                                                <i class="fas fa-hands-helping"></i> Volunteers wanted
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <!-- Shared IDE Sub-Layer Foundation Dock -->
+                                    <div class="ide-subsystem-dock" style="background: rgba(44, 122, 123, 0.08); border: 1px solid rgba(49, 151, 149, 0.35); border-radius: 8px; padding: 10px 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <i class="fas fa-layer-group" style="color: var(--barca-gold); font-size: 1rem;"></i>
+                                                <span style="font-size: 0.9rem; font-weight: 800; color: var(--white); letter-spacing: 0.5px;">ASI IDE</span>
+                                                <code style="font-size: 0.78rem; color: var(--primary-light); background: rgba(0,0,0,0.3); padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.08); font-family: 'JetBrains Mono', monospace;">AbstractIdeAsiContainer</code>
+                                            </div>
+                                            <span class="badge" style="background: rgba(44, 122, 123, 0.25); color: var(--primary-light); border: 1px solid var(--primary-light); font-size: 0.68rem; padding: 2px 7px; border-radius: 4px; font-weight: 700; text-transform: uppercase;">Shared IDE Substrate</span>
+                                        </div>
+                                        <div style="font-size: 0.78rem; color: var(--text-muted); line-height: 1.45;">
+                                            Universal abstraction layer for IDE host runtimes. Provides <code>IdeHandle</code>, universal <b>VCS</b>, <b>Projects</b> &amp; <b>Hints</b> contracts. 
+                                            <span style="color: var(--white); font-weight: 600;">Active Migration:</span> Consolidating <code>CodeModel</code>, <code>CodeRefiner</code>, <code>BatchCodeRefiner</code>, <code>Maven</code>, and <code>Refactor</code> into unified IDE-agnostic contracts.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
