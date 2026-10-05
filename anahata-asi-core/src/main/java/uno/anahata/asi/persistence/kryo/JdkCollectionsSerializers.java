@@ -7,16 +7,23 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.ImmutableCollectionsSerializers;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
+import java.util.RandomAccess;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.SortedSet;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -39,53 +46,42 @@ public class JdkCollectionsSerializers {
      * @param kryo The Kryo instance to register serializers with.
      */
     public static void register(Kryo kryo) {
-        // 1. Immutable Collections (JDK 9+ List.of, Set.of, Map.of, Map.ofEntries)
-        Serializer<List<?>> immutableListSerializer = new ImmutableListSerializer();
-        registerIfNotNull(kryo, List.of().getClass(), immutableListSerializer);
-        registerIfNotNull(kryo, List.of(1).getClass(), immutableListSerializer);
-        registerIfNotNull(kryo, List.of(1, 2).getClass(), immutableListSerializer);
-        registerIfNotNull(kryo, List.of(1, 2, 3).getClass(), immutableListSerializer);
-        registerIfNotNull(kryo, List.of(1, 2, 3).subList(0, 1).getClass(), immutableListSerializer);
+        // 1. Immutable Collections (delegated to Kryo's built-in ImmutableCollectionsSerializers)
+        ImmutableCollectionsSerializers.registerSerializers(kryo);
 
-        Serializer<Set<?>> immutableSetSerializer = new ImmutableSetSerializer();
-        registerIfNotNull(kryo, Set.of().getClass(), immutableSetSerializer);
-        registerIfNotNull(kryo, Set.of(1).getClass(), immutableSetSerializer);
-        registerIfNotNull(kryo, Set.of(1, 2).getClass(), immutableSetSerializer);
-        registerIfNotNull(kryo, Set.of(1, 2, 3).getClass(), immutableSetSerializer);
-
-        Serializer<Map<?, ?>> immutableMapSerializer = new ImmutableMapSerializer();
-        registerIfNotNull(kryo, Map.of().getClass(), immutableMapSerializer);
-        registerIfNotNull(kryo, Map.of(1, 1).getClass(), immutableMapSerializer);
-        registerIfNotNull(kryo, Map.of(1, 1, 2, 2).getClass(), immutableMapSerializer);
-        registerIfNotNull(kryo, Map.of(1, 1, 2, 2, 3, 3).getClass(), immutableMapSerializer);
-
-        // 2. Arrays.asList fixed-size list
-        registerIfNotNull(kryo, Arrays.asList(1, 2).getClass(), new ArraysListSerializer());
-
-        // 3. java.util.Collections singletons
-        registerIfNotNull(kryo, Collections.singletonList(1).getClass(), new SingletonListSerializer());
-        registerIfNotNull(kryo, Collections.singleton(1).getClass(), new SingletonSetSerializer());
-        registerIfNotNull(kryo, Collections.singletonMap(1, 1).getClass(), new SingletonMapSerializer());
-
-        // 4. java.util.Collections empties
-        registerIfNotNull(kryo, Collections.emptyList().getClass(), new EmptyListSerializer());
-        registerIfNotNull(kryo, Collections.emptySet().getClass(), new EmptySetSerializer());
-        registerIfNotNull(kryo, Collections.emptyMap().getClass(), new EmptyMapSerializer());
+        // 2. java.util.Collections empty navigable/sorted collections (not provided by Kryo)
         registerIfNotNull(kryo, Collections.emptyNavigableSet().getClass(), new EmptyNavigableSetSerializer());
         registerIfNotNull(kryo, Collections.emptyNavigableMap().getClass(), new EmptyNavigableMapSerializer());
         registerIfNotNull(kryo, Collections.emptySortedSet().getClass(), new EmptySortedSetSerializer());
         registerIfNotNull(kryo, Collections.emptySortedMap().getClass(), new EmptySortedMapSerializer());
 
-        // 5. java.util.Collections unmodifiable wrappers
+        // 3. java.util.Collections unmodifiable wrappers (not provided by Kryo)
+        Serializer<Collection<?>> unmodifiableCollectionSerializer = new UnmodifiableCollectionSerializer();
+        registerIfNotNull(kryo, Collections.unmodifiableCollection(new ArrayList<>()).getClass(), unmodifiableCollectionSerializer);
+
         Serializer<List<?>> unmodifiableListSerializer = new UnmodifiableListSerializer();
         registerIfNotNull(kryo, Collections.unmodifiableList(new ArrayList<>()).getClass(), unmodifiableListSerializer);
-        registerIfNotNull(kryo, Collections.unmodifiableList(new java.util.LinkedList<>()).getClass(), unmodifiableListSerializer);
+        registerIfNotNull(kryo, Collections.unmodifiableList(new LinkedList<>()).getClass(), unmodifiableListSerializer);
 
         Serializer<Set<?>> unmodifiableSetSerializer = new UnmodifiableSetSerializer();
         registerIfNotNull(kryo, Collections.unmodifiableSet(new HashSet<>()).getClass(), unmodifiableSetSerializer);
 
         Serializer<Map<?, ?>> unmodifiableMapSerializer = new UnmodifiableMapSerializer();
         registerIfNotNull(kryo, Collections.unmodifiableMap(new HashMap<>()).getClass(), unmodifiableMapSerializer);
+
+        // 4. java.util.Collections synchronized wrappers (not provided by Kryo)
+        Serializer<Collection<?>> synchronizedCollectionSerializer = new SynchronizedCollectionSerializer();
+        registerIfNotNull(kryo, Collections.synchronizedCollection(new ArrayList<>()).getClass(), synchronizedCollectionSerializer);
+
+        Serializer<List<?>> synchronizedListSerializer = new SynchronizedListSerializer();
+        registerIfNotNull(kryo, Collections.synchronizedList(new ArrayList<>()).getClass(), synchronizedListSerializer);
+        registerIfNotNull(kryo, Collections.synchronizedList(new LinkedList<>()).getClass(), synchronizedListSerializer);
+
+        Serializer<Set<?>> synchronizedSetSerializer = new SynchronizedSetSerializer();
+        registerIfNotNull(kryo, Collections.synchronizedSet(new HashSet<>()).getClass(), synchronizedSetSerializer);
+
+        Serializer<Map<?, ?>> synchronizedMapSerializer = new SynchronizedMapSerializer();
+        registerIfNotNull(kryo, Collections.synchronizedMap(new HashMap<>()).getClass(), synchronizedMapSerializer);
     }
 
     /**
@@ -102,387 +98,9 @@ public class JdkCollectionsSerializers {
     }
 
     /**
-     * Kryo serializer for JDK 9+ {@link List#of()} and immutable lists.
-     */
-    public static class ImmutableListSerializer extends Serializer<List<?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public ImmutableListSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the size followed by each list element.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, List<?> list) {
-            output.writeInt(list.size(), true);
-            for (Object item : list) {
-                kryo.writeClassAndObject(output, item);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes elements and reconstructs an immutable list preserving contract fidelity.</p>
-         */
-        @Override
-        public List<?> read(Kryo kryo, Input input, Class<? extends List<?>> type) {
-            int size = input.readInt(true);
-            if (size == 0) {
-                return List.of();
-            }
-            Object[] array = new Object[size];
-            boolean hasNull = false;
-            for (int i = 0; i < size; i++) {
-                array[i] = kryo.readClassAndObject(input);
-                if (array[i] == null) {
-                    hasNull = true;
-                }
-            }
-            if (hasNull) {
-                return Collections.unmodifiableList(Arrays.asList(array));
-            }
-            return List.of(array);
-        }
-    }
-
-    /**
-     * Kryo serializer for JDK 9+ {@link Set#of()} and immutable sets.
-     */
-    public static class ImmutableSetSerializer extends Serializer<Set<?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public ImmutableSetSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the size followed by each set element.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, Set<?> set) {
-            output.writeInt(set.size(), true);
-            for (Object item : set) {
-                kryo.writeClassAndObject(output, item);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes elements and reconstructs an immutable set preserving contract fidelity.</p>
-         */
-        @Override
-        public Set<?> read(Kryo kryo, Input input, Class<? extends Set<?>> type) {
-            int size = input.readInt(true);
-            if (size == 0) {
-                return Set.of();
-            }
-            Object[] array = new Object[size];
-            boolean hasNull = false;
-            for (int i = 0; i < size; i++) {
-                array[i] = kryo.readClassAndObject(input);
-                if (array[i] == null) {
-                    hasNull = true;
-                }
-            }
-            if (hasNull) {
-                Set<Object> s = new LinkedHashSet<>(Arrays.asList(array));
-                return Collections.unmodifiableSet(s);
-            }
-            return Set.of(array);
-        }
-    }
-
-    /**
-     * Kryo serializer for JDK 9+ {@link Map#of()} and immutable maps.
-     */
-    public static class ImmutableMapSerializer extends Serializer<Map<?, ?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public ImmutableMapSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the size followed by key-value pairs.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, Map<?, ?> map) {
-            output.writeInt(map.size(), true);
-            for (Map.Entry<?, ?> entry : map.entrySet()) {
-                kryo.writeClassAndObject(output, entry.getKey());
-                kryo.writeClassAndObject(output, entry.getValue());
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes key-value pairs and reconstructs an immutable map.</p>
-         */
-        @Override
-        public Map<?, ?> read(Kryo kryo, Input input, Class<? extends Map<?, ?>> type) {
-            int size = input.readInt(true);
-            if (size == 0) {
-                return Map.of();
-            }
-            Map<Object, Object> temp = new LinkedHashMap<>(size);
-            boolean hasNull = false;
-            for (int i = 0; i < size; i++) {
-                Object key = kryo.readClassAndObject(input);
-                Object value = kryo.readClassAndObject(input);
-                if (key == null || value == null) {
-                    hasNull = true;
-                }
-                temp.put(key, value);
-            }
-            if (hasNull) {
-                return Collections.unmodifiableMap(temp);
-            }
-            return Map.copyOf(temp);
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link java.util.Arrays#asList(Object[])}.
-     */
-    public static class ArraysListSerializer extends Serializer<List<?>> {
-
-        /**
-         * Default constructor.
-         */
-        public ArraysListSerializer() {
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the size followed by each list element.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, List<?> list) {
-            output.writeInt(list.size(), true);
-            for (Object item : list) {
-                kryo.writeClassAndObject(output, item);
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes elements and returns an {@link Arrays#asList(Object[])} wrapper.</p>
-         */
-        @Override
-        public List<?> read(Kryo kryo, Input input, Class<? extends List<?>> type) {
-            int size = input.readInt(true);
-            Object[] array = new Object[size];
-            for (int i = 0; i < size; i++) {
-                array[i] = kryo.readClassAndObject(input);
-            }
-            return Arrays.asList(array);
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link Collections#singletonList(Object)}.
-     */
-    public static class SingletonListSerializer extends Serializer<List<?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public SingletonListSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the single element in the list.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, List<?> object) {
-            kryo.writeClassAndObject(output, object.get(0));
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes the single element and reconstructs a singleton list.</p>
-         */
-        @Override
-        public List<?> read(Kryo kryo, Input input, Class<? extends List<?>> type) {
-            Object item = kryo.readClassAndObject(input);
-            return Collections.singletonList(item);
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link Collections#singleton(Object)}.
-     */
-    public static class SingletonSetSerializer extends Serializer<Set<?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public SingletonSetSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the single element in the set.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, Set<?> object) {
-            kryo.writeClassAndObject(output, object.iterator().next());
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes the single element and reconstructs a singleton set.</p>
-         */
-        @Override
-        public Set<?> read(Kryo kryo, Input input, Class<? extends Set<?>> type) {
-            Object item = kryo.readClassAndObject(input);
-            return Collections.singleton(item);
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link Collections#singletonMap(Object, Object)}.
-     */
-    public static class SingletonMapSerializer extends Serializer<Map<?, ?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public SingletonMapSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Serializes the single key and value pair in the map.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, Map<?, ?> object) {
-            Map.Entry<?, ?> entry = object.entrySet().iterator().next();
-            kryo.writeClassAndObject(output, entry.getKey());
-            kryo.writeClassAndObject(output, entry.getValue());
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Deserializes the key and value and reconstructs a singleton map.</p>
-         */
-        @Override
-        public Map<?, ?> read(Kryo kryo, Input input, Class<? extends Map<?, ?>> type) {
-            Object key = kryo.readClassAndObject(input);
-            Object value = kryo.readClassAndObject(input);
-            return Collections.singletonMap(key, value);
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link Collections#emptyList()}.
-     */
-    public static class EmptyListSerializer extends Serializer<List<?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public EmptyListSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>No-op write as empty list holds no state.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, List<?> object) {
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Returns singleton empty list instance.</p>
-         */
-        @Override
-        public List<?> read(Kryo kryo, Input input, Class<? extends List<?>> type) {
-            return Collections.emptyList();
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link Collections#emptySet()}.
-     */
-    public static class EmptySetSerializer extends Serializer<Set<?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public EmptySetSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>No-op write as empty set holds no state.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, Set<?> object) {
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Returns singleton empty set instance.</p>
-         */
-        @Override
-        public Set<?> read(Kryo kryo, Input input, Class<? extends Set<?>> type) {
-            return Collections.emptySet();
-        }
-    }
-
-    /**
-     * Kryo serializer for {@link Collections#emptyMap()}.
-     */
-    public static class EmptyMapSerializer extends Serializer<Map<?, ?>> {
-
-        /**
-         * Default constructor marking serializer as immutable.
-         */
-        public EmptyMapSerializer() {
-            setImmutable(true);
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>No-op write as empty map holds no state.</p>
-         */
-        @Override
-        public void write(Kryo kryo, Output output, Map<?, ?> object) {
-        }
-
-        /**
-         * {@inheritDoc}
-         * <p>Returns singleton empty map instance.</p>
-         */
-        @Override
-        public Map<?, ?> read(Kryo kryo, Input input, Class<? extends Map<?, ?>> type) {
-            return Collections.emptyMap();
-        }
-    }
-
-    /**
      * Kryo serializer for {@link Collections#emptyNavigableSet()}.
      */
-    public static class EmptyNavigableSetSerializer extends Serializer<java.util.NavigableSet<?>> {
+    public static class EmptyNavigableSetSerializer extends Serializer<NavigableSet<?>> {
 
         /**
          * Default constructor marking serializer as immutable.
@@ -496,7 +114,7 @@ public class JdkCollectionsSerializers {
          * <p>No-op write.</p>
          */
         @Override
-        public void write(Kryo kryo, Output output, java.util.NavigableSet<?> object) {
+        public void write(Kryo kryo, Output output, NavigableSet<?> object) {
         }
 
         /**
@@ -504,7 +122,7 @@ public class JdkCollectionsSerializers {
          * <p>Returns singleton empty navigable set.</p>
          */
         @Override
-        public java.util.NavigableSet<?> read(Kryo kryo, Input input, Class<? extends java.util.NavigableSet<?>> type) {
+        public NavigableSet<?> read(Kryo kryo, Input input, Class<? extends NavigableSet<?>> type) {
             return Collections.emptyNavigableSet();
         }
     }
@@ -512,7 +130,7 @@ public class JdkCollectionsSerializers {
     /**
      * Kryo serializer for {@link Collections#emptyNavigableMap()}.
      */
-    public static class EmptyNavigableMapSerializer extends Serializer<java.util.NavigableMap<?, ?>> {
+    public static class EmptyNavigableMapSerializer extends Serializer<NavigableMap<?, ?>> {
 
         /**
          * Default constructor marking serializer as immutable.
@@ -526,7 +144,7 @@ public class JdkCollectionsSerializers {
          * <p>No-op write.</p>
          */
         @Override
-        public void write(Kryo kryo, Output output, java.util.NavigableMap<?, ?> object) {
+        public void write(Kryo kryo, Output output, NavigableMap<?, ?> object) {
         }
 
         /**
@@ -534,7 +152,7 @@ public class JdkCollectionsSerializers {
          * <p>Returns singleton empty navigable map.</p>
          */
         @Override
-        public java.util.NavigableMap<?, ?> read(Kryo kryo, Input input, Class<? extends java.util.NavigableMap<?, ?>> type) {
+        public NavigableMap<?, ?> read(Kryo kryo, Input input, Class<? extends NavigableMap<?, ?>> type) {
             return Collections.emptyNavigableMap();
         }
     }
@@ -542,7 +160,7 @@ public class JdkCollectionsSerializers {
     /**
      * Kryo serializer for {@link Collections#emptySortedSet()}.
      */
-    public static class EmptySortedSetSerializer extends Serializer<java.util.SortedSet<?>> {
+    public static class EmptySortedSetSerializer extends Serializer<SortedSet<?>> {
 
         /**
          * Default constructor marking serializer as immutable.
@@ -556,7 +174,7 @@ public class JdkCollectionsSerializers {
          * <p>No-op write.</p>
          */
         @Override
-        public void write(Kryo kryo, Output output, java.util.SortedSet<?> object) {
+        public void write(Kryo kryo, Output output, SortedSet<?> object) {
         }
 
         /**
@@ -564,7 +182,7 @@ public class JdkCollectionsSerializers {
          * <p>Returns singleton empty sorted set.</p>
          */
         @Override
-        public java.util.SortedSet<?> read(Kryo kryo, Input input, Class<? extends java.util.SortedSet<?>> type) {
+        public SortedSet<?> read(Kryo kryo, Input input, Class<? extends SortedSet<?>> type) {
             return Collections.emptySortedSet();
         }
     }
@@ -572,7 +190,7 @@ public class JdkCollectionsSerializers {
     /**
      * Kryo serializer for {@link Collections#emptySortedMap()}.
      */
-    public static class EmptySortedMapSerializer extends Serializer<java.util.SortedMap<?, ?>> {
+    public static class EmptySortedMapSerializer extends Serializer<SortedMap<?, ?>> {
 
         /**
          * Default constructor marking serializer as immutable.
@@ -586,7 +204,7 @@ public class JdkCollectionsSerializers {
          * <p>No-op write.</p>
          */
         @Override
-        public void write(Kryo kryo, Output output, java.util.SortedMap<?, ?> object) {
+        public void write(Kryo kryo, Output output, SortedMap<?, ?> object) {
         }
 
         /**
@@ -594,8 +212,47 @@ public class JdkCollectionsSerializers {
          * <p>Returns singleton empty sorted map.</p>
          */
         @Override
-        public java.util.SortedMap<?, ?> read(Kryo kryo, Input input, Class<? extends java.util.SortedMap<?, ?>> type) {
+        public SortedMap<?, ?> read(Kryo kryo, Input input, Class<? extends SortedMap<?, ?>> type) {
             return Collections.emptySortedMap();
+        }
+    }
+
+    /**
+     * Kryo serializer for {@link Collections#unmodifiableCollection(Collection)}.
+     */
+    public static class UnmodifiableCollectionSerializer extends Serializer<Collection<?>> {
+
+        /**
+         * Default constructor marking serializer as immutable.
+         */
+        public UnmodifiableCollectionSerializer() {
+            setImmutable(true);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Serializes the size followed by each element.</p>
+         */
+        @Override
+        public void write(Kryo kryo, Output output, Collection<?> col) {
+            output.writeInt(col.size(), true);
+            for (Object item : col) {
+                kryo.writeClassAndObject(output, item);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Deserializes elements and returns an unmodifiable collection wrapper.</p>
+         */
+        @Override
+        public Collection<?> read(Kryo kryo, Input input, Class<? extends Collection<?>> type) {
+            int size = input.readInt(true);
+            List<Object> list = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                list.add(kryo.readClassAndObject(input));
+            }
+            return Collections.unmodifiableCollection(list);
         }
     }
 
@@ -625,12 +282,13 @@ public class JdkCollectionsSerializers {
 
         /**
          * {@inheritDoc}
-         * <p>Deserializes elements and returns an unmodifiable list wrapper.</p>
+         * <p>Deserializes elements and returns an unmodifiable list wrapper, preserving RandomAccess capability.</p>
          */
         @Override
         public List<?> read(Kryo kryo, Input input, Class<? extends List<?>> type) {
             int size = input.readInt(true);
-            List<Object> list = new ArrayList<>(size);
+            boolean isRandomAccess = RandomAccess.class.isAssignableFrom(type);
+            List<Object> list = isRandomAccess ? new ArrayList<>(size) : new LinkedList<>();
             for (int i = 0; i < size; i++) {
                 list.add(kryo.readClassAndObject(input));
             }
@@ -716,6 +374,231 @@ public class JdkCollectionsSerializers {
                 map.put(key, value);
             }
             return Collections.unmodifiableMap(map);
+        }
+    }
+
+    /**
+     * Kryo serializer for {@link Collections#synchronizedCollection(Collection)}.
+     */
+    public static class SynchronizedCollectionSerializer extends Serializer<Collection<?>> {
+
+        /**
+         * Default constructor.
+         */
+        public SynchronizedCollectionSerializer() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Serializes the size followed by each element within a synchronized block.</p>
+         */
+        @Override
+        public void write(Kryo kryo, Output output, Collection<?> col) {
+            synchronized (col) {
+                output.writeInt(col.size(), true);
+                for (Object item : col) {
+                    kryo.writeClassAndObject(output, item);
+                }
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Deserializes elements and returns a synchronized collection wrapper.</p>
+         */
+        @Override
+        public Collection<?> read(Kryo kryo, Input input, Class<? extends Collection<?>> type) {
+            int size = input.readInt(true);
+            List<Object> list = new ArrayList<>(size);
+            for (int i = 0; i < size; i++) {
+                list.add(kryo.readClassAndObject(input));
+            }
+            return Collections.synchronizedCollection(list);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Creates a thread-safe copy of the synchronized collection.</p>
+         */
+        @Override
+        public Collection<?> copy(Kryo kryo, Collection<?> original) {
+            synchronized (original) {
+                List<Object> copy = new ArrayList<>(original.size());
+                for (Object item : original) {
+                    copy.add(kryo.copy(item));
+                }
+                return Collections.synchronizedCollection(copy);
+            }
+        }
+    }
+
+    /**
+     * Kryo serializer for {@link Collections#synchronizedList(List)}.
+     */
+    public static class SynchronizedListSerializer extends Serializer<List<?>> {
+
+        /**
+         * Default constructor.
+         */
+        public SynchronizedListSerializer() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Serializes the size followed by each list element within a synchronized block.</p>
+         */
+        @Override
+        public void write(Kryo kryo, Output output, List<?> list) {
+            synchronized (list) {
+                output.writeInt(list.size(), true);
+                for (Object item : list) {
+                    kryo.writeClassAndObject(output, item);
+                }
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Deserializes elements and returns a synchronized list wrapper, preserving RandomAccess capability.</p>
+         */
+        @Override
+        public List<?> read(Kryo kryo, Input input, Class<? extends List<?>> type) {
+            int size = input.readInt(true);
+            boolean isRandomAccess = RandomAccess.class.isAssignableFrom(type);
+            List<Object> list = isRandomAccess ? new ArrayList<>(size) : new LinkedList<>();
+            for (int i = 0; i < size; i++) {
+                list.add(kryo.readClassAndObject(input));
+            }
+            return Collections.synchronizedList(list);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Creates a thread-safe copy of the synchronized list.</p>
+         */
+        @Override
+        public List<?> copy(Kryo kryo, List<?> original) {
+            synchronized (original) {
+                boolean isRandomAccess = original instanceof RandomAccess;
+                List<Object> copy = isRandomAccess ? new ArrayList<>(original.size()) : new LinkedList<>();
+                for (Object item : original) {
+                    copy.add(kryo.copy(item));
+                }
+                return Collections.synchronizedList(copy);
+            }
+        }
+    }
+
+    /**
+     * Kryo serializer for {@link Collections#synchronizedSet(Set)}.
+     */
+    public static class SynchronizedSetSerializer extends Serializer<Set<?>> {
+
+        /**
+         * Default constructor.
+         */
+        public SynchronizedSetSerializer() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Serializes the size followed by each set element within a synchronized block.</p>
+         */
+        @Override
+        public void write(Kryo kryo, Output output, Set<?> set) {
+            synchronized (set) {
+                output.writeInt(set.size(), true);
+                for (Object item : set) {
+                    kryo.writeClassAndObject(output, item);
+                }
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Deserializes elements and returns a synchronized set wrapper.</p>
+         */
+        @Override
+        public Set<?> read(Kryo kryo, Input input, Class<? extends Set<?>> type) {
+            int size = input.readInt(true);
+            Set<Object> set = new LinkedHashSet<>(size);
+            for (int i = 0; i < size; i++) {
+                set.add(kryo.readClassAndObject(input));
+            }
+            return Collections.synchronizedSet(set);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Creates a thread-safe copy of the synchronized set.</p>
+         */
+        @Override
+        public Set<?> copy(Kryo kryo, Set<?> original) {
+            synchronized (original) {
+                Set<Object> copy = new LinkedHashSet<>(original.size());
+                for (Object item : original) {
+                    copy.add(kryo.copy(item));
+                }
+                return Collections.synchronizedSet(copy);
+            }
+        }
+    }
+
+    /**
+     * Kryo serializer for {@link Collections#synchronizedMap(Map)}.
+     */
+    public static class SynchronizedMapSerializer extends Serializer<Map<?, ?>> {
+
+        /**
+         * Default constructor.
+         */
+        public SynchronizedMapSerializer() {
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Serializes the size followed by each map key-value entry within a synchronized block.</p>
+         */
+        @Override
+        public void write(Kryo kryo, Output output, Map<?, ?> map) {
+            synchronized (map) {
+                output.writeInt(map.size(), true);
+                for (Map.Entry<?, ?> entry : map.entrySet()) {
+                    kryo.writeClassAndObject(output, entry.getKey());
+                    kryo.writeClassAndObject(output, entry.getValue());
+                }
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Deserializes key-value entries and returns a synchronized map wrapper.</p>
+         */
+        @Override
+        public Map<?, ?> read(Kryo kryo, Input input, Class<? extends Map<?, ?>> type) {
+            int size = input.readInt(true);
+            Map<Object, Object> map = new LinkedHashMap<>(size);
+            for (int i = 0; i < size; i++) {
+                Object key = kryo.readClassAndObject(input);
+                Object value = kryo.readClassAndObject(input);
+                map.put(key, value);
+            }
+            return Collections.synchronizedMap(map);
+        }
+
+        /**
+         * {@inheritDoc}
+         * <p>Creates a thread-safe copy of the synchronized map.</p>
+         */
+        @Override
+        public Map<?, ?> copy(Kryo kryo, Map<?, ?> original) {
+            synchronized (original) {
+                Map<Object, Object> copy = new LinkedHashMap<>(original.size());
+                for (Map.Entry<?, ?> entry : original.entrySet()) {
+                    copy.put(kryo.copy(entry.getKey()), kryo.copy(entry.getValue()));
+                }
+                return Collections.synchronizedMap(copy);
+            }
         }
     }
 }
