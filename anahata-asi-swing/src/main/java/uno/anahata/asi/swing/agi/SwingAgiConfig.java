@@ -498,7 +498,7 @@ public class SwingAgiConfig extends AgiConfig {
          * The fixed-width font used for code blocks and monospaced text
          * segments.
          */
-        private final Font monoFont = new Font("SF Mono", Font.PLAIN, 14);
+        private final Font monoFont = new Font(Font.MONOSPACED, Font.PLAIN, 13);
 
         /**
          * Background color for the user message header.

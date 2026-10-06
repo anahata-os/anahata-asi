@@ -13,6 +13,7 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import lombok.NonNull;
 import uno.anahata.asi.agi.message.AbstractModelMessage;
+import uno.anahata.asi.agi.tool.spi.AbstractToolCall;
 import uno.anahata.asi.agi.provider.FinishReason;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.components.CodeHyperlink;
@@ -26,7 +27,7 @@ import uno.anahata.asi.swing.internal.SwingTask;
  *
  * @author anahata
  */
-public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage> {
+public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage<?>> {
 
     /** The panel displaying grounding metadata, if available. */
     private GroundingMetadataPanel groundingPanel;
@@ -67,7 +68,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
      * @param message The model message to render.
      * @param agiPanel The parent agi panel.
      */
-    public ModelMessagePanel(@NonNull AgiPanel agiPanel, @NonNull AbstractModelMessage message) {
+    public ModelMessagePanel(@NonNull AgiPanel agiPanel, @NonNull AbstractModelMessage<?> message) {
         super(agiPanel, message);
 
         // 1. Initialize footer components once
@@ -120,7 +121,12 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
         new EdtPropertyChangeListener(this, message, "groundingMetadata", evt -> render());
         new EdtPropertyChangeListener(this, message, "runningAllPending", evt -> updateBatchToolsUI());
         new EdtPropertyChangeListener(this, message, "remainingTools", evt -> updateBatchToolsUI());
-        new EdtPropertyChangeListener(this, message, "parts", evt -> updateBatchToolsUI());
+        new EdtPropertyChangeListener(this, message, "parts", evt -> {
+            bindToolCallListeners();
+            updateBatchToolsUI();
+        });
+
+        bindToolCallListeners();
 
         // Initial sync
         updateRawJsonVisibility();
@@ -153,6 +159,16 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
     }
 
     /**
+     * Binds reactive listeners to all tool call responses in the message to ensure
+     * batch tool controls update whenever individual tool statuses change.
+     */
+    private void bindToolCallListeners() {
+        for (AbstractToolCall<?, ?> call : message.getToolCalls()) {
+            new EdtPropertyChangeListener(this, call.getResponse(), "status", evt -> updateBatchToolsUI());
+        }
+    }
+
+    /**
      * Updates the batch tools execution panel visibility and countdown button
      * labels based on remaining pending and executing tool calls.
      */
@@ -165,6 +181,10 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
             runAllPendingButton.setVisible(false);
             declineAllPendingButton.setVisible(false);
             stopBatchButton.setVisible(false);
+            footerContainer.revalidate();
+            footerContainer.repaint();
+            revalidate();
+            repaint();
             return;
         }
 
@@ -184,6 +204,10 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
             runAllPendingButton.setVisible(true);
             declineAllPendingButton.setVisible(true);
         }
+        footerContainer.revalidate();
+        footerContainer.repaint();
+        revalidate();
+        repaint();
     }
 
     /**
@@ -191,7 +215,7 @@ public class ModelMessagePanel extends AbstractMessagePanel<AbstractModelMessage
      * SwingTask without sending a prompt to the model.
      */
     private void executeBatchTools() {
-        new SwingTask<Boolean>(agiPanel, "Executing Batch Tools", () -> {
+        new SwingTask<>(agiPanel, "Executing Batch Tools", () -> {
             return message.executeAllPending();
         }, result -> updateBatchToolsUI()).start();
     }
