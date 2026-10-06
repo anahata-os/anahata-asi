@@ -10,6 +10,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Detection logic
     const activeFile = currentPath.split('/').pop();
     const isActive = (file) => activeFile === file;
+    const isModuleActive = isActive('core.html') || isActive('swing.html') || isActive('yam.html') || 
+                           isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || 
+                           isActive('novaroute.html') || isActive('openrouter.html') || isActive('ollama.html') || 
+                           isActive('compatible.html');
+    const isDocsActive = isActive('whitepaper.html') || isActive('quickstart.html') || currentPath.includes('apidocs') || isModuleActive;
+    const isIfptoasiActive = currentPath.includes('/ifptoasi') || isActive('ifptoasi.html') || isActive('greenpaper.html') || 
+                             isActive('benchmarks.html') || currentPath.includes('/benchmarks/');
 
     // Compute directory depth prefix dynamically based on the script location
     const navScript = document.querySelector('script[src*="nav.js"]');
@@ -27,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     <!-- Docs Dropdown -->
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle ${(isActive('whitepaper.html') || isActive('quickstart.html') || currentPath.includes('apidocs') || isActive('core.html') || isActive('swing.html') || isActive('yam.html') || isActive('gemini.html') || isActive('openai.html') || isActive('anthropic.html') || isActive('novaroute.html') || isActive('openrouter.html') || isActive('ollama.html') || isActive('compatible.html')) ? 'active-link' : ''}">
+                        <a href="#" class="dropdown-toggle ${isDocsActive ? 'active-link' : ''}">
                             Docs <i class="fas fa-chevron-down"></i>
                         </a>
                         <div class="dropdown-menu">
@@ -37,17 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
                             <a href="${prefix}whitepaper.html" class="${isActive('whitepaper.html') ? 'active-item' : ''}"><i class="fas fa-scroll" style="color: var(--barca-gold);"></i> Whitepaper</a>
                             
                             <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0;"></div>
-                            <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Modules</div>
-                            <a href="${prefix}core.html" class="${isActive('core.html') ? 'active-item' : ''}"><i class="fas fa-brain"></i> Core API</a>
-                            <a href="${prefix}swing.html" class="${isActive('swing.html') ? 'active-item' : ''}"><i class="fas fa-desktop"></i> Swing UI</a>
-                            <a href="${prefix}yam.html" class="${isActive('yam.html') ? 'active-item' : ''}"><i class="fas fa-flask"></i> Yam Tools</a>
-                            <a href="${prefix}gemini.html" class="${isActive('gemini.html') ? 'active-item' : ''}"><i class="fas fa-plug"></i> Gemini Provider</a>
-                            <a href="${prefix}openai.html" class="${isActive('openai.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> OpenAI Provider</a>
-                            <a href="${prefix}anthropic.html" class="${isActive('anthropic.html') ? 'active-item' : ''}"><i class="fas fa-ghost"></i> Anthropic Provider</a>
-                            <a href="${prefix}novaroute.html" class="${isActive('novaroute.html') ? 'active-item' : ''}"><i class="fas fa-route" style="color: var(--barca-gold);"></i> NovaRouteAI Provider</a>
-                            <a href="${prefix}openrouter.html" class="${isActive('openrouter.html') ? 'active-item' : ''}"><i class="fas fa-network-wired" style="color: var(--barca-gold);"></i> OpenRouter Provider</a>
-                            <a href="${prefix}ollama.html" class="${isActive('ollama.html') ? 'active-item' : ''}"><i class="fas fa-server"></i> Ollama Provider</a>
-                            <a href="${prefix}compatible.html" class="${isActive('compatible.html') ? 'active-item' : ''}"><i class="fas fa-globe"></i> Universal Alliance</a>
+                            
+                            <!-- Modules Secondary Submenu -->
+                            <div class="dropdown-submenu">
+                                <a href="#" class="submenu-toggle ${isModuleActive ? 'active-item' : ''}" onclick="event.preventDefault();">
+                                    <span><i class="fas fa-cubes" style="color: var(--primary-light);"></i> Modules</span>
+                                    <i class="fas fa-chevron-right" style="font-size: 0.75rem; margin-left: 8px;"></i>
+                                </a>
+                                <div class="submenu">
+                                    <a href="${prefix}core.html" class="${isActive('core.html') ? 'active-item' : ''}"><i class="fas fa-brain"></i> Core API</a>
+                                    <a href="${prefix}swing.html" class="${isActive('swing.html') ? 'active-item' : ''}"><i class="fas fa-desktop"></i> Swing UI</a>
+                                    <a href="${prefix}yam.html" class="${isActive('yam.html') ? 'active-item' : ''}"><i class="fas fa-flask"></i> Yam Tools</a>
+                                    <a href="${prefix}gemini.html" class="${isActive('gemini.html') ? 'active-item' : ''}"><i class="fas fa-plug"></i> Gemini Provider</a>
+                                    <a href="${prefix}openai.html" class="${isActive('openai.html') ? 'active-item' : ''}"><i class="fas fa-bolt"></i> OpenAI Provider</a>
+                                    <a href="${prefix}anthropic.html" class="${isActive('anthropic.html') ? 'active-item' : ''}"><i class="fas fa-ghost"></i> Anthropic Provider</a>
+                                    <a href="${prefix}novaroute.html" class="${isActive('novaroute.html') ? 'active-item' : ''}"><i class="fas fa-route" style="color: var(--barca-gold);"></i> NovaRouteAI Provider</a>
+                                    <a href="${prefix}openrouter.html" class="${isActive('openrouter.html') ? 'active-item' : ''}"><i class="fas fa-network-wired" style="color: var(--barca-gold);"></i> OpenRouter Provider</a>
+                                    <a href="${prefix}ollama.html" class="${isActive('ollama.html') ? 'active-item' : ''}"><i class="fas fa-server"></i> Ollama Provider</a>
+                                    <a href="${prefix}compatible.html" class="${isActive('compatible.html') ? 'active-item' : ''}"><i class="fas fa-globe"></i> Universal Alliance</a>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -82,10 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         </div>
                     </div>
 
-                    <!-- Benchmarks Direct Link -->
-                    <a href="${prefix}benchmarks.html" class="${(isActive('benchmarks.html') || currentPath.includes('/benchmarks/')) ? 'active-link' : ''}" style="display: flex; align-items: center; gap: 6px; color: var(--white); text-decoration: none; font-weight: 600; font-size: 0.95rem; padding: 0.5rem 0.8rem; border-radius: 6px; transition: var(--transition);">
-                        <i class="fas fa-trophy" style="color: var(--barca-gold);"></i> Benchmarks
-                    </a>
+                    <!-- IFPTOASI Dropdown -->
+                    <div class="dropdown">
+                        <a href="#" class="dropdown-toggle ${isIfptoasiActive ? 'active-link' : ''}">
+                            <i class="fas fa-landmark" style="color: var(--barca-gold); margin-right: 4px;"></i> IFPTOASI <i class="fas fa-chevron-down"></i>
+                        </a>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Foundation &amp; Doctrine</div>
+                            <a href="${prefix}ifptoasi/index.html" class="${(activeFile === 'index.html' && currentPath.includes('/ifptoasi')) || isActive('ifptoasi.html') ? 'active-item' : ''}"><i class="fas fa-landmark" style="color: var(--barca-gold);"></i> Foundation Charter</a>
+                            <a href="${prefix}ifptoasi/greenpaper.html" class="${isActive('greenpaper.html') ? 'active-item' : ''}"><i class="fas fa-file-alt" style="color: var(--verified-green);"></i> Green Paper No. 01</a>
+                            
+                            <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0;"></div>
+                            <div class="dropdown-header" style="padding: 6px 12px; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--barca-gold); font-weight: 800;">Certification &amp; Benchmarks</div>
+                            <a href="${prefix}benchmarks.html" class="${isActive('benchmarks.html') ? 'active-item' : ''}"><i class="fas fa-trophy" style="color: var(--barca-gold);"></i> Active Benchmarks</a>
+                            <a href="${prefix}benchmarks/anahata-agi-1/index.html" class="${currentPath.includes('anahata-agi-1') ? 'active-item' : ''}"><i class="fas fa-award"></i> Anahata-AGI-1 Catalog</a>
+                        </div>
+                    </div>
                     
                     <div class="social-links">
                         <a href="https://www.youtube.com/@anahata108" target="_blank" title="Anahata TV"><i class="fab fa-youtube"></i></a>

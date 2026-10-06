@@ -125,6 +125,89 @@ body {
     color: var(--primary-light) !important;
 }
 
+/* Secondary Flyout Submenu Styles */
+.dropdown-submenu {
+    position: relative;
+}
+
+.dropdown-submenu > .submenu-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1.5rem;
+    font-size: 0.9rem;
+    color: var(--text-muted) !important;
+    text-decoration: none;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.dropdown-submenu > .submenu-toggle:hover,
+.dropdown-submenu > .submenu-toggle.active-item {
+    background: rgba(44, 122, 123, 0.1);
+    color: var(--primary-light) !important;
+}
+
+.dropdown-submenu .submenu {
+    display: none;
+    position: absolute;
+    top: -8px;
+    left: 100%;
+    background: #1a202c;
+    min-width: 220px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.8rem 0;
+    z-index: 1200;
+    margin-left: 4px;
+}
+
+/* Hover bridge for submenu */
+.dropdown-submenu .submenu::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -15px;
+    width: 15px;
+    height: 100%;
+}
+
+.dropdown-submenu:hover .submenu {
+    display: block;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdown-submenu .submenu a {
+    padding: 0.7rem 1.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+    color: var(--text-muted) !important;
+    text-decoration: none;
+}
+
+.dropdown-submenu .submenu a:hover,
+.dropdown-submenu .submenu a.active-item {
+    background: rgba(44, 122, 123, 0.1);
+    color: var(--primary-light) !important;
+}
+
+@media (max-width: 992px) {
+    .dropdown-submenu .submenu {
+        position: static;
+        box-shadow: none;
+        border: none;
+        background: transparent;
+        padding-left: 1.2rem;
+        margin-left: 0;
+    }
+    .dropdown-submenu:hover .submenu {
+        display: block;
+    }
+}
+
 .active-link {
     color: var(--barca-gold) !important;
     font-weight: 700;

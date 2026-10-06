@@ -25,7 +25,7 @@ IDE toolkits are contributed by adding their `Class` to `getToolClasses()` in `I
 | Toolkit | Package | Capability |
 |---|---|---|
 | `Projects` | `tools.project` | Open/close projects, structure + alerts context, `anahata.md` sync, `buildProject` (make/rebuild), `saveAllDocuments` |
-| `CodeModel` | `tools.java` | Browse types/members/sources/javadocs, sub/supertype hierarchies (PSI, read-action wrapped) |
+| `CodeModel` | `tools.java.codemodel2` | Universal JVM code model (Java, Kotlin, Groovy, Scala): types, members, sources, docs, hierarchies with location disambiguation |
 | `CodeRefiner` | `tools.java` | Structural imports (`addImports`/`optimizeImports`), `reformat`, `addAnnotation` (write-command) |
 | `BatchCodeRefiner` | `tools.java` | V4 AST-guided batch splice: `refine` — insert/update/delete/move whole members atomically, returns a unified diff (PSI write-command) |
 | `Editor` | `tools.ide` | `openFile`, `getOpenFiles`, `closeAllFiles` + caret/selection/visible-snippet context |
