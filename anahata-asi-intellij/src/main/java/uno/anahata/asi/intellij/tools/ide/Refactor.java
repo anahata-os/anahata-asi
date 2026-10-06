@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.vfs.VfsUtilCore;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.JavaDirectoryService;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDirectory;
@@ -144,6 +145,42 @@ public class Refactor extends AnahataToolkit {
         }
         runRename(project, member, newName, false);
         return "Renamed member " + memberFqn + " to " + newName;
+    }
+
+    /**
+     * Renames a Java package directory across all open projects, updating all package statements,
+     * imports, and directory structures.
+     *
+     * @param packagePath the absolute path of the package directory to rename.
+     * @param newName     the new simple name for the package folder (e.g. 'codemodel').
+     * @return a confirmation message.
+     * @throws AgiToolException if the package directory cannot be resolved or is invalid.
+     */
+    @AgiTool("Renames a Java package across all open projects, updating all package statements, imports, and references dynamically.")
+    public String renamePackage(
+            @AgiToolParam(value = "The absolute path of the package folder to rename.", rendererId = "path") String packagePath,
+            @AgiToolParam("The new simple name for the package folder (e.g. 'codemodel'). Do not use dot-separated package paths.") String newName) throws AgiToolException {
+
+        Project project = resolveHostProject(packagePath);
+        VirtualFile vf = ProjectUtils.findVirtualFile(packagePath);
+        if (vf == null || !vf.isDirectory()) {
+            throw new AgiToolException("Path is not an existing directory: " + packagePath);
+        }
+
+        PsiPackage targetPackage = ReadAction.computeBlocking(() -> {
+            PsiDirectory dir = PsiManager.getInstance(project).findDirectory(vf);
+            if (dir != null) {
+                return JavaDirectoryService.getInstance().getPackage(dir);
+            }
+            return null;
+        });
+
+        if (targetPackage == null) {
+            throw new AgiToolException("Directory is not a recognized Java package: " + packagePath);
+        }
+
+        runRename(project, targetPackage, newName, false);
+        return "Renamed package in " + packagePath + " to " + newName;
     }
 
     /**
