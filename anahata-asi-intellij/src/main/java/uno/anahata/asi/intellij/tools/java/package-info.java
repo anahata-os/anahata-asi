@@ -6,8 +6,8 @@
  * Leverages IntelliJ's Program Structure Interface (PSI), code-style managers, and compiler order enumerators:
  * </p>
  * <ul>
- *   <li>{@link uno.anahata.asi.intellij.tools.java.CodeModel}: For searching types, listing members, retrieving Javadocs,
- *       and exploring recursive subtype and supertype inheritance hierarchies.</li>
+ *   <li>{@link CodeModel}: Universal JVM Code Model for searching types, listing members,
+ *       retrieving source declarations and Javadocs, and exploring recursive inheritance hierarchies across Java, Kotlin, Groovy, and Scala.</li>
  *   <li>{@link uno.anahata.asi.intellij.tools.java.CodeRefiner}: For structural import management, code-style reformatting,
  *       and adding annotations directly onto the live PSI tree.</li>
  *   <li>{@link uno.anahata.asi.intellij.tools.java.BatchCodeRefiner}: The V4 AST-guided batch refinement engine for inserting,
@@ -16,10 +16,12 @@
  *       annotators) and applying quick-fixes programmatically.</li>
  *   <li>{@link uno.anahata.asi.intellij.tools.java.IntellijJava}: For compiling modular classes and executing dynamic scripts
  *       against an open project's classpath and configured SDK.</li>
- *   <li>Keychain DTOs: {@link uno.anahata.asi.intellij.tools.java.JavaType}, {@link uno.anahata.asi.intellij.tools.java.JavaMember},
- *       {@link uno.anahata.asi.intellij.tools.java.JavaMemberPage}, and {@link uno.anahata.asi.intellij.tools.java.JavaHierarchyNode}.</li>
+ *   <li>Universal CodeModel2 DTOs: {@link uno.anahata.asi.intellij.tools.java.codemodel.TypeItem}, {@link uno.anahata.asi.intellij.tools.java.codemodel.MemberItem},
+ *       {@link uno.anahata.asi.intellij.tools.java.codemodel.MemberPage}, and {@link uno.anahata.asi.intellij.tools.java.codemodel.HierarchyNode}.</li>
  * </ul>
  *
  * @author anahata
  */
 package uno.anahata.asi.intellij.tools.java;
+
+import uno.anahata.asi.intellij.tools.java.codemodel.CodeModel;
