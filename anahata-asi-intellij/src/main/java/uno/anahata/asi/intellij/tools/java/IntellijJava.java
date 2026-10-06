@@ -306,7 +306,9 @@ public class IntellijJava extends DesktopJava {
     }
 
     /**
-     * Builds the classpath string for an open project via {@link OrderEnumerator}.
+     * Builds the comprehensive classpath string for an open project via {@link OrderEnumerator},
+     * prioritizing local project bytecode directories ({@code target/classes}) and filtering out
+     * IntelliJ Platform SDK JARs and duplicate libraries already present in the host IDE classpath.
      *
      * @param projectPath                the absolute base path of the open project.
      * @param includeProjectDependencies whether to include library dependencies.
@@ -317,7 +319,25 @@ public class IntellijJava extends DesktopJava {
     public String buildProjectClasspathString(String projectPath, boolean includeProjectDependencies, boolean includeTestContext) throws AgiToolException {
         Project project = resolveProject(projectPath);
         JavaPsi.requireSmart(project);
-        String classpath = ReadAction.computeBlocking(() -> {
+
+        String defaultCp = getDefaultClasspath();
+        Set<String> existingPaths = new HashSet<>();
+        Set<String> existingBaseNames = new HashSet<>();
+        if (defaultCp != null && !defaultCp.isBlank()) {
+            for (String entry : defaultCp.split(File.pathSeparator)) {
+                if (!entry.isBlank()) {
+                    existingPaths.add(Path.of(entry).toAbsolutePath().normalize().toString());
+                    if (entry.endsWith(".jar")) {
+                        existingBaseNames.add(getJarBaseName(new File(entry).getName()));
+                    }
+                }
+            }
+        }
+
+        List<String> projectClassesDirs = new ArrayList<>();
+        List<String> dependencyJars = new ArrayList<>();
+
+        ReadAction.runBlocking(() -> {
             OrderEnumerator enumerator = OrderEnumerator.orderEntries(project).recursively().withoutSdk();
             if (!includeTestContext) {
                 enumerator = enumerator.productionOnly();
@@ -325,13 +345,76 @@ public class IntellijJava extends DesktopJava {
             if (!includeProjectDependencies) {
                 enumerator = enumerator.withoutLibraries();
             }
-            return enumerator.classes().getPathsList().getPathsString();
+
+            for (VirtualFile root : enumerator.classes().getRoots()) {
+                String path = root.getPresentableUrl();
+                if (path.contains("!/")) {
+                    path = path.substring(0, path.indexOf("!/"));
+                } else if (path.contains("!\\")) {
+                    path = path.substring(0, path.indexOf("!\\"));
+                }
+                File f = new File(path);
+                if (!f.exists()) {
+                    continue;
+                }
+                String absPath = Path.of(f.getAbsolutePath()).normalize().toString();
+
+                if (f.isDirectory()) {
+                    if (!projectClassesDirs.contains(absPath)) {
+                        projectClassesDirs.add(absPath);
+                    }
+                } else if (f.isFile() && absPath.toLowerCase().endsWith(".jar")) {
+                    String jarName = f.getName();
+                    String baseName = getJarBaseName(jarName);
+                    String normalizedPath = absPath.replace('\\', '/');
+
+                    boolean isIntellijPlatformJar = normalizedPath.contains("/com/jetbrains/intellij/")
+                            || normalizedPath.contains("/com.jetbrains.intellij.")
+                            || jarName.startsWith("intellij.")
+                            || jarName.startsWith("idea")
+                            || jarName.contains("openapi")
+                            || jarName.startsWith("lombok");
+
+                    if (isIntellijPlatformJar) {
+                        continue;
+                    }
+
+                    if (!existingPaths.contains(absPath) && !existingBaseNames.contains(baseName)) {
+                        if (!dependencyJars.contains(absPath)) {
+                            dependencyJars.add(absPath);
+                        }
+                    }
+                }
+            }
         });
-        if (classpath == null || classpath.isBlank()) {
+
+        List<String> finalClasspath = new ArrayList<>(projectClassesDirs);
+        if (includeProjectDependencies) {
+            finalClasspath.addAll(dependencyJars);
+        }
+
+        if (finalClasspath.isEmpty()) {
             throw new AgiToolException("Could not resolve any classpath entries for project: " + projectPath);
         }
-        log("Resolved classpath for project '" + project.getName() + "' (dependencies=" + includeProjectDependencies + ", tests=" + includeTestContext + ") with " + classpath.split(File.pathSeparator).length + " entries.");
-        return classpath;
+
+        log("Resolved classpath for project '" + project.getName() + "' (outputDirs=" + projectClassesDirs.size()
+                + ", extraDependencies=" + dependencyJars.size() + ").");
+        return String.join(File.pathSeparator, finalClasspath);
+    }
+
+    /**
+     * Extracts the base name of a JAR file by removing the extension and version-specific suffixes.
+     * Used for deduplicating classpath entries against the host IDE classpath.
+     *
+     * @param filename the full filename of the JAR.
+     * @return the normalized base name.
+     */
+    private static String getJarBaseName(String filename) {
+        String name = filename.toLowerCase();
+        if (name.endsWith(".jar")) {
+            name = name.substring(0, name.length() - 4);
+        }
+        return name.replaceAll("-([0-9]+(\\.[0-9]+)*(-snapshot|-release)?|-snapshot|-release).*", "");
     }
 
     /**
