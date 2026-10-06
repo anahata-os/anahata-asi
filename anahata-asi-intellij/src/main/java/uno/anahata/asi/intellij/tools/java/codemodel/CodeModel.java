@@ -1,5 +1,5 @@
 /* Licensed under the Anahata Software License (ASL) v 108. See the LICENSE file for details. Força Barça! */
-package uno.anahata.asi.intellij.tools.java.codemodel2;
+package uno.anahata.asi.intellij.tools.java.codemodel;
 
 import com.intellij.openapi.application.ReadAction;
 import com.intellij.openapi.module.Module;
@@ -57,14 +57,7 @@ import uno.anahata.asi.intellij.internal.JavaPsi;
  */
 @Slf4j
 @AgiToolkit("Explores types, members, sources, javadocs, and hierarchies across all JVM languages (Java, Kotlin, Groovy, Scala) in open projects, library dependencies, and the IntelliJ Platform SDK with deterministic location disambiguation.")
-public class CodeModel2 extends AnahataToolkit {
-
-    /**
-     * Default constructor for the CodeModel2 toolkit.
-     */
-    public CodeModel2() {
-        super();
-    }
+public class CodeModel extends AnahataToolkit {
 
     /**
      * {@inheritDoc}
@@ -204,7 +197,7 @@ public class CodeModel2 extends AnahataToolkit {
                         .name(field.getName())
                         .kind("FIELD")
                         .language(lang)
-                        .signature(field.getText().split("[;=]")[0].trim())
+                        .signature(buildFieldSignature(field))
                         .returnType(typeText)
                         .modifiers(extractModifiers(field.getModifierList()))
                         .isInherited(isInherited)
@@ -685,6 +678,24 @@ public class CodeModel2 extends AnahataToolkit {
         if (list.hasModifierProperty(PsiModifier.TRANSIENT)) mods.add("transient");
         if (list.hasModifierProperty(PsiModifier.VOLATILE)) mods.add("volatile");
         return mods;
+    }
+
+    /**
+     * Builds a human-readable declaration signature for a field (e.g. 'public static final String NAME').
+     *
+     * @param field the field.
+     * @return the declaration signature.
+     */
+    private String buildFieldSignature(PsiField field) {
+        StringBuilder sb = new StringBuilder();
+        for (String mod : extractModifiers(field.getModifierList())) {
+            sb.append(mod).append(" ");
+        }
+        if (field.getType() != null) {
+            sb.append(field.getType().getPresentableText()).append(" ");
+        }
+        sb.append(field.getName());
+        return sb.toString().trim();
     }
 
     /**
