@@ -65,6 +65,7 @@ import uno.anahata.asi.yam.tools.Radio;
 import uno.anahata.asi.yam.tools.Speech;
 import uno.anahata.asi.swing.toolkit.benchmarks.Benchmarks;
 import uno.anahata.asi.yam.tools.youtube.YouTube;
+import uno.anahata.asi.yam.tools.gmail.Gmail;
 
 /**
  * A concrete {@link AgiConfig} implementation for standalone Swing
@@ -105,6 +106,7 @@ public class SwingAgiConfig extends AgiConfig {
         getToolClasses().add(Chrome.class);
         getToolClasses().add(Firefox.class);
         getToolClasses().add(YouTube.class);
+        getToolClasses().add(Gmail.class);
         getToolClasses().add(Benchmarks.class);
         getToolClasses().add(Speech.class);
         //getToolClasses().add(OldChrome.class);

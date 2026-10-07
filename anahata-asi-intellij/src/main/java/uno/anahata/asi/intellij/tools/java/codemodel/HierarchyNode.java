@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
  * A recursive, token-efficient node representing a type hierarchy tree across any JVM language
  * (Java, Kotlin, Groovy, Scala) within the IntelliJ IDEA project model and index.
  * <p>
- * Eliminates redundant empty lists by using a single recursive {@link #getChildren()} collection
+ * Eliminates redundant empty lists by using a single recursive {@link #children} collection
  * governed by the active {@link HierarchyDirection} (subtypes or supertypes), and avoids nested
  * URL keychains by placing type identity, language, and origin location directly on each node.
  * </p>
