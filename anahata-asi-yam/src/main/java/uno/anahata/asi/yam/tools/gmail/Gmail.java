@@ -165,7 +165,7 @@ public class Gmail extends AnahataToolkit {
      * @throws Exception If file reading, browser launch, or authorization fails.
      */
     @AgiTool(value = "Authorizes the Gmail session using official Google Client Secrets JSON or stored credentials.", permission = ToolPermission.APPROVE_ALWAYS)
-    public String login(
+    public String loginWithCredentialsFile(
             @AgiToolParam(value = "Optional path to Google Cloud OAuth 2.0 client_secret.json (leave empty to use stored credentials).", required = false) String credentialsJsonPath) throws Exception {
         if (credentialsJsonPath != null && !credentialsJsonPath.isBlank()) {
             Path path = Paths.get(credentialsJsonPath.trim());
@@ -219,7 +219,7 @@ public class Gmail extends AnahataToolkit {
      */
     @AgiTool(value = "Launches 1-click browser login to authorize Gmail using official Anahata Desktop credentials. No secrets JSON required.", permission = ToolPermission.APPROVE_ALWAYS)
     public String login() throws Exception {
-        return login(null);
+        return loginWithCredentialsFile(null);
     }
 
     /**
