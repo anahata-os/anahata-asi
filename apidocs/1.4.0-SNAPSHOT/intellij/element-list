@@ -9,6 +9,7 @@ uno.anahata.asi.intellij.tools.ide.actions
 uno.anahata.asi.intellij.tools.ide.context
 uno.anahata.asi.intellij.tools.ide.nodes
 uno.anahata.asi.intellij.tools.java
+uno.anahata.asi.intellij.tools.java.codemodel
 uno.anahata.asi.intellij.tools.java.coderefiner
 uno.anahata.asi.intellij.tools.maven
 uno.anahata.asi.intellij.tools.project
