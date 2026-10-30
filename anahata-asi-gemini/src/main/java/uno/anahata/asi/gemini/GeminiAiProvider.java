@@ -79,7 +79,7 @@ public class GeminiAiProvider extends AbstractAiProvider {
                     Client.Builder builder = Client.builder()
                             .vertexAI(vertex)
                             .apiKey(apiKey);
-                    if (getBaseUrl() != null && !getBaseUrl().isBlank()) {
+                    if (isBaseUrlConfigurable() && getBaseUrl() != null && !getBaseUrl().isBlank()) {
                         builder.httpOptions(HttpOptions.builder().baseUrl(getBaseUrl()).build());
                     }
                     client = builder.build();
@@ -108,6 +108,33 @@ public class GeminiAiProvider extends AbstractAiProvider {
     public synchronized void hokusPocus() {
         super.hokusPocus();
         client = null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Google Gemini SDK manages cloud endpoints and versioning internally;
+     * user-configured base URLs are unsupported and hidden in the UI.
+     * </p>
+     *
+     * @return {@code false} as Gemini endpoints are managed natively by the GenAI SDK.
+     */
+    @Override
+    public boolean isBaseUrlConfigurable() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Normalizes base URL and nullifies the cached native client
+     * so changes take effect immediately.
+     * </p>
+     */
+    @Override
+    public synchronized void setBaseUrl(String baseUrl) {
+        super.setBaseUrl(baseUrl);
+        this.client = null;
     }
 
     /**

@@ -374,6 +374,28 @@ public abstract class AbstractAiProvider extends BasicPropertyChangeSource {
     }
 
     /**
+     * Sets the base URL of the provider's API endpoint, normalizing blank strings to null.
+     *
+     * @param baseUrl The base URL, or null/blank for default.
+     */
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = (baseUrl != null && !baseUrl.isBlank()) ? baseUrl.trim() : null;
+    }
+
+    /**
+     * Indicates whether this provider supports a user-configurable base URL in the UI.
+     * <p>
+     * Providers that rely on proprietary SDKs with fixed cloud endpoints (such as Google GenAI)
+     * return {@code false} to prevent invalid endpoint overrides.
+     * </p>
+     *
+     * @return {@code true} if the base URL can be edited by the user, {@code false} to hide it.
+     */
+    public boolean isBaseUrlConfigurable() {
+        return true;
+    }
+
+    /**
      * Gets the master list of model entities for this provider (loaded from
      * disk .kryo files).
      *

@@ -252,6 +252,7 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
         saveBtn.addActionListener(e -> {
             try {
                 syncToProvider();
+                provider.hokusPocus();
                 provider.persist();
                 JOptionPane.showMessageDialog(this, "Provider '" + provider.getDisplayName() + "' saved successfully.", "Saved", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
@@ -311,9 +312,11 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
         }));
         formPanel.add(displayNameField, "span 2, wrap");
 
-        formPanel.add(new JLabel("Base URL:"));
-        baseUrlField = new JTextField(provider.getBaseUrl());
-        formPanel.add(baseUrlField, "span 2, wrap");
+        if (provider.isBaseUrlConfigurable()) {
+            formPanel.add(new JLabel("Base URL:"));
+            baseUrlField = new JTextField(provider.getBaseUrl());
+            formPanel.add(baseUrlField, "span 2, wrap");
+        }
 
         formPanel.add(new JLabel("API Key Required:"), "gaptop 5");
         apiKeyRequiredCheck = new JCheckBox("", provider.isApiKeyRequired());
@@ -649,7 +652,7 @@ public class AbstractAiProviderPanel<P extends AbstractAiProvider> extends Scrol
             provider.setAutomaticallyRegisterNewlyDiscoveredModels(autoRegisterCheck.isSelected());
         }
 
-        if (baseUrlField != null) {
+        if (provider.isBaseUrlConfigurable() && baseUrlField != null) {
             provider.setBaseUrl(baseUrlField.getText().trim());
         }
 
