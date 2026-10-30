@@ -395,40 +395,45 @@ public class StatusPanel extends JPanel {
                 historyJsonLink.setVisible(lastRawApi.historyJson() != null && !lastRawApi.historyJson().isEmpty());
             }
 
-            tokenDetailsLabel.setVisible(lastResponse != null);
+            if (lastResponse != null) {
+                tokenDetailsLabel.setVisible(true);
 
-            lastResponse.getPromptFeedback().ifPresent(blockReason -> {
-                blockReasonLabel.setText("Prompt Blocked: " + blockReason);
-                blockReasonLabel.setVisible(true);
-            });
+                lastResponse.getPromptFeedback().ifPresent(blockReason -> {
+                    blockReasonLabel.setText("Prompt Blocked: " + blockReason);
+                    blockReasonLabel.setVisible(true);
+                });
 
-            ResponseUsageMetadata usage = lastResponse.getUsageMetadata();
-            if (usage != null) {
-                String prompt = "Prompt: " + NUMBER_FORMAT.format(usage.getPromptTokenCount());
+                ResponseUsageMetadata usage = lastResponse.getUsageMetadata();
+                if (usage != null) {
+                    String prompt = "Prompt: " + NUMBER_FORMAT.format(usage.getPromptTokenCount());
 
-                // Append non-text input modalities details (e.g. IMAGE, AUDIO, VIDEO) if present
-                StringBuilder details = new StringBuilder();
-                if (usage.getPromptTokensDetails() != null) {
-                    usage.getPromptTokensDetails().forEach((modality, count) -> {
-                        if (!"TEXT".equals(modality) && count > 0) {
-                            if (details.length() > 0) {
-                                details.append(", ");
+                    // Append non-text input modalities details (e.g. IMAGE, AUDIO, VIDEO) if present
+                    StringBuilder details = new StringBuilder();
+                    if (usage.getPromptTokensDetails() != null) {
+                        usage.getPromptTokensDetails().forEach((modality, count) -> {
+                            if (!"TEXT".equals(modality) && count > 0) {
+                                if (details.length() > 0) {
+                                    details.append(", ");
+                                }
+                                details.append(modality).append(": ").append(NUMBER_FORMAT.format(count));
                             }
-                            details.append(modality).append(": ").append(NUMBER_FORMAT.format(count));
-                        }
-                    });
-                }
-                if (details.length() > 0) {
-                    prompt += " (" + details.toString() + ")";
-                }
+                        });
+                    }
+                    if (details.length() > 0) {
+                        prompt += " (" + details.toString() + ")";
+                    }
 
-                String candidates = "Candidates: " + NUMBER_FORMAT.format(usage.getCandidatesTokenCount());
-                String cached = "Cached: " + NUMBER_FORMAT.format(usage.getCachedContentTokenCount());
-                String thoughts = "Thoughts: " + NUMBER_FORMAT.format(usage.getThoughtsTokenCount());
-                String toolPrompt = "Tools: " + NUMBER_FORMAT.format(usage.getToolUsePromptTokenCount());
+                    String candidates = "Candidates: " + NUMBER_FORMAT.format(usage.getCandidatesTokenCount());
+                    String cached = "Cached: " + NUMBER_FORMAT.format(usage.getCachedContentTokenCount());
+                    String thoughts = "Thoughts: " + NUMBER_FORMAT.format(usage.getThoughtsTokenCount());
+                    String toolPrompt = "Tools: " + NUMBER_FORMAT.format(usage.getToolUsePromptTokenCount());
 
-                tokenDetailsLabel.setText(String.join(" | ", prompt, candidates, cached, thoughts, toolPrompt));
+                    tokenDetailsLabel.setText(String.join(" | ", prompt, candidates, cached, thoughts, toolPrompt));
+                } else {
+                    tokenDetailsLabel.setText("");
+                }
             } else {
+                tokenDetailsLabel.setVisible(false);
                 tokenDetailsLabel.setText("");
             }
 
