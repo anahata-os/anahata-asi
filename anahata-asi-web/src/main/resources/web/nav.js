@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         deskSnapshotVer.textContent = snapVersion.startsWith("v") ? snapVersion : `v${snapVersion}`;
                     }
 
-                    // Dynamic NBM snapshot resolver (split by target: 300 / 310)
+                    // Dynamic NBM snapshot resolver (split by target: 300 / 310 / 320)
                     window.nbNbmAssets = window.nbNbmAssets || { stable: {}, snapshot: {} };
                     window.nbNbmVersions = window.nbNbmVersions || { stable: {}, snapshot: {} };
                     assets.forEach(asset => {
@@ -370,6 +370,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else if (asset.name.includes('310')) {
                                 window.nbNbmAssets.snapshot['310'] = asset.browser_download_url;
                                 window.nbNbmVersions.snapshot['310'] = verStr;
+                            } else if (asset.name.includes('320')) {
+                                window.nbNbmAssets.snapshot['320'] = asset.browser_download_url;
+                                window.nbNbmVersions.snapshot['320'] = verStr;
                             }
                         }
                     });
@@ -476,6 +479,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     } else if (asset.name.includes('310')) {
                                         window.nbNbmAssets.stable['310'] = asset.browser_download_url;
                                         window.nbNbmVersions.stable['310'] = verStr;
+                                    } else if (asset.name.includes('320')) {
+                                        window.nbNbmAssets.stable['320'] = asset.browser_download_url;
+                                        window.nbNbmVersions.stable['320'] = verStr;
                                     }
                                 }
                             });
