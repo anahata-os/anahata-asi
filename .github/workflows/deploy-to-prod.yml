@@ -28,6 +28,11 @@ on:
         required: true
         type: boolean
         default: false
+      release_nb_320:
+        description: 'Release NetBeans 32 ASI Studio (Target 320 NBM)'
+        required: true
+        type: boolean
+        default: false
       release_nb_uc:
         description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
         required: true
@@ -144,6 +149,7 @@ jobs:
             -f deploy_central="${{ inputs.deploy_central }}" \
             -f release_nb_300="${{ inputs.release_nb_300 }}" \
             -f release_nb_310="${{ inputs.release_nb_310 }}" \
+            -f release_nb_320="${{ inputs.release_nb_320 }}" \
             -f release_nb_uc="${{ inputs.release_nb_uc }}" \
             -f release_intellij="${{ inputs.release_intellij }}" \
             -f release_snap="${{ inputs.release_snap }}"

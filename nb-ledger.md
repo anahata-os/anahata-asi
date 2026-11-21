@@ -3,9 +3,9 @@
 ## 📈 Distribution Funnel
 | Channel | Version | Status | Downloads (Est) | Strategy |
 | :--- | :--- | :--- | :--- | :--- |
-| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 5,329 | Brand Awareness / Discovery (id=125) |
-| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,245 | The Singularity / ASI Container (id=135) |
-| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 607 | Autonomous Update Channel (id=141) |
+| **NB Plugin Portal (V1)** | 30.0.1 | Stable | 5,469 | Brand Awareness / Discovery (id=125) |
+| **NB Plugin Portal (V2)** | 1.0.0 | Stable | 1,278 | The Singularity / ASI Container (id=135) |
+| **NB Plugin Portal (Update Center)** | 1.0.0 | Active | 757 | Autonomous Update Channel (id=141) |
 
  > [!TIP]
  > **One-Shot Portal Scraper & Velocity Guide:**
@@ -61,6 +61,10 @@
 "5. **Update `ledger.md`**: Record the new counts in `## 📈 Distribution Funnel` and append a fresh log row in `## 🛠️ Milestone Log
 | Date | V1 (125) | V2 (135) | UC (141) | Total | Δ Total | Velocity (DL/h) | Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 2026-11-07 21:49 | 5,469 | 1,278 | 757 | 7,504 | +64 | 2.62 | V1: +50 (2.04 DLs/hr), V2: +1 (0.04 DLs/hr), UC: +13 (0.53 DLs/hr) in 24.5 hours (Total Velocity: 2.62 DLs/hr) - Ecosystem crossed 7,500 milestone (7,504)! |
+| 2026-11-06 21:21 | 5,419 | 1,277 | 744 | 7,440 | +6 | 0.59 | V1: +1 (0.10 DLs/hr), V2: +1 (0.10 DLs/hr), UC: +4 (0.40 DLs/hr) in 10.1 hours (Total Velocity: 0.59 DLs/hr) - Total reached 7,440 |
+| 2026-11-06 11:15 | 5,418 | 1,276 | 740 | 7,434 | +144 | 3.50 | V1: +50 (1.21 DLs/hr), V2: +25 (0.61 DLs/hr), UC: +69 (1.68 DLs/hr) in 41.2 hours (Total Velocity: 3.50 DLs/hr) - UC crossed 700 & Total accelerated to 3.50 DLs/hr! |
+| 2026-11-04 18:04 | 5,368 | 1,251 | 671 | 7,290 | +109 | 0.85 | V1: +39 (0.30 DLs/hr), V2: +6 (0.05 DLs/hr), UC: +64 (0.50 DLs/hr) in 128.8 hours (Total Velocity: 0.85 DLs/hr) - Total reached 7,290 |
 | 2026-10-30 09:15 | 5,329 | 1,245 | 607 | 7,181 | +173 | 2.47 | V1: +132 (1.88 DLs/hr), V2: +6 (0.09 DLs/hr), UC: +35 (0.50 DLs/hr) in 70.1 hours (Total Velocity: 2.47 DLs/hr) - UC crossed 600 & Total accelerated to 2.47 DLs/hr! |
 | 2026-10-27 11:11 | 5,197 | 1,239 | 572 | 7,008 | +68 | 1.08 | V1: +12 (0.19 DLs/hr), V2: +10 (0.16 DLs/hr), UC: +46 (0.73 DLs/hr) in 63.1 hours (Total Velocity: 1.08 DLs/hr) - Total crossed 7,000! |
 | 2026-10-24 20:08 | 5,185 | 1,229 | 526 | 6,940 | +34 | 0.44 | V1: +6 (0.08 DLs/hr), V2: +11 (0.14 DLs/hr), UC: +17 (0.22 DLs/hr) in 77.0 hours (Total Velocity: 0.44 DLs/hr) |

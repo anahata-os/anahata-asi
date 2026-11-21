@@ -20,6 +20,11 @@ on:
         required: false
         type: boolean
         default: false
+      release_nb_320:
+        description: 'Release NetBeans 32 ASI Studio (Target 320 NBM)'
+        required: false
+        type: boolean
+        default: false
       release_nb_uc:
         description: 'Release NetBeans Update Center Plugin (anahata-asi-nb-uc)'
         required: false
@@ -161,10 +166,15 @@ jobs:
             echo " [INFO] Distribution Base: $dist_base"
             echo "---------------------------------------------------------"
 
+            local bc_ver="1.83"
+            if [ "$target" == "320" ]; then
+              bc_ver="1.86"
+            fi
+
             rm -rf anahata-asi-nb/target/*.nbm anahata-asi-nb/target/netbeans_site
             mvn -f anahata-asi-nb/pom.xml versions:set -DnewVersion="$stamped_ver" -DgenerateBackupPoms=false -ntp
-            mvn -f anahata-asi-nb/pom.xml install -Dnetbeans.version="RELEASE$target" -ntp
-            mvn -f anahata-asi-nb/pom.xml nbm:autoupdate -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="$dist_base" -ntp
+            mvn -f anahata-asi-nb/pom.xml install -Dnetbeans.version="RELEASE$target" -Dbouncycastle.version="$bc_ver" -ntp
+            mvn -f anahata-asi-nb/pom.xml nbm:autoupdate -Dnetbeans.version="RELEASE$target" -Dnbm.distBase="$dist_base" -Dbouncycastle.version="$bc_ver" -ntp
 
             if [ "$IS_RELEASE" == "true" ] && [ "${{ inputs.deploy_central }}" == "true" ]; then
               local should_deploy="false"
@@ -172,10 +182,12 @@ jobs:
                 should_deploy="true"
               elif [ "$target" == "310" ] && [ "${{ inputs.release_nb_310 }}" == "true" ]; then
                 should_deploy="true"
+              elif [ "$target" == "320" ] && [ "${{ inputs.release_nb_320 }}" == "true" ]; then
+                should_deploy="true"
               fi
               if [ "$should_deploy" == "true" ]; then
                 echo "[INFO] Deploying NetBeans $major ASI Studio ($stamped_ver) to Maven Central..."
-                mvn -f anahata-asi-nb/pom.xml deploy -P release -Dnetbeans.version="RELEASE$target" -ntp
+                mvn -f anahata-asi-nb/pom.xml deploy -P release -Dnetbeans.version="RELEASE$target" -Dbouncycastle.version="$bc_ver" -ntp
               fi
             fi
 
@@ -191,6 +203,7 @@ jobs:
           # Build NBMs locally and stage for GitHub Releases
           deploy_nbm 300
           deploy_nbm 310
+          deploy_nbm 320
 
           # Gated Tier 3: Only update official production updates.xml catalogs if explicitly selected in release
           if [ "$IS_RELEASE" == "true" ]; then
@@ -201,6 +214,10 @@ jobs:
             if [ "${{ inputs.release_nb_310 }}" != "true" ]; then
               echo "[INFO] NetBeans 31 production updates.xml catalog skipped (release_nb_310=false)."
               rm -f "staging-catalogs/nb/31/updates.xml"
+            fi
+            if [ "${{ inputs.release_nb_320 }}" != "true" ]; then
+              echo "[INFO] NetBeans 32 production updates.xml catalog skipped (release_nb_320=false)."
+              rm -f "staging-catalogs/nb/32/updates.xml"
             fi
           fi
 
@@ -403,7 +420,7 @@ jobs:
             for dir in temp-gh-pages/apidocs/*; do
               if [ -d "$dir" ]; then
                 dirname=$(basename "$dir")
-                if [[ "$dirname" =~ ^[0-9] ]] && [[ ! "$dirname" =~ \.(300|310) ]]; then
+                if [[ "$dirname" =~ ^[0-9] ]] && [[ ! "$dirname" =~ \.(300|310|320) ]]; then
                   cp -r "$dir" _site/apidocs/
                 fi
               fi
@@ -444,7 +461,7 @@ jobs:
           apidocs_dir = "_site/apidocs"
           all_dirs = [d for d in os.listdir(apidocs_dir) if os.path.isdir(os.path.join(apidocs_dir, d)) and not d.startswith(".") and d[0].isdigit()]
 
-          clean_dirs = [d for d in all_dirs if not re.search(r"\.(300|310)", d)]
+          clean_dirs = [d for d in all_dirs if not re.search(r"\.(300|310|320)", d)]
 
           snapshots = [d for d in clean_dirs if "SNAPSHOT" in d]
           stables = [d for d in clean_dirs if "SNAPSHOT" not in d]

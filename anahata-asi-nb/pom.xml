@@ -14,7 +14,8 @@
     <name>Anahata ASI Studio - NetBeans</name>
     <description>The Best Java AI Assistant On Earth | Anahata ASI RI and SDK.</description>
     <properties>
-        <netbeans.version>RELEASE310</netbeans.version>
+        <netbeans.version>RELEASE320</netbeans.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
         <!-- <netbeans.installation>/usr/lib/apache-netbeans</netbeans.installation> -->
     </properties>
     <dependencies>
@@ -526,13 +527,25 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
-            <version>1.83</version>
+            <version>${bouncycastle.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.83</version>
+            <version>${bouncycastle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpg-jdk18on</artifactId>
+            <version>${bouncycastle.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcutil-jdk18on</artifactId>
+            <version>${bouncycastle.version}</version>
             <scope>provided</scope>
         </dependency>
         
@@ -794,7 +807,7 @@
                         </dependency>
                         <dependency>
                             <type>impl</type>
-                            <id>org.netbeans.api:org-netbeans-lig-bit</id>
+                            <id>org.netbeans.api:org-netbeans-libs-git</id>
                         </dependency>
                     </moduleDependencies>
                     <publicPackages>
