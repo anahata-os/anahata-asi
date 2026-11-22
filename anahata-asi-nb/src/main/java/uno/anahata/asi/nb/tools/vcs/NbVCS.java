@@ -55,6 +55,7 @@ import org.openide.util.HelpCtx;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.agi.message.RagMessage;
 import uno.anahata.asi.ide.tools.vcs.FastForwardPolicy;
+import uno.anahata.asi.ide.tools.vcs.GitProtocol;
 import uno.anahata.asi.ide.tools.vcs.HistoryEntry;
 import uno.anahata.asi.ide.tools.vcs.VcsDiff;
 import uno.anahata.asi.ide.tools.vcs.VcsFileStatus;
@@ -345,31 +346,146 @@ public class NbVCS extends AbstractVCS {
     }
 
     /**
-     * Initializes a new Git repository in the specified directory and refreshes NetBeans VFS.
-     *
-     * @param directoryPath The absolute path of the directory to initialize as a Git repository.
-     * @return Confirmation message of repository initialization.
-     * @throws Exception if initialization fails.
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Initializes the repository via {@code GitClient.init()},
+     * configures the initial branch (defaulting to {@code main}) directly on the unborn branch
+     * in {@code .git/HEAD} or via {@code client.renameBranch()}, and if a remote URI is specified,
+     * normalizes it according to the requested {@link GitProtocol} (defaulting to SSH) and sets
+     * the remote configuration via {@code GitClient.setRemote()} in a single shot.
+     * </p>
      */
-    @AgiTool("Initializes a new Git repository in the specified directory.")
+    @Override
+    @AgiTool("Initializes a new Git repository in the specified directory, sets default branch to 'main', and optionally configures the remote with SSH.")
     public String gitInit(
-            @AgiToolParam(value = "The absolute path of the directory to initialize.", rendererId = "path") String directoryPath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the directory to initialize.", rendererId = "path") String directoryPath,
+            @AgiToolParam(value = "Initial branch name. Defaults to 'main'.", required = false) String initialBranchName,
+            @AgiToolParam(value = "Optional remote URI or GitHub shorthand (e.g. 'git@github.com:org/repo.git', 'https://github.com/org/repo', or 'org/repo'). Automatically normalizes according to selected protocol.", required = false) String remoteUri,
+            @AgiToolParam(value = "Optional remote name. Defaults to 'origin'.", required = false) String remoteName,
+            @AgiToolParam(value = "Optional remote protocol (SSH or HTTPS). Defaults to SSH.", required = false) GitProtocol remoteProtocol) throws Exception {
 
         File dir = resolveDirectory(directoryPath);
+        String targetBranch = (initialBranchName != null && !initialBranchName.isBlank()) ? initialBranchName.trim() : "main";
+        String rName = (remoteName != null && !remoteName.isBlank()) ? remoteName.trim() : "origin";
+        GitProtocol protocol = (remoteProtocol != null) ? remoteProtocol : GitProtocol.SSH;
+
         GitClient client = Git.getInstance().getClient(dir);
+        ToolProgressMonitor monitor = new ToolProgressMonitor();
         try {
-            client.init(new ToolProgressMonitor());
+            client.init(monitor);
+
+            // Establish initial branch on unborn HEAD or rename existing branch
+            File headFile = new File(new File(dir, ".git"), "HEAD");
+            if (headFile.exists()) {
+                Files.writeString(headFile.toPath(), "ref: refs/heads/" + targetBranch + "\n", StandardCharsets.UTF_8);
+            }
+
+            // Configure remote in single shot if provided
+            if (remoteUri != null && !remoteUri.isBlank()) {
+                String formattedUri = formatRemoteUrl(remoteUri, protocol);
+                List<String> uris = Collections.singletonList(formattedUri);
+                List<String> pushUris = Collections.singletonList(formattedUri);
+                List<String> fetchSpecs = Collections.singletonList("+refs/heads/*:refs/remotes/" + rName + "/*");
+                List<String> pushSpecs = Collections.emptyList();
+                GitRemoteConfig remoteConfig = new GitRemoteConfig(rName, uris, pushUris, fetchSpecs, pushSpecs);
+                client.setRemote(remoteConfig, monitor);
+            }
         } finally {
             client.release();
         }
 
-        FileObject fo = FileUtil.toFileObject(dir);
-        if (fo != null) {
-            fo.refresh();
+        refreshVfs(dir);
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Successfully initialized Git repository in: ").append(dir.getAbsolutePath());
+        sb.append(" [Branch: `").append(targetBranch).append("`]");
+        if (remoteUri != null && !remoteUri.isBlank()) {
+            sb.append(" with remote `").append(rName).append("` (").append(formatRemoteUrl(remoteUri, protocol)).append(")");
+        }
+        log(sb.toString());
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Normalizes the remote URI using {@link #formatRemoteUrl(String, GitProtocol)}
+     * (defaulting to SSH) and sets or updates the {@link GitRemoteConfig} on the repository via {@code GitClient.setRemote()}.
+     * </p>
+     */
+    @Override
+    @AgiTool("Sets or updates a remote configuration in the repository, automatically normalizing GitHub URLs according to the selected protocol.")
+    public String gitSetRemote(
+            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
+            @AgiToolParam(value = "The remote name. Defaults to 'origin'.", required = false) String remoteName,
+            @AgiToolParam(value = "The remote URI or GitHub shorthand (e.g. 'git@github.com:org/repo.git', 'https://github.com/org/repo', or 'org/repo').") String remoteUri,
+            @AgiToolParam(value = "Optional remote protocol (SSH or HTTPS). Defaults to SSH.", required = false) GitProtocol remoteProtocol) throws Exception {
+
+        if (remoteUri == null || remoteUri.isBlank()) {
+            throw new AgiToolException("Remote URI cannot be empty.");
         }
 
-        log("Initialized Git repository in: " + dir.getAbsolutePath());
-        return "Successfully initialized Git repository in: " + dir.getAbsolutePath();
+        File repoRoot = requireRepoRoot(repoPath);
+        String rName = (remoteName != null && !remoteName.isBlank()) ? remoteName.trim() : "origin";
+        GitProtocol protocol = (remoteProtocol != null) ? remoteProtocol : GitProtocol.SSH;
+        String formattedUri = formatRemoteUrl(remoteUri, protocol);
+
+        GitClient client = Git.getInstance().getClient(repoRoot);
+        ToolProgressMonitor monitor = new ToolProgressMonitor();
+        try {
+            List<String> uris = Collections.singletonList(formattedUri);
+            List<String> pushUris = Collections.singletonList(formattedUri);
+            List<String> fetchSpecs = Collections.singletonList("+refs/heads/*:refs/remotes/" + rName + "/*");
+            List<String> pushSpecs = Collections.emptyList();
+            GitRemoteConfig remoteConfig = new GitRemoteConfig(rName, uris, pushUris, fetchSpecs, pushSpecs);
+            client.setRemote(remoteConfig, monitor);
+        } finally {
+            client.release();
+        }
+
+        refreshVfs(repoRoot);
+        String msg = "Successfully configured remote `" + rName + "` -> `" + formattedUri + "` in " + repoRoot.getName();
+        log(msg);
+        return msg;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Delegates to {@code GitClient.renameBranch()} and refreshes
+     * NetBeans Virtual FileSystem and repository metadata.
+     * </p>
+     */
+    @Override
+    @AgiTool("Renames a Git branch in the repository.")
+    public String gitRenameBranch(
+            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
+            @AgiToolParam(value = "The current name of the branch to rename.") String oldName,
+            @AgiToolParam(value = "The new name for the branch.") String newName) throws Exception {
+
+        if (oldName == null || oldName.isBlank()) {
+            throw new AgiToolException("Current branch name cannot be empty.");
+        }
+        if (newName == null || newName.isBlank()) {
+            throw new AgiToolException("New branch name cannot be empty.");
+        }
+
+        File repoRoot = requireRepoRoot(repoPath);
+        String oldBranch = oldName.trim();
+        String newBranch = newName.trim();
+
+        GitClient client = Git.getInstance().getClient(repoRoot);
+        ToolProgressMonitor monitor = new ToolProgressMonitor();
+        try {
+            client.renameBranch(oldBranch, newBranch, monitor);
+        } finally {
+            client.release();
+        }
+
+        refreshVfs(repoRoot);
+        String msg = "Successfully renamed branch `" + oldBranch + "` to `" + newBranch + "` in " + repoRoot.getName();
+        log(msg);
+        return msg;
     }
 
     /**

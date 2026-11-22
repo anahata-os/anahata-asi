@@ -4,9 +4,6 @@ package uno.anahata.asi.ide.tools.vcs;
 import java.io.File;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
-import uno.anahata.asi.ide.tools.vcs.FastForwardPolicy;
-import uno.anahata.asi.ide.tools.vcs.HistoryEntry;
-import uno.anahata.asi.ide.tools.vcs.VcsDiff;
 import uno.anahata.asi.agi.tool.AnahataToolkit;
 
 /**
@@ -97,13 +94,40 @@ public abstract class AbstractVCS extends AnahataToolkit {
     public abstract String getRepositoryOverview(String repoPath) throws Exception;
 
     /**
-     * Initializes a new Git repository in the specified directory.
+     * Initializes a new Git repository in the specified directory, sets default branch to 'main', and optionally configures the remote with SSH.
      *
      * @param directoryPath The absolute path of the directory to initialize. If omitted or null, defaults to project root.
+     * @param initialBranchName Initial branch name. Defaults to 'main'.
+     * @param remoteUri Optional remote URI or GitHub shorthand (e.g. 'git@github.com:org/repo.git', 'https://github.com/org/repo', or 'org/repo'). Automatically normalizes according to selected protocol.
+     * @param remoteName Optional remote name. Defaults to 'origin'.
+     * @param remoteProtocol Optional remote protocol (SSH or HTTPS). Defaults to SSH.
      * @return Confirmation message of repository initialization.
      * @throws Exception if initialization fails.
      */
-    public abstract String gitInit(String directoryPath) throws Exception;
+    public abstract String gitInit(String directoryPath, String initialBranchName, String remoteUri, String remoteName, GitProtocol remoteProtocol) throws Exception;
+
+    /**
+     * Sets or updates a remote configuration in the repository, automatically normalizing GitHub URLs according to the selected protocol.
+     *
+     * @param repoPath Path of the repository or project directory.
+     * @param remoteName The remote name. Defaults to 'origin'.
+     * @param remoteUri The remote URI or GitHub shorthand (e.g. 'git@github.com:org/repo.git', 'https://github.com/org/repo', or 'org/repo').
+     * @param remoteProtocol Optional remote protocol (SSH or HTTPS). Defaults to SSH.
+     * @return Confirmation message of remote configuration.
+     * @throws Exception if setting remote fails.
+     */
+    public abstract String gitSetRemote(String repoPath, String remoteName, String remoteUri, GitProtocol remoteProtocol) throws Exception;
+
+    /**
+     * Renames a Git branch in the repository.
+     *
+     * @param repoPath Path of the repository or project directory.
+     * @param oldName The current name of the branch to rename.
+     * @param newName The new name for the branch.
+     * @return Confirmation message of branch rename.
+     * @throws Exception if renaming branch fails.
+     */
+    public abstract String gitRenameBranch(String repoPath, String oldName, String newName) throws Exception;
 
     /**
      * Retrieves the Git status for a repository or specific file/directory path.
@@ -285,6 +309,57 @@ public abstract class AbstractVCS extends AnahataToolkit {
      * @throws Exception if blame retrieval fails.
      */
     public abstract String gitBlame(String filePath, Integer startLine, Integer endLine, String revision) throws Exception;
+
+    /**
+     * Normalizes a remote URI or GitHub shorthand into a fully-qualified URL matching the target transport protocol.
+     * <p>
+     * Supports GitHub shorthand ({@code org/repo}), HTTPS URLs ({@code https://github.com/org/repo.git}),
+     * and SSH URLs ({@code git@github.com:org/repo.git}).
+     * </p>
+     *
+     * @param remoteUri The raw remote URI, web URL, or shorthand.
+     * @param protocol The target transport protocol (defaults to {@link GitProtocol#SSH}).
+     * @return The formatted, protocol-aligned remote URL.
+     */
+    public static String formatRemoteUrl(String remoteUri, GitProtocol protocol) {
+        if (remoteUri == null || remoteUri.isBlank()) {
+            return remoteUri;
+        }
+        String trimmed = remoteUri.trim();
+        GitProtocol target = (protocol != null) ? protocol : GitProtocol.SSH;
+
+        // GitHub shorthand e.g. "anahata-os/marketing-dashboard"
+        if (trimmed.matches("^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$")) {
+            return target == GitProtocol.SSH
+                    ? "git@github.com:" + trimmed + ".git"
+                    : "https://github.com/" + trimmed + ".git";
+        }
+
+        // GitHub HTTPS or HTTP URL
+        if (trimmed.startsWith("https://github.com/") || trimmed.startsWith("http://github.com/")) {
+            String prefix = trimmed.startsWith("https://") ? "https://github.com/" : "http://github.com/";
+            String path = trimmed.substring(prefix.length());
+            if (!path.endsWith(".git")) {
+                path = path + ".git";
+            }
+            return target == GitProtocol.SSH
+                    ? "git@github.com:" + path
+                    : "https://github.com/" + path;
+        }
+
+        // GitHub SSH URL
+        if (trimmed.startsWith("git@github.com:")) {
+            String path = trimmed.substring("git@github.com:".length());
+            if (!path.endsWith(".git")) {
+                path = path + ".git";
+            }
+            return target == GitProtocol.SSH
+                    ? "git@github.com:" + path
+                    : "https://github.com/" + path;
+        }
+
+        return trimmed;
+    }
 
     /**
      * Checks whether a revision string represents the local uncommitted working tree or index.

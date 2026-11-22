@@ -58,6 +58,7 @@ import uno.anahata.asi.internal.AnahataDiffUtils;
 import uno.anahata.asi.intellij.internal.ProjectUtils;
 import uno.anahata.asi.swing.internal.SwingUtils;
 import uno.anahata.asi.ide.tools.vcs.AbstractVCS;
+import uno.anahata.asi.ide.tools.vcs.GitProtocol;
 
 /**
  * A toolkit for inspecting version-control status through IntelliJ's generic VCS layer.
@@ -811,15 +812,22 @@ public class IntellijVCS extends AbstractVCS {
     }
 
     /**
-     * Initializes a new Git repository in the specified directory and updates IntelliJ's repository mappings.
-     *
-     * @param directoryPath The absolute path of the directory to initialize. If omitted, initializes in the active project base directory.
-     * @return Confirmation message of repository initialization.
-     * @throws Exception if initialization fails.
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Initializes the Git repository via {@code Git.getInstance().init(project, vf)},
+     * establishes the initial branch (defaulting to {@code main}) directly on the unborn branch
+     * in {@code .git/HEAD}, and if a remote URI is specified, normalizes it according to the requested
+     * {@link GitProtocol} (defaulting to SSH) and configures the remote in a single shot.
+     * </p>
      */
-    @AgiTool("Initializes a new Git repository in the specified directory.")
+    @Override
+    @AgiTool("Initializes a new Git repository in the specified directory, sets default branch to 'main', and optionally configures the remote with SSH.")
     public String gitInit(
-            @AgiToolParam(value = "The absolute path of the directory to initialize. If omitted, initializes in the active project base directory.", required = false, rendererId = "path") String directoryPath) throws Exception {
+            @AgiToolParam(value = "The absolute path of the directory to initialize. If omitted, initializes in the active project base directory.", required = false, rendererId = "path") String directoryPath,
+            @AgiToolParam(value = "Initial branch name. Defaults to 'main'.", required = false) String initialBranchName,
+            @AgiToolParam(value = "Optional remote URI or GitHub shorthand (e.g. 'git@github.com:org/repo.git', 'https://github.com/org/repo', or 'org/repo'). Automatically normalizes according to selected protocol.", required = false) String remoteUri,
+            @AgiToolParam(value = "Optional remote name. Defaults to 'origin'.", required = false) String remoteName,
+            @AgiToolParam(value = "Optional remote protocol (SSH or HTTPS). Defaults to SSH.", required = false) GitProtocol remoteProtocol) throws Exception {
 
         File dir;
         Project project;
@@ -853,11 +861,134 @@ public class IntellijVCS extends AbstractVCS {
             throw new AgiToolException("Failed to initialize Git repository: " + result.getErrorOutputAsJoinedString());
         }
 
+        String targetBranch = (initialBranchName != null && !initialBranchName.isBlank()) ? initialBranchName.trim() : "main";
+        File headFile = new File(new File(dir, ".git"), "HEAD");
+        if (headFile.exists()) {
+            Files.writeString(headFile.toPath(), "ref: refs/heads/" + targetBranch + "\n", StandardCharsets.UTF_8);
+        }
+
+        String rName = (remoteName != null && !remoteName.isBlank()) ? remoteName.trim() : "origin";
+        GitProtocol protocol = (remoteProtocol != null) ? remoteProtocol : GitProtocol.SSH;
+
+        if (remoteUri != null && !remoteUri.isBlank()) {
+            String formattedUri = formatRemoteUrl(remoteUri, protocol);
+            GitLineHandler remoteHandler = new GitLineHandler(project, vf, GitCommand.REMOTE);
+            remoteHandler.addParameters("add", rName, formattedUri);
+            GitCommandResult remRes = Git.getInstance().runCommand(remoteHandler);
+            if (!remRes.success()) {
+                log.warn("Could not add remote during gitInit: {}", remRes.getErrorOutputAsJoinedString());
+            }
+        }
+
         vf.refresh(false, true);
         GitRepositoryManager.getInstance(project).updateRepository(vf);
 
-        log("Initialized Git repository in: " + dir.getAbsolutePath());
-        return "Successfully initialized Git repository in: " + dir.getAbsolutePath();
+        StringBuilder sb = new StringBuilder();
+        sb.append("Successfully initialized Git repository in: ").append(dir.getAbsolutePath());
+        sb.append(" [Branch: `").append(targetBranch).append("`]");
+        if (remoteUri != null && !remoteUri.isBlank()) {
+            sb.append(" with remote `").append(rName).append("` (").append(formatRemoteUrl(remoteUri, protocol)).append(")");
+        }
+        log(sb.toString());
+        return sb.toString();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Normalizes the remote URI via {@link #formatRemoteUrl(String, GitProtocol)}
+     * and configures or updates the remote in IntelliJ's Git repository via {@code git remote set-url} or {@code git remote add}.
+     * </p>
+     */
+    @Override
+    @AgiTool("Sets or updates a remote configuration in the repository, automatically normalizing GitHub URLs according to the selected protocol.")
+    public String gitSetRemote(
+            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
+            @AgiToolParam(value = "The remote name. Defaults to 'origin'.", required = false) String remoteName,
+            @AgiToolParam(value = "The remote URI or GitHub shorthand (e.g. 'git@github.com:org/repo.git', 'https://github.com/org/repo', or 'org/repo').") String remoteUri,
+            @AgiToolParam(value = "Optional remote protocol (SSH or HTTPS). Defaults to SSH.", required = false) GitProtocol remoteProtocol) throws Exception {
+
+        if (remoteUri == null || remoteUri.isBlank()) {
+            throw new AgiToolException("Remote URI cannot be empty.");
+        }
+
+        GitRepository repo = requireRepo(repoPath);
+        Project project = repo.getProject();
+        VirtualFile root = repo.getRoot();
+
+        String rName = (remoteName != null && !remoteName.isBlank()) ? remoteName.trim() : "origin";
+        GitProtocol protocol = (remoteProtocol != null) ? remoteProtocol : GitProtocol.SSH;
+        String formattedUri = formatRemoteUrl(remoteUri, protocol);
+
+        boolean remoteExists = false;
+        for (GitRemote r : repo.getRemotes()) {
+            if (r.getName().equalsIgnoreCase(rName)) {
+                remoteExists = true;
+                break;
+            }
+        }
+
+        GitLineHandler handler = new GitLineHandler(project, root, GitCommand.REMOTE);
+        if (remoteExists) {
+            handler.addParameters("set-url", rName, formattedUri);
+        } else {
+            handler.addParameters("add", rName, formattedUri);
+        }
+
+        GitCommandResult result = Git.getInstance().runCommand(handler);
+        if (!result.success()) {
+            throw new AgiToolException("Failed to set remote: " + result.getErrorOutputAsJoinedString());
+        }
+
+        root.refresh(false, true);
+        repo.update();
+
+        String msg = "Successfully configured remote `" + rName + "` -> `" + formattedUri + "` in " + root.getName();
+        log(msg);
+        return msg;
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Implementation details: Renames the branch via {@code git branch -m} and updates IntelliJ repository state.
+     * </p>
+     */
+    @Override
+    @AgiTool("Renames a Git branch in the repository.")
+    public String gitRenameBranch(
+            @AgiToolParam(value = "Path of the repository or project directory.", rendererId = "path") String repoPath,
+            @AgiToolParam(value = "The current name of the branch to rename.") String oldName,
+            @AgiToolParam(value = "The new name for the branch.") String newName) throws Exception {
+
+        if (oldName == null || oldName.isBlank()) {
+            throw new AgiToolException("Current branch name cannot be empty.");
+        }
+        if (newName == null || newName.isBlank()) {
+            throw new AgiToolException("New branch name cannot be empty.");
+        }
+
+        GitRepository repo = requireRepo(repoPath);
+        Project project = repo.getProject();
+        VirtualFile root = repo.getRoot();
+
+        String oldBranch = oldName.trim();
+        String newBranch = newName.trim();
+
+        GitLineHandler handler = new GitLineHandler(project, root, GitCommand.BRANCH);
+        handler.addParameters("-m", oldBranch, newBranch);
+
+        GitCommandResult result = Git.getInstance().runCommand(handler);
+        if (!result.success()) {
+            throw new AgiToolException("Failed to rename branch: " + result.getErrorOutputAsJoinedString());
+        }
+
+        root.refresh(false, true);
+        repo.update();
+
+        String msg = "Successfully renamed branch `" + oldBranch + "` to `" + newBranch + "` in " + root.getName();
+        log(msg);
+        return msg;
     }
 
     /**

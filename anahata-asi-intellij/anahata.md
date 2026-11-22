@@ -35,7 +35,7 @@ IDE toolkits are contributed by adding their `Class` to `getToolClasses()` in `I
 | `IntellijJava` | `tools.java` | `compileAndExecuteInProject` against a project classpath (OrderEnumerator); replaces `SwingJava` |
 | `Maven` | `tools.maven` | `getMavenProjects`, `getDependencies`, `runGoals`, `addDependency`, `searchMavenIndex` (MavenProjectsManager + MavenRunner + MavenArtifactSearcher) |
 | `RunConfigurations` | `tools.run` | `listRunConfigurations`, `runConfiguration` (RunManager + ProgramRunnerUtil) — beyond-parity |
-| `Vcs` | `tools.vcs` | `getVcsStatus` — provider-agnostic changed/unversioned files (ChangeListManager) — beyond-parity |
+| `Vcs` | `tools.vcs` | `getVcsStatus`, single-shot `gitInit` (defaults to 'main' & SSH), `gitSetRemote`, `gitRenameBranch`, full Git commands parity with NetBeans |
 | `Terminals` | `tools.terminal` | `openLocalTerminal`, `typeCommand`, `closeTerminal` (TerminalToolWindowManager + ShellTerminalWidget) |
 
 The Project view also shows an **Anahata** node (`AnahataTreeStructureProvider`) linking to `anahata.md`, and the diff renderer paints per-line **gutter comment bubbles** from `FullTextResourceUpdate.getLineComments()`.
