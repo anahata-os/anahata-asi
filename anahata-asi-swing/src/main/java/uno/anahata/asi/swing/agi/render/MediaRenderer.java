@@ -33,6 +33,7 @@ import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 import uno.anahata.asi.swing.AbstractSwingAsiContainer;
 import uno.anahata.asi.swing.agi.AgiPanel;
+import uno.anahata.asi.swing.agi.render.pdf.SwingPdfViewer;
 import uno.anahata.asi.swing.audio.AudioPlaybackPanel;
 import uno.anahata.asi.swing.internal.JavaFxBridgeClassLoader;
 import uno.anahata.asi.swing.internal.SwingUtils;
@@ -155,6 +156,23 @@ public class MediaRenderer {
     }
 
     /**
+     * Creates an interactive {@link SwingPdfViewer} initialized with raw PDF
+     * data, MIME type, display name, and optional source URI.
+     *
+     * @param data The raw binary PDF data.
+     * @param mimeType The detected MIME type (typically 'application/pdf').
+     * @param displayName The human-readable display name or file name.
+     * @param sourceUri The optional disk or network URI of the document source.
+     * @param agiPanel The parent AgiPanel providing session context.
+     * @return A fully configured {@link SwingPdfViewer} ready for embedding in the UI.
+     */
+    public static SwingPdfViewer createPdfViewer(byte[] data, String mimeType, String displayName, URI sourceUri, @NonNull AgiPanel agiPanel) {
+        SwingPdfViewer viewer = new SwingPdfViewer(agiPanel);
+        viewer.load(data, mimeType, displayName, sourceUri);
+        return viewer;
+    }
+
+    /**
      * Creates the optimal {@link MediaViewerComponent} based on MIME type and container runtime capabilities.
      *
      * @param data The raw binary data.
@@ -174,6 +192,11 @@ public class MediaRenderer {
         // 1. High-fidelity Interactive Image Viewer (Pure Swing, universal)
         if (cleanMime.startsWith("image/")) {
             return createImageViewer(data, cleanMime, displayName, sourceUri, agiPanel);
+        }
+
+        // 2. High-fidelity Interactive PDF Document Viewer (Pure Java, Apache PDFBox)
+        if (cleanMime.equals("application/pdf")) {
+            return createPdfViewer(data, cleanMime, displayName, sourceUri, agiPanel);
         }
 
         // 2. Host-provided media viewer (e.g. JCEF in IntelliJ)
