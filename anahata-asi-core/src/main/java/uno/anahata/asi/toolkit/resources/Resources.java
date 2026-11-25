@@ -139,7 +139,7 @@ public class Resources extends AnahataToolkit {
             }
             log("Created handle " + handle);
             Resource resource = new Resource(handle);
-            if (initialSettings != null) {
+            if (initialSettings != null && handle.isTextual()) {
                 resource.setView(new TextView(resource, initialSettings.copy()));
             }
 
