@@ -152,5 +152,4 @@ jobs:
             -f release_nb_320="${{ inputs.release_nb_320 }}" \
             -f release_nb_uc="${{ inputs.release_nb_uc }}" \
             -f release_intellij="${{ inputs.release_intellij }}"
-#            -f release_snap="${{ inputs.release_snap }}"
           echo "🚀 Master build3 pipeline successfully triggered on tag v$RELEASE_VER!"
