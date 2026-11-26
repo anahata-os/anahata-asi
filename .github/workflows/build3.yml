@@ -561,6 +561,9 @@ jobs:
         with:
           path: '_site'
 
+      - name: Await Artifact Indexing
+        run: sleep 10
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
