@@ -34,6 +34,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import lombok.Getter;
 import lombok.NonNull;
@@ -123,6 +124,11 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
      * In-memory cache for rendered full-page rasters keyed by page index.
      */
     private final Map<Integer, BufferedImage> pageCache = new ConcurrentHashMap<>();
+
+    /**
+     * Debounce timer for high-DPI re-rasterization after mouse drag / resizing finishes.
+     */
+    private final Timer resizeDebounceTimer;
 
     /**
      * In-memory cache for generated thumbnail previews keyed by page index.
@@ -271,6 +277,9 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
         // Bind image supplier to toolbar for clipboard copy
         toolbar.setImageSupplier(canvas::getImage);
 
+        resizeDebounceTimer = new Timer(150, e -> reRenderCurrentPageAtOptimalDpi());
+        resizeDebounceTimer.setRepeats(false);
+
         setupListeners();
         updateControlsState();
     }
@@ -418,22 +427,22 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
         actualSizeBtn.addActionListener(e -> {
             setFitWidthMode(false);
             zoomFactor = 1.0;
-            pageCache.clear();
-            renderCurrentPage();
+            updateManualZoomDisplay();
+            resizeDebounceTimer.restart();
         });
 
         zoomInBtn.addActionListener(e -> {
             setFitWidthMode(false);
             zoomFactor = Math.min(4.0, zoomFactor * 1.25);
-            pageCache.clear();
-            renderCurrentPage();
+            updateManualZoomDisplay();
+            resizeDebounceTimer.restart();
         });
 
         zoomOutBtn.addActionListener(e -> {
             setFitWidthMode(false);
             zoomFactor = Math.max(0.25, zoomFactor / 1.25);
-            pageCache.clear();
-            renderCurrentPage();
+            updateManualZoomDisplay();
+            resizeDebounceTimer.restart();
         });
 
         // Viewport resize tracking for dynamic fit-width adjustment
@@ -441,7 +450,7 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
             @Override
             public void componentResized(ComponentEvent e) {
                 if (fitWidthToggle.isSelected()) {
-                    checkResizeAndRefit();
+                    handleViewportResize();
                 }
             }
         });
@@ -455,8 +464,8 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
                 } else {
                     zoomFactor = Math.max(0.25, zoomFactor / 1.15);
                 }
-                pageCache.clear();
-                renderCurrentPage();
+                updateManualZoomDisplay();
+                resizeDebounceTimer.restart();
                 e.consume();
             } else {
                 JScrollBar vBar = mainScrollPane.getVerticalScrollBar();
@@ -494,21 +503,57 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
         zoomOutBtn.setEnabled(!fit);
 
         if (fit) {
-            pageCache.clear();
-            renderCurrentPage();
+            handleViewportResize();
         }
+    }
+
+    /**
+     * Updates manual zoom scale immediately using Java2D without vector re-rasterization.
+     */
+    private void updateManualZoomDisplay() {
+        if (document == null || totalPages == 0) {
+            return;
+        }
+        zoomLabel.setText((int) Math.round(zoomFactor * 100) + "%");
+        PDRectangle crop = document.getPage(currentPage).getCropBox();
+        int targetW = (int) Math.round(crop.getWidth() * zoomFactor);
+        int targetH = (int) Math.round(crop.getHeight() * zoomFactor);
+        canvas.setDisplaySize(targetW, targetH);
+    }
+
+    /**
+     * Handles live viewport resize events instantaneously via Java2D master image scaling,
+     * scheduling a 150ms debounced high-DPI rasterization pass.
+     */
+    private void handleViewportResize() {
+        if (document == null || totalPages == 0) {
+            return;
+        }
+        int viewW = mainScrollPane.getViewport().getWidth();
+        if (viewW <= 50 || Math.abs(viewW - lastViewportWidth) < 2) {
+            return;
+        }
+        lastViewportWidth = viewW;
+
+        PDRectangle crop = document.getPage(currentPage).getCropBox();
+        int targetW = Math.max(200, viewW - 48);
+        int targetH = (int) Math.round(targetW * (crop.getHeight() / crop.getWidth()));
+
+        zoomFactor = (double) targetW / crop.getWidth();
+        zoomLabel.setText((int) Math.round(zoomFactor * 100) + "%");
+
+        // Instant Java2D scale (<1ms, 60fps smooth split-pane dragging)
+        canvas.setDisplaySize(targetW, targetH);
+
+        // Schedule crisp high-DPI re-render after 150ms of quiet
+        resizeDebounceTimer.restart();
     }
 
     /**
      * Checks if the viewport width has changed and refits the page if necessary.
      */
     private void checkResizeAndRefit() {
-        int currentW = mainScrollPane.getViewport().getWidth();
-        if (currentW > 50 && Math.abs(currentW - lastViewportWidth) > 5) {
-            lastViewportWidth = currentW;
-            pageCache.clear();
-            renderCurrentPage();
-        }
+        handleViewportResize();
     }
 
     /**
@@ -550,34 +595,65 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
         }
 
         try {
-            float dpi;
-            if (fitWidthToggle.isSelected()) {
-                int viewW = mainScrollPane.getViewport().getWidth();
-                if (viewW <= 0) {
-                    viewW = 800;
-                }
-                int targetW = Math.max(250, viewW - 48);
+            PDRectangle crop = document.getPage(currentPage).getCropBox();
+            int viewW = mainScrollPane.getViewport().getWidth();
+            if (viewW <= 0) {
+                viewW = 800;
+            }
 
-                PDRectangle crop = document.getPage(currentPage).getCropBox();
-                float scale = (float) targetW / crop.getWidth();
-                dpi = Math.max(50f, Math.min(300f, 72f * scale));
-                zoomFactor = scale;
+            int targetW;
+            if (fitWidthToggle.isSelected()) {
+                targetW = Math.max(250, viewW - 48);
+                zoomFactor = (double) targetW / crop.getWidth();
                 lastViewportWidth = viewW;
             } else {
-                dpi = (float) (150f * zoomFactor);
+                targetW = (int) Math.round(crop.getWidth() * zoomFactor);
             }
+            int targetH = (int) Math.round(targetW * (crop.getHeight() / crop.getWidth()));
 
             zoomLabel.setText((int) Math.round(zoomFactor * 100) + "%");
 
             BufferedImage img = pageCache.get(currentPage);
             if (img == null) {
+                float scale = (float) targetW / crop.getWidth();
+                float dpi = Math.max(50f, Math.min(300f, 72f * scale));
                 img = renderer.renderImageWithDPI(currentPage, dpi);
                 pageCache.put(currentPage, img);
             }
 
-            canvas.setImage(img);
+            canvas.setMasterImage(img, targetW, targetH);
         } catch (Exception ex) {
             log.error("Failed to render PDF page {}: {}", currentPage, ex.getMessage(), ex);
+        }
+    }
+
+    /**
+     * Re-renders the active page from PDFBox at the exact DPI matching current display size.
+     */
+    private void reRenderCurrentPageAtOptimalDpi() {
+        if (document == null || totalPages == 0) {
+            return;
+        }
+
+        try {
+            PDRectangle crop = document.getPage(currentPage).getCropBox();
+            int targetW;
+            if (fitWidthToggle.isSelected()) {
+                int viewW = mainScrollPane.getViewport().getWidth();
+                targetW = Math.max(200, viewW - 48);
+            } else {
+                targetW = (int) Math.round(crop.getWidth() * zoomFactor);
+            }
+            int targetH = (int) Math.round(targetW * (crop.getHeight() / crop.getWidth()));
+
+            float scale = (float) targetW / crop.getWidth();
+            float dpi = Math.max(50f, Math.min(300f, 72f * scale));
+
+            BufferedImage crispImg = renderer.renderImageWithDPI(currentPage, dpi);
+            pageCache.put(currentPage, crispImg);
+            canvas.setMasterImage(crispImg, targetW, targetH);
+        } catch (Exception ex) {
+            log.error("Failed to re-render PDF page at optimal DPI: {}", ex.getMessage(), ex);
         }
     }
 
@@ -728,6 +804,9 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
      * Closes the active PDDocument and releases caches.
      */
     private void disposeDocument() {
+        if (resizeDebounceTimer != null && resizeDebounceTimer.isRunning()) {
+            resizeDebounceTimer.stop();
+        }
         stopThumbnailLoader();
         pageCache.clear();
         thumbnailCache.clear();
