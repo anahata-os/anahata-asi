@@ -41,6 +41,8 @@ import uno.anahata.asi.swing.icons.LoadSessionIcon;
 import uno.anahata.asi.swing.icons.NewIcon;
 import uno.anahata.asi.swing.icons.NextIcon;
 import uno.anahata.asi.swing.icons.OkIcon;
+import uno.anahata.asi.swing.icons.FastForwardIcon;
+import uno.anahata.asi.swing.icons.RewindIcon;
 import uno.anahata.asi.swing.icons.PinnedIcon;
 import uno.anahata.asi.swing.icons.PrevIcon;
 import uno.anahata.asi.swing.icons.PulseIcon;
@@ -383,6 +385,10 @@ public class SwingAgiConfig extends AgiConfig {
                 new OkIcon(size);
             case PREV ->
                 new PrevIcon(size);
+            case REWIND ->
+                new RewindIcon(size);
+            case FAST_FORWARD ->
+                new FastForwardIcon(size);
             case CARDS_VIEW ->
                 new CardsIcon(size);
             case TABLE_VIEW ->

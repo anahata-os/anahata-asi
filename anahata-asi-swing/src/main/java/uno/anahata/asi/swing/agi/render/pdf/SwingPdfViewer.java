@@ -45,6 +45,8 @@ import org.apache.pdfbox.rendering.PDFRenderer;
 import uno.anahata.asi.swing.agi.AgiPanel;
 import uno.anahata.asi.swing.agi.render.MediaToolbar;
 import uno.anahata.asi.swing.agi.render.MediaViewerComponent;
+import uno.anahata.asi.swing.agi.SwingAgiConfig;
+import uno.anahata.asi.swing.icons.ActionIconKey;
 import uno.anahata.asi.swing.icons.ActualSizeIcon;
 import uno.anahata.asi.swing.icons.FitWidthIcon;
 import uno.anahata.asi.swing.icons.SidebarSplitIcon;
@@ -143,17 +145,17 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
     /**
      * Toggle button to collapse or expand the page thumbnail navigator.
      */
-    private final JToggleButton sidebarToggle = createSquareToggle(new SidebarSplitIcon(16), "Toggle Page Thumbnails Sidebar");
+    private final JToggleButton sidebarToggle;
 
     /**
      * Jump button to navigate directly to the first page.
      */
-    private final JButton firstBtn = createSquareBtn("⏮", "First Page");
+    private final JButton firstBtn;
 
     /**
      * Button to navigate to the previous page.
      */
-    private final JButton prevBtn = createSquareBtn("◀", "Previous Page");
+    private final JButton prevBtn;
 
     /**
      * Spinner control for entering or stepping through page numbers.
@@ -168,37 +170,42 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
     /**
      * Button to navigate to the next page.
      */
-    private final JButton nextBtn = createSquareBtn("▶", "Next Page");
+    private final JButton nextBtn;
 
     /**
      * Jump button to navigate directly to the last page.
      */
-    private final JButton lastBtn = createSquareBtn("⏭", "Last Page");
+    private final JButton lastBtn;
 
     /**
      * Toggle button to lock zoom to the viewport width.
      */
-    private final JToggleButton fitWidthToggle = createSquareToggle(new FitWidthIcon(16), "Fit Page to Window Width");
+    private final JToggleButton fitWidthToggle;
 
     /**
      * Button to reset zoom to 100% actual size.
      */
-    private final JButton actualSizeBtn = createSquareBtn(new ActualSizeIcon(14), "Actual Size (100% 1:1)");
+    private final JButton actualSizeBtn;
 
     /**
      * Button to zoom out.
      */
-    private final JButton zoomOutBtn = createSquareBtn(new ZoomMinusIcon(14), "Zoom Out (-)");
+    private final JButton zoomOutBtn;
 
     /**
      * Button to zoom in.
      */
-    private final JButton zoomInBtn = createSquareBtn(new ZoomPlusIcon(14), "Zoom In (+)");
+    private final JButton zoomInBtn;
 
     /**
      * Label displaying the current zoom percentage.
      */
     private final JLabel zoomLabel = new JLabel("100%");
+
+    /**
+     * Panel hosting right-aligned zoom controls.
+     */
+    private JPanel rightZoomPanel;
 
     /**
      * Collapsible sidebar panel holding the page thumbnail list.
@@ -239,6 +246,18 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
         super(new BorderLayout());
         this.agiPanel = agiPanel;
         this.toolbar = new MediaToolbar(agiPanel);
+
+        SwingAgiConfig config = agiPanel.getAgiConfig();
+        this.sidebarToggle = createSquareToggle(new SidebarSplitIcon(16), "Toggle Page Thumbnails Sidebar");
+        this.firstBtn = createSquareBtn(config.getActionIcon(ActionIconKey.REWIND, 14), "First Page");
+        this.prevBtn = createSquareBtn(config.getActionIcon(ActionIconKey.PREV, 14), "Previous Page");
+        this.nextBtn = createSquareBtn(config.getActionIcon(ActionIconKey.NEXT, 14), "Next Page");
+        this.lastBtn = createSquareBtn(config.getActionIcon(ActionIconKey.FAST_FORWARD, 14), "Last Page");
+
+        this.fitWidthToggle = createSquareToggle(new FitWidthIcon(16), "Fit Page to Window Width");
+        this.actualSizeBtn = createSquareBtn(new ActualSizeIcon(14), "Actual Size (100% 1:1)");
+        this.zoomOutBtn = createSquareBtn(new ZoomMinusIcon(14), "Zoom Out (-)");
+        this.zoomInBtn = createSquareBtn(new ZoomPlusIcon(14), "Zoom In (+)");
 
         setOpaque(true);
         setBackground(new Color(24, 28, 36));
@@ -282,6 +301,7 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
 
         setupListeners();
         updateControlsState();
+        setFitWidthMode(true);
     }
 
     /**
@@ -310,30 +330,30 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
         pageSpinner.setPreferredSize(new Dimension(45, 24));
         leftNav.add(pageSpinner);
 
-        pageInfoLabel.setFont(new Font("SansSerif", Font.PLAIN, 11));
-        pageInfoLabel.setForeground(new Color(180, 190, 210));
+        pageInfoLabel.setFont(new Font("SansSerif", Font.BOLD, 13));
+        pageInfoLabel.setForeground(new Color(220, 228, 242));
         leftNav.add(pageInfoLabel);
 
         leftNav.add(nextBtn);
         leftNav.add(lastBtn);
 
-        JPanel rightZoom = new JPanel(new FlowLayout(FlowLayout.RIGHT, 3, 0));
-        rightZoom.setOpaque(false);
+        this.rightZoomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 3, 0));
+        rightZoomPanel.setOpaque(false);
 
         fitWidthToggle.setSelected(true);
-        rightZoom.add(fitWidthToggle);
-        rightZoom.add(actualSizeBtn);
-        rightZoom.add(zoomOutBtn);
-        rightZoom.add(zoomInBtn);
+        rightZoomPanel.add(fitWidthToggle);
+        rightZoomPanel.add(actualSizeBtn);
+        rightZoomPanel.add(zoomOutBtn);
+        rightZoomPanel.add(zoomInBtn);
 
         zoomLabel.setFont(new Font("SansSerif", Font.BOLD, 10));
         zoomLabel.setForeground(new Color(160, 175, 200));
         zoomLabel.setPreferredSize(new Dimension(36, 24));
         zoomLabel.setHorizontalAlignment(SwingConstants.RIGHT);
-        rightZoom.add(zoomLabel);
+        rightZoomPanel.add(zoomLabel);
 
         bar.add(leftNav, BorderLayout.WEST);
-        bar.add(rightZoom, BorderLayout.EAST);
+        bar.add(rightZoomPanel, BorderLayout.EAST);
         return bar;
     }
 
@@ -481,10 +501,10 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
                 }
                 // When at the top or bottom boundary (or page fits viewport), wheel flips to previous/next page
                 if (e.getWheelRotation() > 0 && currentPage < totalPages - 1) {
-                    goToPage(currentPage + 1);
+                    goToPage(currentPage + 1, false);
                     e.consume();
                 } else if (e.getWheelRotation() < 0 && currentPage > 0) {
-                    goToPage(currentPage - 1);
+                    goToPage(currentPage - 1, true);
                     e.consume();
                 }
             }
@@ -498,9 +518,13 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
      */
     private void setFitWidthMode(boolean fit) {
         fitWidthToggle.setSelected(fit);
-        actualSizeBtn.setEnabled(!fit);
-        zoomInBtn.setEnabled(!fit);
-        zoomOutBtn.setEnabled(!fit);
+        actualSizeBtn.setVisible(!fit);
+        zoomInBtn.setVisible(!fit);
+        zoomOutBtn.setVisible(!fit);
+        if (rightZoomPanel != null) {
+            rightZoomPanel.revalidate();
+            rightZoomPanel.repaint();
+        }
 
         if (fit) {
             handleViewportResize();
@@ -557,11 +581,22 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
     }
 
     /**
-     * Navigates to a specific 0-based page index.
+     * Navigates to a specific 0-based page index, resetting the scroll position to the top.
      *
      * @param page Target 0-based page index.
      */
     public void goToPage(int page) {
+        goToPage(page, false);
+    }
+
+    /**
+     * Navigates to a specific 0-based page index and aligns the vertical scrollbar.
+     *
+     * @param page Target 0-based page index.
+     * @param atBottom True to position scrollbar at the bottom (useful when scrolling up backwards),
+     *                 false to position at the top (standard reading order).
+     */
+    public void goToPage(int page, boolean atBottom) {
         if (page < 0 || page >= totalPages || page == currentPage) {
             return;
         }
@@ -572,6 +607,13 @@ public class SwingPdfViewer extends JPanel implements MediaViewerComponent {
 
         updateControlsState();
         renderCurrentPage();
+
+        SwingUtilities.invokeLater(() -> {
+            JScrollBar vBar = mainScrollPane.getVerticalScrollBar();
+            if (vBar != null) {
+                vBar.setValue(atBottom ? vBar.getMaximum() : 0);
+            }
+        });
     }
 
     /**

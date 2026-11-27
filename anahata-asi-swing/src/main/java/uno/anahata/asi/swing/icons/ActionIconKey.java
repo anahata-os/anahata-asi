@@ -180,6 +180,16 @@ public enum ActionIconKey {
     PREV,
 
     /**
+     * Rewind or jump to start / first page.
+     */
+    REWIND,
+
+    /**
+     * Fast-forward or jump to end / last page.
+     */
+    FAST_FORWARD,
+
+    /**
      * Switch view to cards layout.
      */
     CARDS_VIEW,
